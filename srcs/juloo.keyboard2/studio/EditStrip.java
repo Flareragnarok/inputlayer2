@@ -350,13 +350,12 @@ public class EditStrip extends LinearLayout
     switch (action)
     {
       case "select":
-        // First the unit at the cursor, then the next ones.
+        // First the unit at the cursor, then the next ones: inclusive adds
+        // them to the selection, exclusive moves to them.
         if (!has_selection(f))
-          r = _scope.unit_at(f.text, f.sel_start);
+          r = adjust(f.text, _scope.unit_at(f.text, f.sel_start));
         else
-          r = _forward ? _scope.next_unit(f.text, unit[1])
-            : _scope.prev_unit(f.text, unit[0]);
-        r = adjust(f.text, r);
+          r = step(f.text, sel, unit, _forward);
         break;
       // With a selection, the selection moves by a unit, staying selected
       // (and inclusive or exclusive). Without, the cursor moves.
@@ -364,7 +363,7 @@ public class EditStrip extends LinearLayout
       {
         if (has_selection(f))
         {
-          r = adjust(f.text, _scope.next_unit(f.text, unit[1]));
+          r = step(f.text, sel, unit, true);
           break;
         }
         int p = unit[1];
@@ -379,7 +378,7 @@ public class EditStrip extends LinearLayout
       {
         if (has_selection(f))
         {
-          r = adjust(f.text, _scope.prev_unit(f.text, unit[0]));
+          r = step(f.text, sel, unit, false);
           break;
         }
         int p = unit[0];
@@ -587,22 +586,16 @@ public class EditStrip extends LinearLayout
       space for Word. */
   void start_typing()
   {
+    // What View and Verse show: their last item, or the one a tap applies.
     String[] f = view_format();
-    String style = null;
-    if (_verse_item >= 0)
-    {
-      String[] n = verse_nest();
-      style = n[1 + Math.min(_verse_item, n.length - 2)];
-      _typing_case = n[0].equals("Case");
-    }
+    String[] n = verse_nest();
+    String style = n[1 + Math.min(Math.max(0, _verse_item), n.length - 2)];
+    _typing_case = n[0].equals("Case");
+    if (style.equals(UnicodeStyles.PLAIN))
+      style = null;
     InputConnection ic = _listener.input();
     if (ic == null)
       return;
-    if (f == null && style == null)
-    {
-      toast("Pick a format on View or a look on Verse first");
-      return;
-    }
     String open = (f == null) ? "" : f[1], close = (f == null) ? "" : f[2];
     int pos = Math.min(_listener.sel_start(), _listener.sel_end());
     ic.beginBatchEdit();
@@ -621,7 +614,7 @@ public class EditStrip extends LinearLayout
     toast("Typing in " + typing_summary() + " until " + separator_name());
   }
 
-  /** E.g. "Bold · 𝐛𝐨𝐥𝐝". */
+  /** E.g. "Bold · 𝐛𝐨𝐥𝐝", "plain" when neither applies anything. */
   String typing_summary()
   {
     String f = (_typing_close.isEmpty() && view_format() == null) ? null : _view_item;
@@ -629,7 +622,7 @@ public class EditStrip extends LinearLayout
       : (_typing_case ? case_label(_typing_style) : UnicodeStyles.label(_typing_style));
     if (f != null && v != null)
       return f + " · " + v;
-    return (f != null) ? f : (v != null ? v : "");
+    return (f != null) ? f : (v != null ? v : "plain");
   }
 
   /** What ends typing in format, for the scope. */
@@ -985,6 +978,20 @@ public class EditStrip extends LinearLayout
       return;
     String n = t.apply(f.text.substring(r[0], r[1]));
     replace(f, r[0], r[1], n, r[0], r[0] + n.length());
+  }
+
+  /** The selection [sel] (of unit [unit]) after a step forward or back:
+      inclusive keeps it and adds the next or previous unit, exclusive moves
+      to that unit. [null] when there is none. */
+  int[] step(String text, int[] sel, int[] unit, boolean forward)
+  {
+    int[] n = forward ? _scope.next_unit(text, unit[1]) : _scope.prev_unit(text, unit[0]);
+    if (n == null)
+      return null;
+    if (!_inclusive)
+      return n;
+    n = _scope.inclusive(text, n);
+    return new int[]{ Math.min(sel[0], n[0]), Math.max(sel[1], n[1]) };
   }
 
   /** A unit as Sector selects it: exclusive, or inclusive. */
