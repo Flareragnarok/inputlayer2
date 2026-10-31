@@ -85,7 +85,12 @@ public class EditStrip extends LinearLayout
   static final ComfortKeySpec SELECTOR_KEY =
     ComfortKeySpec.of("c", "select", "w", "cursor_prev", "e", "cursor_next",
         "n", "select_toggle", "s", "inclusive_toggle");
-  static final ComfortKeySpec CUSTOM_SELECTION_KEY = ComfortKeySpec.of("c", "custom_selection");
+  /** Spec and Vert: tap applies the current macro, right picks the next,
+      left lists them, down saves the last typing in format as one (Spec:
+      its steps, Vert: its key replacements), up opens the definitions. */
+  static final ComfortKeySpec CUSTOM_SELECTION_KEY =
+    ComfortKeySpec.of("c", "spec_apply", "e", "spec_next", "w", "spec_menu",
+        "s", "spec_save", "n", "custom_selection");
   static final ComfortKeySpec SELECTION_DIRECTION_KEY = ComfortKeySpec.of("c", "selection_direction");
   static final ComfortKeySpec CYCLE_DIRECTION_KEY = ComfortKeySpec.of("c", "cycle_direction");
   static final ComfortKeySpec APPEARANCE_KEY =
@@ -98,7 +103,9 @@ public class EditStrip extends LinearLayout
   static final String KEY_NEST_CONFIGS = "studio_nest_configs";
   static final String KEY_NEST_CONFIG_INDEX = "studio_nest_config_index";
   static final int DEFAULT_VERSE_NEST = 1;
-  static final ComfortKeySpec CUSTOM_FORMAT_KEY = ComfortKeySpec.of("c", "custom_format");
+  static final ComfortKeySpec CUSTOM_FORMAT_KEY =
+    ComfortKeySpec.of("c", "vert_apply", "e", "vert_next", "w", "vert_menu",
+        "s", "vert_save", "n", "custom_format");
 
   Listener _listener;
   SharedPreferences _prefs;
@@ -148,6 +155,14 @@ public class EditStrip extends LinearLayout
   String _typing_style = null;
   boolean _typing_case = false;
   View _scope_key;
+  View _spec_key;
+  View _vert_key;
+  /** Current macros, by name ([null]: the first saved). */
+  String _spec_name = null;
+  String _vert_name = null;
+  /** The last typing in format: its steps (format, look) and what was
+      typed, for saving it with Spec or Vert. [null] before the first. */
+  JSONObject _last_write = null;
   View _appearance_key;
   View _format_key;
   /** Navigation bar height on Android 15+, kept clear below the keys. */
@@ -198,7 +213,10 @@ public class EditStrip extends LinearLayout
     else
       ((ComfortKey)_scope_key).set_lines(scope_nest_name(), _scope.label);
     addView(_scope_key);
-    addView(make_key(CUSTOM_SELECTION_KEY, 1.3f));
+    _spec_key = make_key(CUSTOM_SELECTION_KEY, 1.4f);
+    Module spec = current_macro("spec");
+    ((ComfortKey)_spec_key).set_lines("Spec", (spec == null) ? "—" : spec.name);
+    addView(_spec_key);
     View sector = make_key(SELECTOR_KEY, 1.5f);
     // The selection type sits at the bottom, by the down swipe switching it.
     ((ComfortKey)sector).set_lines("Sector", _inclusive ? "incl" : "excl");
@@ -213,7 +231,10 @@ public class EditStrip extends LinearLayout
         + verse_item_label(vn, Math.max(0, _verse_item)));
     // View formats, Vert defines formats and fonts, Verse changes the look.
     addView(_format_key);
-    addView(make_key(CUSTOM_FORMAT_KEY, 1.3f));
+    _vert_key = make_key(CUSTOM_FORMAT_KEY, 1.4f);
+    Module vert = current_macro("vert");
+    ((ComfortKey)_vert_key).set_lines("Vert", (vert == null) ? "—" : vert.name);
+    addView(_vert_key);
     addView(_appearance_key);
     addView(make_key(CYCLE_DIRECTION_KEY, 1.0f));
   }
@@ -332,6 +353,14 @@ public class EditStrip extends LinearLayout
         _up = !_up;
         rebuild();
         return;
+      case "spec_apply": apply_macro("spec"); return;
+      case "spec_next": next_macro("spec"); return;
+      case "spec_menu": macro_menu("spec", _spec_key); return;
+      case "spec_save": save_macro("spec"); return;
+      case "vert_apply": apply_macro("vert"); return;
+      case "vert_next": next_macro("vert"); return;
+      case "vert_menu": macro_menu("vert", _vert_key); return;
+      case "vert_save": save_macro("vert"); return;
       case "custom_selection":
       case "custom_format":
         _listener.open_studio();
@@ -430,7 +459,11 @@ public class EditStrip extends LinearLayout
       case "select_toggle": return new ComfortKey.Label("[ ]", false);
       case "inclusive_toggle": return new ComfortKey.Label("⊂", false);
       case "scope_default": return new ComfortKey.Label("⌂", false);
-      case "custom_selection": return new ComfortKey.Label("Spec", false);
+      case "custom_selection": case "custom_format": return new ComfortKey.Label("⚙", false);
+      case "spec_apply": case "vert_apply": return new ComfortKey.Label("", false);
+      case "spec_next": case "vert_next": return new ComfortKey.Label("›", false);
+      case "spec_menu": case "vert_menu": return new ComfortKey.Label("☰", false);
+      case "spec_save": case "vert_save": return new ComfortKey.Label("⤓", false);
       case "selection_direction": return new ComfortKey.Label(_forward ? "→" : "←", false);
       case "cycle_direction": return new ComfortKey.Label(_up ? "↑" : "↓", false);
       case "appearance": return new ComfortKey.Label("Verse", false);
@@ -444,7 +477,6 @@ public class EditStrip extends LinearLayout
       case "format_restore": return new ComfortKey.Label("⟲", false);
       case "format": return new ComfortKey.Label("View", false);
       case "format_menu": return new ComfortKey.Label("☰", false);
-      case "custom_format": return new ComfortKey.Label("Vert", false);
       default: return new ComfortKey.Label("?", false);
     }
   }
@@ -625,6 +657,18 @@ public class EditStrip extends LinearLayout
     _typing_len = fl.text.length() - (fl.sel_end - fl.sel_start)
       + open.length() + body.length() + close.length();
     _listener.preview(open + body + close);
+    try
+    {
+      _last_write = new JSONObject();
+      _last_write.put("format", (f == null) ? "" : f[0]);
+      _last_write.put("open", open);
+      _last_write.put("close", close);
+      _last_write.put("style", (style == null) ? "" : style);
+      _last_write.put("case", _typing_case);
+      _last_write.put("summary", typing_summary());
+      _last_write.put("typed", UnicodeStyles.to_plain(body));
+    }
+    catch (Exception _e) {}
     rebuild();
     toast("Typing in " + typing_summary() + " until " + separator_name() + " at the end");
   }
@@ -650,6 +694,15 @@ public class EditStrip extends LinearLayout
     if (_scope == TextScope.SENTENCE)
       return ". ! ? or a new line";
     return "a space";
+  }
+
+  /** The keys' result in letters (the look removed), for Vert. */
+  void record_typed(String body)
+  {
+    if (_last_write == null)
+      return;
+    try { _last_write.put("typed", UnicodeStyles.to_plain(body)); }
+    catch (Exception _e) {}
   }
 
   void stop_typing()
@@ -698,6 +751,7 @@ public class EditStrip extends LinearLayout
     {
       char sep = body.charAt(body.length() - 1);
       String conv = convert(body.substring(0, body.length() - 1));
+      record_typed(body.substring(0, body.length() - 1));
       _typing = false;
       f.ic.beginBatchEdit();
       f.ic.setSelection(_typing_start, _typing_end + close.length());
@@ -708,6 +762,7 @@ public class EditStrip extends LinearLayout
       return;
     }
     String conv = convert(body);
+    record_typed(body);
     _listener.preview(_typing_open + conv + close);
     if (!conv.equals(body))
     {
@@ -745,6 +800,150 @@ public class EditStrip extends LinearLayout
   void toast(String msg)
   {
     android.widget.Toast.makeText(getContext(), msg, android.widget.Toast.LENGTH_SHORT).show();
+  }
+
+  /* Macros: Spec (steps) and Vert (key replacements) */
+
+  /** Saved macros of [type] ("spec" or "vert"), by name. */
+  List<Module> macros(String type)
+  {
+    return new ModuleStore(_prefs).list(type);
+  }
+
+  /** The current macro of [type]: the one picked last, or the first. */
+  Module current_macro(String type)
+  {
+    List<Module> ms = macros(type);
+    String name = type.equals("spec") ? _spec_name : _vert_name;
+    for (Module m : ms)
+      if (m.name.equals(name))
+        return m;
+    return ms.isEmpty() ? null : ms.get(0);
+  }
+
+  void pick_macro(String type, String name)
+  {
+    if (type.equals("spec"))
+      _spec_name = name;
+    else
+      _vert_name = name;
+    rebuild();
+  }
+
+  void next_macro(String type)
+  {
+    List<Module> ms = macros(type);
+    if (ms.isEmpty())
+    {
+      toast(type.equals("spec") ? "No steps saved: swipe down on Spec after typing in format"
+          : "No replacement saved: swipe down on Vert after typing in format");
+      return;
+    }
+    Module cur = current_macro(type);
+    int i = ms.indexOf(cur);
+    for (int j = 0; j < ms.size(); j++)
+      if (ms.get(j).name.equals(cur.name))
+        i = j;
+    pick_macro(type, ms.get((i + 1) % ms.size()).name);
+  }
+
+  void macro_menu(final String type, View anchor)
+  {
+    PopupMenu p = new PopupMenu(getContext(), anchor);
+    Module cur = current_macro(type);
+    for (final Module m : macros(type))
+      add(p.getMenu(), ((cur != null && cur.name.equals(m.name)) ? "● " : "") + m.name
+          + "  " + m.json.optString("summary", ""), new Runnable() {
+        public void run() { pick_macro(type, m.name); }
+      });
+    if (p.getMenu().size() == 0)
+      add(p.getMenu(), "Nothing saved yet", new Runnable() { public void run() {} });
+    p.show();
+  }
+
+  /** Spec ↓: the steps of the last typing in format (format and look, not
+      the typed text). Vert ↓: its key replacements (the typed letters). */
+  void save_macro(String type)
+  {
+    if (_last_write == null)
+    {
+      toast("Type in format first (Scope ↑), then save it");
+      return;
+    }
+    try
+    {
+      JSONObject j = new JSONObject();
+      String summary;
+      if (type.equals("spec"))
+      {
+        j.put("format", _last_write.optString("format", ""));
+        j.put("open", _last_write.optString("open", ""));
+        j.put("close", _last_write.optString("close", ""));
+        j.put("style", _last_write.optString("style", ""));
+        j.put("case", _last_write.optBoolean("case", false));
+        summary = _last_write.optString("summary", "");
+      }
+      else
+      {
+        String typed = _last_write.optString("typed", "");
+        j.put("replace", typed);
+        summary = "→ " + typed;
+      }
+      j.put("summary", summary);
+      List<Module> ms = macros(type);
+      String name = (type.equals("spec") ? "Spec " : "Vert ") + (ms.size() + 1);
+      Module m = Module.create(type, name, j);
+      new ModuleStore(_prefs).save(m);
+      pick_macro(type, name);
+      toast("Saved " + name + ": " + summary);
+    }
+    catch (Exception e)
+    {
+      toast("Couldn't save: " + e.getMessage());
+    }
+  }
+
+  /** Apply the current macro of [type]: during typing in format to the
+      typed text, otherwise to the selection (or Scope's unit at the
+      cursor). */
+  void apply_macro(String type)
+  {
+    Module m = current_macro(type);
+    if (m == null)
+    {
+      next_macro(type); // Says what to do.
+      return;
+    }
+    Field f = read();
+    if (f == null)
+      return;
+    int[] r = _typing ? new int[]{ _typing_start - f.base, _typing_end - f.base } : target(f);
+    if (r == null || r[0] < 0 || r[1] > f.text.length())
+      return;
+    String body = f.text.substring(r[0], r[1]);
+    String n;
+    if (type.equals("spec"))
+    {
+      String style = m.json.optString("style", "");
+      String looked = style.isEmpty() ? body
+        : (m.json.optBoolean("case", false) ? UnicodeStyles.change_case(body, style)
+            : UnicodeStyles.apply(body, style));
+      n = m.json.optString("open", "") + looked + m.json.optString("close", "");
+    }
+    else
+      n = m.json.optString("replace", "");
+    if (_typing)
+    {
+      // The typed text becomes the result; typing goes on after it.
+      f.ic.beginBatchEdit();
+      f.ic.setSelection(f.base + r[0], f.base + r[1]);
+      f.ic.commitText(n, 1);
+      f.ic.endBatchEdit();
+      _typing_end = _typing_start + n.length();
+      _typing_len += n.length() - body.length();
+    }
+    else
+      replace(f, r[0], r[1], n, r[0], r[0] + n.length());
   }
 
   /* Scope */
