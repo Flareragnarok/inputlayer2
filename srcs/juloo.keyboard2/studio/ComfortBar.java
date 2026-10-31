@@ -2,27 +2,24 @@ package juloo.keyboard2.studio;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Handler;
 import android.util.AttributeSet;
-import android.util.TypedValue;
 import android.view.Gravity;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.HorizontalScrollView;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import java.util.List;
 import juloo.keyboard2.Config;
 import juloo.keyboard2.KeyValue;
 import juloo.keyboard2.Logs;
-import juloo.keyboard2.R;
+import juloo.keyboard2.Theme;
 import org.json.JSONObject;
 
-/** The comfort bar, above the suggestion bar: a scrollable row of applets
-    chosen by the active [comfortbar] module, and the language switch fixed at
-    the right end. Applets are built in; modules only choose and order them. */
-public class ComfortBar extends LinearLayout
+/** The comfort bar, above the suggestion bar: a few tiny keys, centered and
+    spaced apart, chosen by the active [comfortbar] module, and the language
+    key at the right end. Each key has a tap action and swipe actions.
+    Actions are built in; modules only choose and place them. */
+public class ComfortBar extends FrameLayout implements ComfortKey.Host
 {
   public interface Listener
   {
@@ -32,19 +29,17 @@ public class ComfortBar extends LinearLayout
   }
 
   static final int HEIGHT_STEP = 2;
+  static final ComfortKeySpec LANGUAGE_KEY =
+    ComfortKeySpec.of("c", "language", "sw", "keyboard_picker");
 
   Listener _listener;
   SharedPreferences _prefs;
   Config _config;
-  LinearLayout _applets;
-  TextView _language;
-  Handler _handler = new Handler();
+  LinearLayout _keys;
 
   public ComfortBar(Context ctx, AttributeSet attrs)
   {
     super(ctx, attrs);
-    setOrientation(HORIZONTAL);
-    setGravity(Gravity.CENTER_VERTICAL);
   }
 
   public void setup(Listener l, SharedPreferences prefs)
@@ -52,24 +47,14 @@ public class ComfortBar extends LinearLayout
     _listener = l;
     _prefs = prefs;
     removeAllViews();
-    HorizontalScrollView scroll = new HorizontalScrollView(getContext());
-    scroll.setHorizontalScrollBarEnabled(false);
-    _applets = new LinearLayout(getContext());
-    _applets.setOrientation(HORIZONTAL);
-    scroll.addView(_applets, new ViewGroup.LayoutParams(
-          ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
-    addView(scroll, new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
-    _language = cell("🌐");
-    _language.setOnClickListener(new View.OnClickListener() {
-      public void onClick(View v) { key("switch_forward"); }
-    });
-    _language.setOnLongClickListener(new View.OnLongClickListener() {
-      public boolean onLongClick(View v) { key("change_method"); return true; }
-    });
-    addView(_language, cell_params());
+    _keys = new LinearLayout(getContext());
+    _keys.setOrientation(LinearLayout.HORIZONTAL);
+    _keys.setGravity(Gravity.CENTER);
+    addView(_keys, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+          ViewGroup.LayoutParams.MATCH_PARENT));
   }
 
-  /** Rebuild the applets, called whenever the config changes. */
+  /** Rebuild the keys, called whenever the config changes. */
   public void refresh(Config config)
   {
     _config = config;
@@ -81,48 +66,114 @@ public class ComfortBar extends LinearLayout
     }
     setVisibility(VISIBLE);
     ViewGroup.LayoutParams p = getLayoutParams();
-    p.height = (int)(dp * getResources().getDisplayMetrics().density);
+    p.height = (int)(dp * density());
     setLayoutParams(p);
-    _applets.removeAllViews();
-    for (String a : config.studio.applets)
-      add_applet(a);
+    _keys.removeAllViews();
+    // The language key stays at the right end, the others in the middle.
+    while (getChildCount() > 1)
+      removeViewAt(1);
+    for (ComfortKeySpec s : config.studio.keys)
+      _keys.addView(make_key(s), key_params(true));
+    LayoutParams lp = key_params(false);
+    lp.gravity = Gravity.END | Gravity.CENTER_VERTICAL;
+    addView(make_key(LANGUAGE_KEY), lp);
   }
 
-  void add_applet(String a)
+  View make_key(ComfortKeySpec s)
   {
-    if (a.equals("height"))
-    {
-      add_height_cell("−", -HEIGHT_STEP);
-      add_height_cell("+", HEIGHT_STEP);
-    }
-    else if (a.startsWith("switch:"))
-      add_switch_cell(a.substring("switch:".length()));
-    else if (a.equals("memory"))
-      add_key_cell(getContext().getString(R.string.studio_memory), "switch_clipboard", false);
+    return new ComfortKey(getContext(), s, this, Theme.getKeyFont(getContext()));
+  }
+
+  LayoutParams key_params(boolean spaced)
+  {
+    int h = (int)(_config.studio.comfort_bar_dp * density());
+    LayoutParams p = new LayoutParams((int)(h * 1.7f), h - dp(4));
+    int gap = spaced ? dp(10) : dp(2);
+    p.setMargins(gap, dp(2), gap, dp(2));
+    return p;
+  }
+
+  /* ComfortKey.Host */
+
+  public void perform(String action)
+  {
+    if (action.equals("height_up"))
+      change_height(HEIGHT_STEP);
+    else if (action.equals("height_down"))
+      change_height(-HEIGHT_STEP);
+    else if (action.startsWith("switch:"))
+      cycle_module(action.substring("switch:".length()));
+    else if (action.equals("studio"))
+      _listener.open_studio();
     else
     {
-      String[] k = editing_applet(a);
-      if (k != null)
-        add_key_cell(k[0], k[1], k[2] != null);
+      String name = key_name(action);
+      KeyValue kv = (name == null) ? null : KeyValue.getKeyByName(name);
+      if (kv != null)
+        _listener.comfort_key(kv);
     }
   }
 
-  /** Label, key name and whether it repeats when held, or [null]. */
-  static String[] editing_applet(String a)
+  public ComfortKey.Label label_of(String action)
   {
-    switch (a)
+    switch (action)
     {
-      case "left": return new String[]{ "←", "left", "repeat" };
-      case "right": return new String[]{ "→", "right", "repeat" };
-      case "up": return new String[]{ "↑", "up", "repeat" };
-      case "down": return new String[]{ "↓", "down", "repeat" };
-      case "select_all": return new String[]{ "All", "selectAll", null };
-      case "copy": return new String[]{ "Copy", "copy", null };
-      case "cut": return new String[]{ "Cut", "cut", null };
-      case "paste": return new String[]{ "Paste", "paste", null };
-      case "undo": return new String[]{ "↶", "undo", null };
-      case "redo": return new String[]{ "↷", "redo", null };
+      case "height_up": return new ComfortKey.Label("+", false);
+      case "height_down": return new ComfortKey.Label("−", false);
+      case "studio": return new ComfortKey.Label("⚙", false);
+      case "language": return new ComfortKey.Label("🌐", false);
+      case "keyboard_picker": return new ComfortKey.Label("⌨", false);
+    }
+    if (action.startsWith("switch:"))
+    {
+      String type = action.substring("switch:".length());
+      Module active = Module.is_known_type(type) ?
+        new ModuleStore(_prefs).active(type) : null;
+      String name = (active == null) ? "" : " " + shorten(active.name);
+      return new ComfortKey.Label(type_symbol(type) + name, false);
+    }
+    String name = key_name(action);
+    KeyValue kv = (name == null) ? null : KeyValue.getKeyByName(name);
+    if (kv == null)
+      return new ComfortKey.Label("?", false);
+    return new ComfortKey.Label(kv.getString(),
+        kv.hasFlagsAny(KeyValue.FLAG_KEY_FONT));
+  }
+
+  public float swipe_dist_px()
+  {
+    return Math.max(dp(8), _config.swipe_dist_px / 2);
+  }
+
+  public long repeat_delay() { return _config.longPressTimeout; }
+
+  public long repeat_interval() { return _config.longPressInterval; }
+
+  /** Name of the keyboard key that does [action], or [null]. */
+  static String key_name(String action)
+  {
+    switch (action)
+    {
+      case "left": case "right": case "up": case "down":
+      case "copy": case "cut": case "paste": case "undo": case "redo":
+        return action;
+      case "select_all": return "selectAll";
+      case "language": return "switch_forward";
+      case "keyboard_picker": return "change_method";
+      case "clipboard": return "switch_clipboard";
       default: return null;
+    }
+  }
+
+  /** Actions that repeat while held. */
+  static boolean repeats(String action)
+  {
+    switch (action)
+    {
+      case "left": case "right": case "up": case "down":
+      case "undo": case "redo": case "height_up": case "height_down":
+        return true;
+      default: return false;
     }
   }
 
@@ -138,47 +189,9 @@ public class ComfortBar extends LinearLayout
     }
   }
 
-  void add_key_cell(String label, final String key_name, boolean repeat)
+  static String shorten(String s)
   {
-    TextView c = cell(label);
-    if (repeat)
-      c.setOnTouchListener(new Repeater(key_name));
-    else
-      c.setOnClickListener(new View.OnClickListener() {
-        public void onClick(View v) { key(key_name); }
-      });
-    _applets.addView(c, cell_params());
-  }
-
-  void add_height_cell(String label, final int delta)
-  {
-    TextView c = cell(label);
-    c.setOnClickListener(new View.OnClickListener() {
-      public void onClick(View v) { change_height(delta); }
-    });
-    c.setOnLongClickListener(new View.OnLongClickListener() {
-      public boolean onLongClick(View v) { _listener.open_studio(); return true; }
-    });
-    _applets.addView(c, cell_params());
-  }
-
-  void add_switch_cell(final String type)
-  {
-    if (!Module.is_known_type(type))
-      return;
-    Module active = new ModuleStore(_prefs).active(type);
-    TextView c = cell(type_symbol(type) + " " + (active == null ? "off" : active.name));
-    c.setOnClickListener(new View.OnClickListener() {
-      public void onClick(View v) { cycle_module(type); }
-    });
-    _applets.addView(c, cell_params());
-  }
-
-  void key(String name)
-  {
-    KeyValue kv = KeyValue.getKeyByName(name);
-    if (kv != null)
-      _listener.comfort_key(kv);
+    return (s.length() <= 5) ? s : s.substring(0, 4) + "…";
   }
 
   /** Change the keyboard height for the current orientation, stored in the
@@ -225,65 +238,13 @@ public class ComfortBar extends LinearLayout
     store.set_active(type, (i + 1 < ms.size()) ? ms.get(i + 1).name : null);
   }
 
-  TextView cell(String label)
+  float density()
   {
-    TextView t = new TextView(getContext());
-    t.setText(label);
-    t.setGravity(Gravity.CENTER);
-    t.setMaxLines(1);
-    t.setBackgroundResource(R.drawable.suggestions_item_background);
-    TypedValue tv = new TypedValue();
-    if (getContext().getTheme().resolveAttribute(R.attr.colorLabel, tv, true))
-      t.setTextColor(tv.data);
-    int pad = dp(10);
-    t.setPadding(pad, 0, pad, 0);
-    t.setMinWidth(dp(40));
-    return t;
-  }
-
-  LayoutParams cell_params()
-  {
-    LayoutParams p = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-        ViewGroup.LayoutParams.MATCH_PARENT);
-    p.setMargins(dp(4), dp(4), 0, dp(4));
-    return p;
+    return getResources().getDisplayMetrics().density;
   }
 
   int dp(int v)
   {
-    return (int)(v * getResources().getDisplayMetrics().density);
-  }
-
-  /** Arrow keys repeat while held, like on the keyboard. */
-  final class Repeater implements View.OnTouchListener, Runnable
-  {
-    final String _key_name;
-
-    Repeater(String key_name) { _key_name = key_name; }
-
-    public boolean onTouch(View v, MotionEvent ev)
-    {
-      switch (ev.getActionMasked())
-      {
-        case MotionEvent.ACTION_DOWN:
-          v.setPressed(true);
-          key(_key_name);
-          if (_config.keyrepeat_enabled)
-            _handler.postDelayed(this, _config.longPressTimeout);
-          return true;
-        case MotionEvent.ACTION_UP:
-        case MotionEvent.ACTION_CANCEL:
-          v.setPressed(false);
-          _handler.removeCallbacks(this);
-          return true;
-      }
-      return false;
-    }
-
-    public void run()
-    {
-      key(_key_name);
-      _handler.postDelayed(this, _config.longPressInterval);
-    }
+    return (int)(v * density());
   }
 }

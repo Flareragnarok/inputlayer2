@@ -13,12 +13,14 @@ public final class StudioConfig
 {
   public static final int KEYBOARD_PERCENT_MIN = 10;
   public static final int KEYBOARD_PERCENT_MAX = 100;
-  public static final float DEFAULT_COMFORT_BAR_DP = 36f;
+  public static final float DEFAULT_COMFORT_BAR_DP = 26f;
 
-  /** Applets shown when no [comfortbar] module is active. */
-  public static final List<String> DEFAULT_APPLETS = Arrays.asList(
-      "height", "switch:changeheight", "left", "right", "select_all", "copy",
-      "cut", "paste", "undo", "redo", "memory");
+  /** Keys shown when no [comfortbar] module is active. */
+  public static final List<ComfortKeySpec> DEFAULT_KEYS = Arrays.asList(
+      ComfortKeySpec.of("c", "copy", "nw", "cut", "ne", "paste", "sw", "select_all"),
+      ComfortKeySpec.of("c", "undo", "e", "redo"),
+      ComfortKeySpec.of("w", "left", "e", "right", "n", "up", "s", "down"),
+      ComfortKeySpec.of("c", "switch:changeheight", "n", "height_up", "s", "height_down"));
 
   /** [-1] when not set. */
   public int keyboard_percent_portrait = -1;
@@ -29,7 +31,7 @@ public final class StudioConfig
   public float comfort_bar_dp = DEFAULT_COMFORT_BAR_DP;
   /** Height factor for each row, top to bottom. [null] when not set. */
   public float[] rows = null;
-  public List<String> applets = DEFAULT_APPLETS;
+  public List<ComfortKeySpec> keys = DEFAULT_KEYS;
 
   public static StudioConfig load(SharedPreferences prefs)
   {
@@ -70,19 +72,38 @@ public final class StudioConfig
     }
   }
 
+  /** [keys]: one object per key, mapping "c" (tap) and the directions "n",
+      "ne", "e", "se", "s", "sw", "w", "nw" (swipes) to actions. The older
+      [applets] list of single actions is still read. */
   void read_comfortbar(JSONObject j)
   {
+    List<ComfortKeySpec> l = new ArrayList<ComfortKeySpec>();
+    JSONArray ks = j.optJSONArray("keys");
     JSONArray as = j.optJSONArray("applets");
-    if (as == null)
-      return;
-    List<String> l = new ArrayList<String>();
-    for (int i = 0; i < as.length(); i++)
+    if (ks != null)
     {
-      String a = as.optString(i, "");
-      if (!a.isEmpty())
-        l.add(a);
+      for (int i = 0; i < ks.length(); i++)
+      {
+        JSONObject k = ks.optJSONObject(i);
+        ComfortKeySpec s = (k == null) ? null : ComfortKeySpec.of_json(k);
+        if (s != null)
+          l.add(s);
+      }
     }
-    applets = l;
+    else if (as != null)
+    {
+      for (int i = 0; i < as.length(); i++)
+      {
+        String a = as.optString(i, "");
+        if (a.equals("height"))
+          l.add(ComfortKeySpec.of("c", "height_up", "s", "height_down"));
+        else if (!a.isEmpty())
+          l.add(ComfortKeySpec.of("c", a));
+      }
+    }
+    else
+      return;
+    keys = l;
   }
 
   /** [current] if the active module doesn't set it. */

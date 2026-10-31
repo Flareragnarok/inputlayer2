@@ -19,6 +19,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -167,6 +168,7 @@ public class Keyboard2 extends InputMethodService
     _keyboard_layout_view = (Keyboard2View)_keyboard_container_view.findViewById(R.id.keyboard_view);
     _candidates_view = (CandidatesView)_keyboard_container_view.findViewById(R.id.candidates_view);
     _comfort_bar = (ComfortBar)_keyboard_container_view.findViewById(R.id.comfort_bar);
+    setup_corner_icon(R.id.corner_clipboard, "switch_clipboard");
     _comfort_bar.setup(new ComfortBar.Listener() {
       public void comfort_key(KeyValue kv)
       {
@@ -175,6 +177,23 @@ public class Keyboard2 extends InputMethodService
       }
       public void open_studio() { start_activity(StudioActivity.class); }
     }, Config.globalPrefs());
+  }
+
+  /** Studio: a see-through shortcut on the suggestion bar, showing the icon
+      of key [key_name] and acting like it. */
+  private void setup_corner_icon(int id, String key_name)
+  {
+    final KeyValue kv = KeyValue.getKeyByName(key_name);
+    TextView v = (TextView)_keyboard_container_view.findViewById(id);
+    v.setText(kv.getString());
+    if (kv.hasFlagsAny(KeyValue.FLAG_KEY_FONT))
+      v.setTypeface(Theme.getKeyFont(this));
+    v.setOnClickListener(new View.OnClickListener() {
+      public void onClick(View _v)
+      {
+        _keyeventhandler.key_up(kv, Pointers.Modifiers.EMPTY);
+      }
+    });
   }
 
   InputMethodManager get_imm()
@@ -233,6 +252,8 @@ public class Keyboard2 extends InputMethodService
       _keyeventhandler.dictionary_changed();
     }
     _candidates_view.setVisibility(should_show ? View.VISIBLE : View.GONE);
+    _keyboard_container_view.findViewById(R.id.candidates_frame)
+      .setVisibility(should_show ? View.VISIBLE : View.GONE);
     _comfort_bar.refresh(_config);
   }
 

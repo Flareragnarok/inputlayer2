@@ -25,7 +25,7 @@ public class StudioConfigTest
     assertTrue(Float.isNaN(c.margin_bottom_dp));
     assertEquals(StudioConfig.DEFAULT_COMFORT_BAR_DP, c.comfort_bar_dp, 0f);
     assertEquals(1f, c.row_factor(0), 0f);
-    assertEquals(StudioConfig.DEFAULT_APPLETS, c.applets);
+    assertEquals(StudioConfig.DEFAULT_KEYS, c.keys);
   }
 
   @Test
@@ -59,22 +59,40 @@ public class StudioConfigTest
   }
 
   @Test
-  public void comfortbar()
+  public void comfortbar_keys()
   throws Exception
   {
-    StudioConfig c = with("comfortbar", "\"applets\":[\"copy\",\"\",\"paste\"]");
-    assertEquals(java.util.Arrays.asList("copy", "paste"), c.applets);
+    StudioConfig c = with("comfortbar",
+        "\"keys\":[{\"c\":\"copy\",\"sw\":\"cut\",\"x\":\"paste\"},{},{\"e\":\"redo\"}]");
+    assertEquals(2, c.keys.size());
+    assertEquals("copy", c.keys.get(0).get(0));
+    assertEquals("cut", c.keys.get(0).get(ComfortKeySpec.index_of("sw")));
+    assertNull(c.keys.get(0).get(ComfortKeySpec.index_of("ne")));
+    assertNull(c.keys.get(1).get(0));
+    assertEquals("redo", c.keys.get(1).get(ComfortKeySpec.index_of("e")));
+  }
+
+  @Test
+  public void comfortbar_applets_still_read()
+  throws Exception
+  {
+    StudioConfig c = with("comfortbar", "\"applets\":[\"copy\",\"\",\"height\"]");
+    assertEquals(2, c.keys.size());
+    assertEquals("copy", c.keys.get(0).get(0));
+    assertEquals("height_up", c.keys.get(1).get(0));
   }
 
   @Test
   public void applet_keys_exist()
   {
-    for (String a : StudioConfig.DEFAULT_APPLETS)
-    {
-      String[] k = ComfortBar.editing_applet(a);
-      if (k != null)
-        assertNotNull(a, KeyValue.getKeyByName(k[1]));
-    }
+    String[] actions = { "left", "right", "up", "down", "select_all", "copy",
+      "cut", "paste", "undo", "redo", "language", "keyboard_picker", "clipboard" };
+    for (String a : actions)
+      assertNotNull(a, KeyValue.getKeyByName(ComfortBar.key_name(a)));
+    for (ComfortKeySpec s : StudioConfig.DEFAULT_KEYS)
+      for (String a : s.actions)
+        if (a != null && ComfortBar.key_name(a) != null)
+          assertNotNull(a, KeyValue.getKeyByName(ComfortBar.key_name(a)));
     for (String name : new String[]{ "switch_forward", "change_method", "switch_clipboard" })
       assertNotNull(name, KeyValue.getKeyByName(name));
   }
