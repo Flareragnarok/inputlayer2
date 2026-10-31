@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-10-31 (build 10).
+Last updated: 2026-10-31 (build 11).
 
 ## Done
 
@@ -21,6 +21,7 @@ Last updated: 2026-10-31 (build 10).
 | 8 | The language key is a normal comfort bar key instead of pinned to the right end. ROADMAP.md. |
 | 9 | Comfort bar keys look like the keyboard's keys, smaller and a shade brighter. The height key selects a whole container (comfort bar, suggestions, keyboard) and highlights it; swiping up/down resizes it. |
 | 10 | Suggestion bar only shows suggestions: the language name, language button and "install a dictionary" message are gone from it (the comfort bar's language key shows `⬇ EN` when that dictionary is missing). Memory icon in the bottom-right corner (the pane itself comes next). |
+| 11 | Clipboard / Memory pane with tabs, replacing upstream's clipboard pane. Clipboard: history on the left third, pins on the right two thirds (existing pins kept), one tap to turn history on. Memory: items by category (Links, Symbols, Snippets, Notes and your own, managed in Studio). Long-press menus: pin, save to Memory (likely category first), copy to clipboard, move, delete. |
 
 Infrastructure:
 
@@ -33,13 +34,11 @@ Infrastructure:
 
 ## Next
 
-1. **Clipboard pane, rebuilt.** History of everything copied, text and
-   files, in a scrollable column on the left third: tap to paste, pin to keep.
-   Pinned items fill the right two thirds for quick access.
-2. **Memory pane.** Your own workspace: add items from your pins, from the
-   clipboard and from files on the phone's storage. Opened from the
-   see-through icon in the bottom-right corner of the suggestion bar.
-3. **Switch between Clipboard and Memory** from inside either pane.
+1. **Files.** Copied files in the clipboard history, and adding files from
+   the phone's storage to Memory.
+2. **Adding Memory categories from the pane** (today: in Studio, since the
+   keyboard can't easily type into its own dialogs).
+3. **Language and suggestions, rethought** (see Undecided).
 
 ## Later
 

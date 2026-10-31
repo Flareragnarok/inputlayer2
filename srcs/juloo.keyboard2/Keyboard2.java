@@ -21,7 +21,6 @@ import android.view.inputmethod.InputMethodSubtype;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,6 +34,7 @@ import juloo.keyboard2.dict.DictionarySwitcher;
 import juloo.keyboard2.dict.SupportedDictionaries;
 import juloo.keyboard2.prefs.LayoutsPreference;
 import juloo.keyboard2.studio.ComfortBar;
+import juloo.keyboard2.studio.MemoryPane;
 import juloo.keyboard2.studio.StudioActivity;
 import juloo.keyboard2.suggestions.CandidatesView;
 import juloo.keyboard2.suggestions.Suggestions;
@@ -173,11 +173,7 @@ public class Keyboard2 extends InputMethodService
     setup_corner_icon(R.id.corner_clipboard, "switch_clipboard");
     _keyboard_container_view.findViewById(R.id.corner_memory)
       .setOnClickListener(new View.OnClickListener() {
-        public void onClick(View _v)
-        {
-          Toast.makeText(Keyboard2.this, R.string.studio_memory_soon,
-              Toast.LENGTH_SHORT).show();
-        }
+        public void onClick(View _v) { open_memory_pane(true); }
       });
     _comfort_bar.setup(new ComfortBar.Listener() {
       public void comfort_key(KeyValue kv)
@@ -206,6 +202,16 @@ public class Keyboard2 extends InputMethodService
         _keyeventhandler.key_up(kv, Pointers.Modifiers.EMPTY);
       }
     });
+  }
+
+  /** Studio: the Clipboard / Memory pane replaces upstream's clipboard pane.
+      Opens on the Memory tab if [memory]. */
+  private void open_memory_pane(boolean memory)
+  {
+    if (_clipboard_pane == null)
+      _clipboard_pane = (ViewGroup)inflate_view(R.layout.studio_memory_pane);
+    ((MemoryPane)_clipboard_pane.findViewById(R.id.memory_pane)).show(memory);
+    setInputView(_clipboard_pane);
   }
 
   /** Studio: outline the container the comfort bar's height key resizes. */
@@ -520,9 +526,7 @@ public class Keyboard2 extends InputMethodService
           break;
 
         case SWITCH_CLIPBOARD:
-          if (_clipboard_pane == null)
-            _clipboard_pane = (ViewGroup)inflate_view(R.layout.clipboard_pane);
-          setInputView(_clipboard_pane);
+          open_memory_pane(false);
           break;
 
         case SWITCH_BACK_EMOJI:

@@ -49,6 +49,7 @@ public class StudioActivity extends Activity
   TextView _update_status;
   LinearLayout _releases;
   LinearLayout _modules;
+  LinearLayout _categories;
   /** Module waiting for the export file to be picked. */
   Module _exporting;
 
@@ -62,6 +63,7 @@ public class StudioActivity extends Activity
     setTitle(R.string.studio_title);
     setContentView(build_view());
     refresh_modules();
+    refresh_categories();
     handle_install_status(getIntent());
   }
 
@@ -103,6 +105,27 @@ public class StudioActivity extends Activity
     root.addView(_modules);
     root.addView(button(R.string.studio_import, new View.OnClickListener() {
       public void onClick(View v) { start_import(); }
+    }));
+
+    root.addView(heading(R.string.studio_memory_categories));
+    root.addView(text(getString(R.string.studio_memory_categories_desc)));
+    _categories = vertical();
+    root.addView(_categories);
+    final EditText new_category = new EditText(this);
+    new_category.setSingleLine(true);
+    new_category.setHint(R.string.studio_category_hint);
+    root.addView(new_category);
+    root.addView(button(R.string.studio_category_add, new View.OnClickListener() {
+      public void onClick(View v)
+      {
+        if (memory().add_category(new_category.getText().toString()))
+        {
+          new_category.setText("");
+          refresh_categories();
+        }
+        else
+          toast(getString(R.string.studio_category_invalid));
+      }
     }));
 
     ScrollView sv = new ScrollView(this);
@@ -214,6 +237,34 @@ public class StudioActivity extends Activity
     {
       Logs.exn("Studio file", e);
       toast(e.toString());
+    }
+  }
+
+  /* Memory categories */
+
+  MemoryStore memory()
+  {
+    return new MemoryStore(new File(getFilesDir(), "memory.json"));
+  }
+
+  void refresh_categories()
+  {
+    _categories.removeAllViews();
+    final MemoryStore store = memory();
+    for (final String c : store.custom_categories())
+    {
+      LinearLayout row = new LinearLayout(this);
+      row.setOrientation(LinearLayout.HORIZONTAL);
+      row.addView(text(c), new LinearLayout.LayoutParams(0,
+            ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+      row.addView(button(R.string.studio_delete, new View.OnClickListener() {
+        public void onClick(View v)
+        {
+          store.remove_category(c);
+          refresh_categories();
+        }
+      }));
+      _categories.addView(row);
     }
   }
 
