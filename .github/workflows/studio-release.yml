@@ -1,0 +1,73 @@
+name: Studio release
+
+# Every push to the studio branch builds a debug APK and publishes it as the
+# GitHub release "build-N" (N = run number), which the in-app updater
+# (Settings -> Studio -> Check for updates) and Obtainium pick up.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - studio
+
+permissions:
+  contents: write
+
+concurrency:
+  group: studio-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      STUDIO_BUILD: ${{ github.run_number }}
+      STUDIO_UPDATE_REPO: ${{ github.repository }}
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v6
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    # Without the same key every build, Android refuses to install updates
+    # over the previous build. See CONTRIBUTING.md for creating the secret.
+    - name: Restore debug keystore
+      env:
+        DEBUG_KEYSTORE_ASC: ${{ secrets.DEBUG_KEYSTORE }}
+      run: |
+        if [[ -z "$DEBUG_KEYSTORE_ASC" ]]; then
+          echo "::error::Secret DEBUG_KEYSTORE is not set; refusing to publish a build signed with a throw-away key."
+          exit 1
+        fi
+        printf '%s\n' "$DEBUG_KEYSTORE_ASC" > debug.keystore.asc
+        gpg -d --passphrase "debug0" --batch debug.keystore.asc > debug.keystore
+
+    - uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+
+    - name: Test and build
+      run: ./gradlew test assembleDebug
+      env:
+        DEBUG_KEYSTORE: "debug.keystore"
+        DEBUG_KEYSTORE_PASSWORD: debug0
+        DEBUG_KEY_ALIAS: debug
+        DEBUG_KEY_PASSWORD: debug0
+
+    - name: Publish release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        tag="build-${STUDIO_BUILD}"
+        apk="unexpected-keyboard-studio-${tag}.apk"
+        cp build/outputs/apk/debug/*.apk "$apk"
+        # Notes: the commits since the previous Studio release.
+        prev=$(git tag --list 'build-*' --sort=-v:refname | head -n1)
+        range=${prev:+$prev..}HEAD
+        { echo "Changes:"; git log --no-merges --format='- %s' "$range" | head -n 50; } > notes.md
+        gh release create "$tag" "$apk" --target "$GITHUB_SHA" \
+          --title "Studio build ${STUDIO_BUILD}" --notes-file notes.md
