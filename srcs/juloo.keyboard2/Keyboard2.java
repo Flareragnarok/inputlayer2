@@ -217,6 +217,7 @@ public class Keyboard2 extends InputMethodService
       public void open_studio() { start_activity(StudioActivity.class); }
       public void open_dictionaries() { launch_dictionaries_activity(); }
       public void highlight(int target) { highlight_container(target); }
+      public int keyboard_rows() { return _keyboard_layout_view.studio_row_count(); }
     }, Config.globalPrefs());
     _keyboard_layout_view.studio_bottom = new Keyboard2View.BottomInsetTaker() {
       public boolean takes_bottom_inset() { return bottom_container() != _keyboard_layout_view; }
@@ -318,6 +319,9 @@ public class Keyboard2 extends InputMethodService
       return;
     // The selection bar shows while it is being placed, even if empty.
     _selection_bar.set_placing(target == ComfortBar.TARGET_SELECTION_BAR);
+    // Rows are outlined inside the keyboard.
+    _keyboard_layout_view.studio_highlight_row(
+        (target >= ComfortBar.TARGET_ROWS) ? target - ComfortBar.TARGET_ROWS : -1);
     View[] views = {
       _comfort_bar,
       _keyboard_container_view.findViewById(R.id.candidates_frame),

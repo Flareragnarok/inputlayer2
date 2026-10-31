@@ -59,6 +59,22 @@ public class Keyboard2View extends View
   }
   public BottomInsetTaker studio_bottom = null;
 
+  /** Studio: row outlined while the comfort bar's height key resizes it,
+      [-1] for none. */
+  private int _studio_row = -1;
+  private Paint _studio_row_paint = null;
+
+  public int studio_row_count()
+  {
+    return (_keyboard == null) ? 0 : _keyboard.rows.size();
+  }
+
+  public void studio_highlight_row(int row)
+  {
+    _studio_row = row;
+    invalidate();
+  }
+
   private Theme _theme;
   private Theme.Computed _tc;
 
@@ -363,9 +379,12 @@ public class Keyboard2View extends View
     }
 
     float y = _tc.margin_top;
+    int row_index = 0;
     for (KeyboardData.Row row : _keyboard.rows)
     {
       y += row.shift * _tc.row_height;
+      if (row_index++ == _studio_row)
+        draw_studio_row(canvas, y, row.height * _tc.row_height);
       float x = _marginLeft + _tc.margin_left;
       float keyH = row.height * _tc.row_height - _tc.vertical_margin;
       for (KeyboardData.Key k : row.keys)
@@ -398,6 +417,19 @@ public class Keyboard2View extends View
       }
       y += row.height * _tc.row_height;
     }
+  }
+
+  void draw_studio_row(Canvas canvas, float y, float h)
+  {
+    if (_studio_row_paint == null)
+    {
+      _studio_row_paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+      _studio_row_paint.setStyle(Paint.Style.STROKE);
+      _studio_row_paint.setColor(0xcc3399ff);
+      _studio_row_paint.setStrokeWidth(2 * getResources().getDisplayMetrics().density);
+    }
+    float m = _studio_row_paint.getStrokeWidth();
+    canvas.drawRect(m, y + m / 2, getWidth() - m, y + h - m / 2, _studio_row_paint);
   }
 
   @Override

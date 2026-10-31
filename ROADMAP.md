@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 26).
+Last updated: 2026-11-01 (build 27).
 
 ## Done
 
@@ -37,6 +37,7 @@ Last updated: 2026-11-01 (build 26).
 | 24 | Inclusive selection grows a (partial) selection out to whole units and their separators, keeping what it held. Typing in format shows on the Scope key (lit, "✎ typing", the format and look) with a message saying what ends it. |
 | 25 | Updater reads all releases (up to 300, by pages of 100) and sorts them by build number: GitHub lists them by tag as text (build-9 before build-24), so the newest could fall off a single page. CI writes build failures as annotations. |
 | 26 | Pinned selection: Sector ↖ pins the selection; a selection bar (above the suggestions by default) shows it, tap selects it again, ✕ unpins. View, Verse and backspace ↓ (cut) act on the pinned text while the cursor types elsewhere; it is found again when text before it changes. The height key also moves the selected container: ← up, → down in the stack (comfort bar, selection bar, suggestions, keyboard, edit strip), saved as `order` in the changeheight module. The lowest container keeps clear of the navigation bar. |
+| 27 | The height key also selects each keyboard row (after the containers: row 1 at the top to the last row), outlined in the keyboard; up/down change that row's height factor by 0.1, independently of the others. Growing a row makes the keyboard taller. |
 
 Infrastructure:
 
@@ -107,8 +108,8 @@ Every module is a JSON file with `module` (its type), `name` and `version`.
 
 `edit_strip_dp` and `selection_bar_dp` set the edit strip and selection
 bar (0 hides them); `order` lists the containers top to bottom (`comfort`,
-`selection`, `suggestions`, `keyboard`, `edit`). `rows` are height factors, top to bottom (file only; the height key never
-resizes single rows). `comfort_bar_dp: 0` hides the comfort bar.
+`selection`, `suggestions`, `keyboard`, `edit`). `rows` are height factors, top to bottom (the height key changes them one
+row at a time). `comfort_bar_dp: 0` hides the comfort bar.
 
 ```json
 { "module": "comfortbar", "name": "mine", "version": 1,

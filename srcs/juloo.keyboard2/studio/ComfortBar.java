@@ -27,8 +27,11 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     void comfort_key(KeyValue kv);
     void open_studio();
     void open_dictionaries();
-    /** Highlight container [target] (one of [TARGETS]), or none if [-1]. */
+    /** Highlight container [target] (one of [TARGETS]), or none if [-1].
+        Targets from [TARGET_ROWS] on are the keyboard's rows. */
     void highlight(int target);
+    /** Rows of the keyboard shown. */
+    int keyboard_rows();
   }
 
   static final int HEIGHT_STEP = 2;
@@ -41,6 +44,10 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
   public static final int TARGET_EDIT_STRIP = 3;
   public static final int TARGET_SELECTION_BAR = 4;
   static final String[] TARGET_LABELS = { "bar", "sugg", "keys", "edit", "sel" };
+  /** Targets from here on are keyboard rows, top to bottom. */
+  public static final int TARGET_ROWS = 5;
+  /** Step of a row's height factor. */
+  static final float ROW_STEP = 0.1f;
   /** Names of the targets in [StudioConfig.order]. */
   static final String[] TARGET_NAMES = { "comfort", "suggestions", "keyboard", "edit", "selection" };
 
@@ -107,7 +114,9 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
   {
     if (action.equals("select_container"))
     {
-      _target = (_target + 2) % (TARGET_LABELS.length + 1) - 1;
+      // Containers, then each row of the keyboard, then none.
+      int n = TARGET_ROWS + _listener.keyboard_rows();
+      _target = (_target + 2) % (n + 1) - 1;
       _listener.highlight(_target);
       refresh(_config); // Update the key's label.
     }
@@ -144,8 +153,7 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     switch (action)
     {
       case "select_container":
-        return new ComfortKey.Label(
-            (_target < 0) ? "↕" : "↕ " + TARGET_LABELS[_target], false);
+        return new ComfortKey.Label((_target < 0) ? "↕" : "↕ " + target_label(), false);
       case "move_up": return new ComfortKey.Label("⇡", false);
       case "move_down": return new ComfortKey.Label("⇣", false);
       case "height_up": return new ComfortKey.Label("+", false);
@@ -273,7 +281,7 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
         case TARGET_SELECTION_BAR:
           j.put("selection_bar_dp", clamp(_config.studio.selection_bar_dp + delta, 12, 96));
           break;
-        default:
+        case -1: case TARGET_KEYBOARD:
           JSONObject kp = j.optJSONObject("keyboard_percent");
           if (kp == null)
             kp = new JSONObject();
@@ -281,6 +289,9 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
               (int)clamp(_config.keyboard_height_percent + delta,
                 StudioConfig.KEYBOARD_PERCENT_MIN, StudioConfig.KEYBOARD_PERCENT_MAX));
           j.put("keyboard_percent", kp);
+          break;
+        default:
+          j.put("rows", resized_rows(_target - TARGET_ROWS, delta > 0));
           break;
       }
       Module nm = (m == null) ? Module.create("changeheight", "quick", j) : new Module(j);
@@ -292,11 +303,18 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     }
   }
 
+  String target_label()
+  {
+    return (_target >= TARGET_ROWS) ? "row " + (_target - TARGET_ROWS + 1)
+      : TARGET_LABELS[_target];
+  }
+
   /** Move the selected container up ([-1]) or down one place in the stack,
       saved in the active [changeheight] module (or "quick"). */
   void move(int dir)
   {
-    if (_target < 0)
+    // Rows keep their place in the layout.
+    if (_target < 0 || _target >= TARGET_ROWS)
       return;
     List<String> order = new java.util.ArrayList<String>(_config.studio.order);
     int i = order.indexOf(TARGET_NAMES[_target]);
@@ -320,6 +338,23 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     {
       Logs.exn("Comfort bar move", e);
     }
+  }
+
+  /** The rows' height factors with row [row] one step bigger (or
+      smaller), the others as they are. */
+  org.json.JSONArray resized_rows(int row, boolean bigger) throws org.json.JSONException
+  {
+    int n = Math.max(row + 1, _listener.keyboard_rows());
+    org.json.JSONArray a = new org.json.JSONArray();
+    for (int i = 0; i < n; i++)
+    {
+      float f = _config.studio.row_factor(i);
+      if (i == row)
+        f = clamp(f + (bigger ? ROW_STEP : -ROW_STEP), 0.3f, 3f);
+      // Rounded, so the module stays readable.
+      a.put(Math.round(f * 100) / 100.0);
+    }
+    return a;
   }
 
   static float clamp(float v, float min, float max)
