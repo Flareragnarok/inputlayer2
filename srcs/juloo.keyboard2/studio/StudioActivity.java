@@ -411,22 +411,14 @@ public class StudioActivity extends Activity
     {
       _releases.addView(heading(R.string.studio_past_builds));
       _releases.addView(text(getString(R.string.studio_past_builds_desc)));
-      for (Updater.Release r : older)
-        show_past(r);
+      show_past(older);
     }
   }
 
   /** A dropdown of the builds not installed yet, newest first and selected. */
   void show_newer(final List<Updater.Release> newer)
   {
-    List<String> labels = new ArrayList<String>();
-    for (Updater.Release r : newer)
-      labels.add(r.title);
-    final Spinner spinner = new Spinner(this);
-    ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-        android.R.layout.simple_spinner_item, labels);
-    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-    spinner.setAdapter(adapter);
+    final Spinner spinner = spinner(newer);
     final TextView notes = text(newer.get(0).notes);
     final Button install = button(install_label(newer.get(0)), null);
     spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -448,26 +440,48 @@ public class StudioActivity extends Activity
     _releases.addView(install);
   }
 
-  /** An older build. Android doesn't install older versions over newer
-      ones, so restoring republishes it as a new build on GitHub. */
-  void show_past(final Updater.Release r)
+  /** A dropdown of older builds, newest first. Android doesn't install older
+      versions over newer ones, so restoring republishes the selected one as
+      a new build on GitHub. */
+  void show_past(final List<Updater.Release> older)
   {
-    TextView title = text(r.title);
-    title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-    title.setPadding(0, dp(12), 0, 0);
-    _releases.addView(title);
-    if (!r.notes.isEmpty())
-      _releases.addView(text(r.notes));
-    _releases.addView(button(getString(R.string.studio_restore, r.build),
-          new View.OnClickListener() {
+    final Spinner spinner = spinner(older);
+    final TextView notes = text(older.get(0).notes);
+    final Button restore = button(getString(R.string.studio_restore, older.get(0).build), null);
+    spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+      public void onItemSelected(AdapterView<?> parent, View v, int pos, long id)
+      {
+        notes.setText(older.get(pos).notes);
+        restore.setText(getString(R.string.studio_restore, older.get(pos).build));
+      }
+      public void onNothingSelected(AdapterView<?> parent) {}
+    });
+    restore.setOnClickListener(new View.OnClickListener() {
       public void onClick(View v)
       {
+        Updater.Release r = older.get(spinner.getSelectedItemPosition());
         toast(getString(R.string.studio_restore_howto, r.build));
         startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(
                 "https://github.com/" + _prefs.getString(KEY_UPDATE_REPO, "")
                 + "/actions/workflows/studio-restore.yml")));
       }
-    }));
+    });
+    _releases.addView(spinner);
+    _releases.addView(notes);
+    _releases.addView(restore);
+  }
+
+  Spinner spinner(List<Updater.Release> rs)
+  {
+    List<String> labels = new ArrayList<String>();
+    for (Updater.Release r : rs)
+      labels.add(r.title);
+    Spinner sp = new Spinner(this);
+    ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+        android.R.layout.simple_spinner_item, labels);
+    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    sp.setAdapter(adapter);
+    return sp;
   }
 
   String install_label(Updater.Release r)

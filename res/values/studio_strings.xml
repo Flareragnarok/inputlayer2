@@ -55,7 +55,7 @@
   <string name="studio_install_failed">Install failed: %1$s</string>
   <string name="studio_modules">Modules</string>
   <string name="studio_tools">Edit strip tools</string>
-  <string name="studio_tools_desc">Opened from Spec (selections) and Vers (formats, fonts) on the edit strip. Your own selections join the Scope cycle, formats the Vex cycle and fonts the View cycle. They are saved as modules, listed below, where you can export or delete them.</string>
+  <string name="studio_tools_desc">Opened from Spec (selections) and Vert (formats, fonts) on the edit strip. Your own selections join the Scope cycle, formats the View cycle and fonts the Verse cycle. They are saved as modules, listed below, where you can export or delete them.</string>
   <string name="studio_tool_selection">New selection</string>
   <string name="studio_tool_format">New format</string>
   <string name="studio_tool_font">New font</string>

@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-10-31 (build 18).
+Last updated: 2026-10-31 (build 19).
 
 ## Done
 
@@ -26,9 +26,10 @@ Last updated: 2026-10-31 (build 18).
 | 13 | Memory's history: a ⟲ History button at the right end of Memory's categories shows what was copied, one record per phone restart. Delete one item, one record or all history (tap twice to confirm). Saved items (saved or moved by you) are never deleted with the history. Clipboard tab: Clear button for its short-term history. |
 | 14 | Edit strip under the space bar. Left: scope (Word, Sentence, Line, Paragraph, All) and selector (select the unit at the cursor, previous/next, grow/shrink by one, deselect). Right: Aa Appearance (case; unicode bold, italic, mono, script, fraktur, double-struck, small caps, circled, fullwidth, strike, underline, zalgo, converting between them) and ¶ Format (the app's markup: Markdown, Discord, Reddit, WhatsApp, Telegram, HTML, BBCode, none for Threads/Instagram/X; chosen per app, wraps and unwraps). The ↕ key can resize it. |
 | 15 | Edit strip has seven keys and cycles on tap: Scope, Selector (unit at the cursor, then next or previous), +[ ] custom selection, →↑/←↓ direction, Aa (next unicode style; swipe up: case, down: list), ¶ (next format, plain in between; swipe down: list and syntax), +¶ custom format. Your own selections (delimiters or pattern), formats (before/after) and fonts (your letters) are `selection`, `format` and `font` modules, made in Studio → Edit strip tools, and join the cycles. |
-| 16 | Edit strip reordered into eight keys: ←→ (selection direction), Scope, Spec (defines selections), Sector (selector), View (appearance), Vers (defines formats and fonts), Vex (format), ↑↓ (cycling direction for View and Vex). |
+| 16 | Edit strip reordered into eight keys: ←→ (selection direction), Scope, Spec (defines selections), Sector (selector), View, Vers, Vex, ↑↓ (cycling direction). See build 19 for today's roles. |
 | 17 | Swipe down on backspace cuts the selection, which then shows in the clipboard history (every layout; none used that spot). |
 | 18 | Sector is built around taps: tap jumps to the next unit, swipe up adds one, down removes one, on the side the ←→ arrow points to (it only grew forward before). View and Vex: swipe left or right for the menu, down to restore (plain letters, format removed). |
+| 19 | View and Verse swap jobs: View formats (markup), Verse changes the look (unicode, case); Vers is now Vert. Scope always says "Scope", the current scope shows top-left, swiping there lists them. Sector: swipe right deselects. Past builds in a dropdown with one Restore button. |
 
 Infrastructure:
 
