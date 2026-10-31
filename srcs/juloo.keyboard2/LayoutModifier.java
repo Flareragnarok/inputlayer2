@@ -90,7 +90,24 @@ public final class LayoutModifier
     // Avoid adding extra keys to the number row
     if (added_number_row != null)
       kw = kw.insert_row(added_number_row, 0);
-    return scale_rows(kw);
+    return scale_rows(backspace_cut(kw));
+  }
+
+  /** Studio: swiping down on backspace cuts the selection (it then shows in
+      the clipboard history), where the layout leaves that spot free. */
+  static KeyboardData backspace_cut(KeyboardData kw)
+  {
+    final KeyValue backspace = KeyValue.getKeyByName("backspace");
+    final KeyValue cut = KeyValue.getKeyByName("cut");
+    return kw.mapKeys(new KeyboardData.MapKey() {
+      public KeyboardData.Key apply(KeyboardData.Key k)
+      {
+        if (k.keys[0] == null || !k.keys[0].equals(backspace)
+            || k.keys.length <= 8 || k.keys[8] != null)
+          return k;
+        return k.withKeyValue(8, cut);
+      }
+    });
   }
 
   /** Studio: row heights from the active [changeheight] module. */
