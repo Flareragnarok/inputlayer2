@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-10-31 (build 20).
+Last updated: 2026-10-31 (build 21).
 
 ## Done
 
@@ -31,6 +31,7 @@ Last updated: 2026-10-31 (build 20).
 | 18 | Sector is built around taps: tap jumps to the next unit, swipe up adds one, down removes one, on the side the ←→ arrow points to (it only grew forward before). View and Vex: swipe left or right for the menu, down to restore (plain letters, format removed). |
 | 19 | View and Verse swap jobs: View formats (markup), Verse changes the look (unicode, case); Vers is now Vert. Scope always says "Scope", the current scope shows top-left, swiping there lists them. Sector: swipe right deselects. Past builds in a dropdown with one Restore button. |
 | 20 | Nested keys: Scope (Text, Custom), View (the syntaxes, remembered per app) and Verse (Case, Serif, Sans, Type, Shapes, Marks, Fonts) show their nest on top and current item at the bottom. Tap cycles the items, swipe left the nests, swipe right lists everything. |
+| 21 | Nests switch with swipe right (left lists everything); swipe down goes back to the default nest, swipe up restores the text (View, Verse). Scope swiped down types in View's format until the scope's separator (space for Word). Space bar: down resets all nests, left saves them as a nest config, up switches configs (replaces upstream's layout switching and left cursor slider, decided 2026-10-31). |
 
 Infrastructure:
 

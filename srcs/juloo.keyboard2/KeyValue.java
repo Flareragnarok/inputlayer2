@@ -26,6 +26,10 @@ public final class KeyValue implements Comparable<KeyValue>
     SWITCH_VOICE_TYPING_CHOOSER,
     HIDE_SELF,
     CHANGE_DICTIONARY,
+    // Studio: nest configs of the edit strip, on the space bar.
+    STUDIO_NESTS_RESET,
+    STUDIO_NESTS_NEXT,
+    STUDIO_NESTS_SAVE,
   }
 
   // Must be evaluated in the reverse order of their values.
@@ -663,6 +667,9 @@ public final class KeyValue implements Comparable<KeyValue>
       case "complete_emoji": return statefulKey(Stateful.Complete_emoji);
       case "hide_self": return eventKey("⊻", Event.HIDE_SELF, FLAG_SMALLER_FONT);
       case "change_dictionary": return eventKey(0xE01D, Event.CHANGE_DICTIONARY, 0);
+      case "studio_nests_reset": return eventKey("⟲", Event.STUDIO_NESTS_RESET, FLAG_SMALLER_FONT);
+      case "studio_nests_next": return eventKey("⇵", Event.STUDIO_NESTS_NEXT, FLAG_SMALLER_FONT);
+      case "studio_nests_save": return eventKey("✓", Event.STUDIO_NESTS_SAVE, FLAG_SMALLER_FONT);
 
       /* Key events */
       case "esc": return keyeventKey("Esc", KeyEvent.KEYCODE_ESCAPE, FLAG_SMALLER_FONT);

@@ -16,6 +16,8 @@ import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import java.util.ArrayList;
 import java.util.List;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import juloo.keyboard2.Config;
 import juloo.keyboard2.Keyboard2View;
 import juloo.keyboard2.Theme;
@@ -23,8 +25,12 @@ import juloo.keyboard2.Theme;
 /** The edit strip, under the space bar, eight keys:
     - ←→: selection direction, forward or backward, for Sector and Scope.
     - Scope, View, Verse are nested: the nest shows on top, its current item
-      at the bottom; tap cycles the items, swipe left the nests, swipe right
-      lists everything.
+      at the bottom; tap cycles the items, swipe right the nests, swipe left
+      lists everything, swipe down goes back to the default nest (Scope's
+      down types in View's format until the scope's separator, e.g. a space
+      for Word). View and Verse: swipe up restores the text.
+    - The space bar's swipes keep nest configs: down resets every nest, left
+      saves them as a config, up switches to the next saved config.
     - Scope: nests Text (Word, Sentence, Line, Paragraph, All) and Custom
       (custom selections).
     - Spec: opens Studio to define selections.
@@ -32,11 +38,10 @@ import juloo.keyboard2.Theme;
       then jumps to the next (or previous) one; swipe up adds a unit, down
       removes one, on the side the ←→ arrow points to; right deselects.
     - View (format): nests are the syntaxes (the app's first, remembered
-      per app), items their formats and custom formats; swipe down removes
-      the format.
+      per app), items their formats and custom formats.
     - Vert: opens Studio to define formats and fonts.
     - Verse (appearance): nests Case, Serif, Sans, Type, Shapes, Marks,
-      Fonts; swipe down restores plain letters.
+      Fonts.
     - ↑↓: cycling direction, up or down, for View and Verse.
     View and Verse act on the selection, or on the scope's unit at the
     cursor, and select the result so that the next tap cycles on. */
@@ -60,10 +65,11 @@ public class EditStrip extends LinearLayout
   static final int CONTEXT_CHARS = 4000;
 
   /** Nested keys (Scope, View, Verse): the nest shows on top and its
-      current item at the bottom. Tap cycles the items, swipe left the
-      nests, swipe right lists everything. */
+      current item at the bottom. Tap cycles the items, swipe right the
+      nests, swipe left lists everything, swipe down goes back to the
+      default nest. Scope's down instead starts typing in View's format. */
   static final ComfortKeySpec SCOPE_KEY =
-    ComfortKeySpec.of("c", "scope", "w", "scope_nest", "e", "scope_menu");
+    ComfortKeySpec.of("c", "scope", "e", "scope_nest", "w", "scope_menu", "s", "scope_type");
   /** Designed around taps: tap jumps to the next unit, up adds one, down
       removes one, all in the ←→ direction. */
   static final ComfortKeySpec SELECTOR_KEY =
@@ -73,11 +79,15 @@ public class EditStrip extends LinearLayout
   static final ComfortKeySpec SELECTION_DIRECTION_KEY = ComfortKeySpec.of("c", "selection_direction");
   static final ComfortKeySpec CYCLE_DIRECTION_KEY = ComfortKeySpec.of("c", "cycle_direction");
   static final ComfortKeySpec APPEARANCE_KEY =
-    ComfortKeySpec.of("c", "appearance", "w", "appearance_nest",
-        "e", "appearance_menu", "s", "appearance_restore");
+    ComfortKeySpec.of("c", "appearance", "e", "appearance_nest",
+        "w", "appearance_menu", "s", "appearance_default", "n", "appearance_restore");
   static final ComfortKeySpec FORMAT_KEY =
-    ComfortKeySpec.of("c", "format", "w", "format_nest", "e", "format_menu",
-        "s", "format_restore");
+    ComfortKeySpec.of("c", "format", "e", "format_nest", "w", "format_menu",
+        "s", "format_default", "n", "format_restore");
+
+  static final String KEY_NEST_CONFIGS = "studio_nest_configs";
+  static final String KEY_NEST_CONFIG_INDEX = "studio_nest_config_index";
+  static final int DEFAULT_VERSE_NEST = 1;
   static final ComfortKeySpec CUSTOM_FORMAT_KEY = ComfortKeySpec.of("c", "custom_format");
 
   Listener _listener;
@@ -96,12 +106,15 @@ public class EditStrip extends LinearLayout
   int _scope_nest = 0;
   /** Verse's nest, index into [UnicodeStyles.nests()], and the item last
       applied in it ([-1]: none yet). */
-  int _verse_nest = 1;
+  int _verse_nest = DEFAULT_VERSE_NEST;
   int _verse_item = -1;
   /** Format View last applied, [null] for none or plain. */
   String _view_item = null;
   /** View's syntax when the app is unknown and the user picked one. */
   String _syntax_override = null;
+  /** Typing in View's format (Scope swiped down): the closing marker the
+      cursor sits before, [null] when not typing in a format. */
+  String _typing_close = null;
   View _scope_key;
   View _appearance_key;
   View _format_key;
@@ -150,7 +163,7 @@ public class EditStrip extends LinearLayout
     addView(make_key(SELECTOR_KEY, 1.5f));
     _format_key = make_key(FORMAT_KEY, 1.6f);
     ((ComfortKey)_format_key).set_lines(syntax().name,
-        (_view_item == null) ? "plain" : _view_item);
+        (_typing_close != null ? "✎ " : "") + ((_view_item == null) ? "plain" : _view_item));
     _appearance_key = make_key(APPEARANCE_KEY, 1.6f);
     String[] vn = verse_nest();
     ((ComfortKey)_appearance_key).set_lines(vn[0],
@@ -238,6 +251,18 @@ public class EditStrip extends LinearLayout
       case "scope_menu":
         scope_menu();
         return;
+      case "scope_type":
+        start_typing();
+        return;
+      case "appearance_default":
+        _verse_nest = DEFAULT_VERSE_NEST;
+        _verse_item = -1;
+        rebuild();
+        return;
+      case "format_default":
+        default_syntax();
+        rebuild();
+        return;
       case "appearance_nest":
         _verse_nest = (_verse_nest + 1) % UnicodeStyles.nests().size();
         _verse_item = -1;
@@ -311,7 +336,10 @@ public class EditStrip extends LinearLayout
       case "appearance": return new ComfortKey.Label("Verse", false);
       case "appearance_menu": return new ComfortKey.Label("☰", false);
       case "appearance_nest": case "format_nest": case "scope_nest":
-        return new ComfortKey.Label("‹", false);
+        return new ComfortKey.Label("›", false);
+      case "appearance_default": case "format_default":
+        return new ComfortKey.Label("⌂", false);
+      case "scope_type": return new ComfortKey.Label("✎", false);
       case "appearance_restore": return new ComfortKey.Label("⟲", false);
       case "format_restore": return new ComfortKey.Label("⟲", false);
       case "format": return new ComfortKey.Label("View", false);
@@ -329,6 +357,200 @@ public class EditStrip extends LinearLayout
   public long repeat_delay() { return _config.longPressTimeout; }
 
   public long repeat_interval() { return _config.longPressInterval; }
+
+  /* Defaults and nest configs (space bar swipes) */
+
+  /** View's syntax back to the app's own. */
+  void default_syntax()
+  {
+    String app = _listener.app();
+    if (app != null)
+      _prefs.edit().remove(KEY_SYNTAX_PREFIX + app).apply();
+    _syntax_override = null;
+    _view_item = null;
+  }
+
+  /** Space bar down: every nest back to its default. */
+  public void reset_nests()
+  {
+    _scope_nest = 0;
+    _scope = TextScope.WORD;
+    default_syntax();
+    _verse_nest = DEFAULT_VERSE_NEST;
+    _verse_item = -1;
+    rebuild();
+    toast("Nests reset");
+  }
+
+  JSONObject nest_config()
+  {
+    JSONObject j = new JSONObject();
+    try
+    {
+      j.put("scope_nest", _scope_nest);
+      j.put("scope", _scope.label);
+      j.put("view_nest", syntax().name);
+      j.put("view_item", (_view_item == null) ? "" : _view_item);
+      j.put("verse_nest", _verse_nest);
+      j.put("verse_item", _verse_item);
+    }
+    catch (Exception _e) {}
+    return j;
+  }
+
+  void apply_nest_config(JSONObject j)
+  {
+    _scope_nest = j.optInt("scope_nest", 0);
+    _scope = TextScope.WORD;
+    for (TextScope s : _scopes)
+      if (s.label.equals(j.optString("scope")))
+        _scope = s;
+    String syntax = j.optString("view_nest", "");
+    String app = _listener.app();
+    if (!syntax.isEmpty())
+    {
+      if (app != null)
+        _prefs.edit().putString(KEY_SYNTAX_PREFIX + app, syntax).apply();
+      else
+        _syntax_override = syntax;
+    }
+    String vi = j.optString("view_item", "");
+    _view_item = vi.isEmpty() ? null : vi;
+    _verse_nest = j.optInt("verse_nest", DEFAULT_VERSE_NEST);
+    _verse_item = j.optInt("verse_item", -1);
+    rebuild();
+  }
+
+  JSONArray nest_configs()
+  {
+    try
+    {
+      return new JSONArray(_prefs.getString(KEY_NEST_CONFIGS, "[]"));
+    }
+    catch (Exception _e)
+    {
+      return new JSONArray();
+    }
+  }
+
+  /** Space bar left: save the nests (scope, view and verse nests and
+      items) as a config, unless the same one is saved already. */
+  public void save_nest_config()
+  {
+    JSONArray cs = nest_configs();
+    String cur = nest_config().toString();
+    int index = -1;
+    for (int i = 0; i < cs.length(); i++)
+    {
+      JSONObject o = cs.optJSONObject(i);
+      if (o != null && cur.equals(o.toString()))
+        index = i;
+    }
+    if (index < 0)
+    {
+      cs.put(nest_config());
+      index = cs.length() - 1;
+    }
+    _prefs.edit().putString(KEY_NEST_CONFIGS, cs.toString())
+      .putInt(KEY_NEST_CONFIG_INDEX, index).apply();
+    toast("Nest config " + (index + 1) + " of " + cs.length() + " saved");
+  }
+
+  /** Space bar up: the next saved config. */
+  public void next_nest_config()
+  {
+    JSONArray cs = nest_configs();
+    if (cs.length() == 0)
+    {
+      toast("No nest config saved: swipe left on space to save one");
+      return;
+    }
+    int i = (_prefs.getInt(KEY_NEST_CONFIG_INDEX, -1) + 1) % cs.length();
+    _prefs.edit().putInt(KEY_NEST_CONFIG_INDEX, i).apply();
+    JSONObject j = cs.optJSONObject(i);
+    if (j == null)
+      return;
+    apply_nest_config(j);
+    toast("Nest config " + (i + 1) + " of " + cs.length() + ": " + _scope.label + ", "
+        + syntax().name + " " + ((_view_item == null) ? "plain" : _view_item) + ", "
+        + verse_nest()[0]);
+  }
+
+  /* Typing in View's format (Scope swiped down) */
+
+  /** The format View last applied, or the first one of the syntax. */
+  String[] view_format()
+  {
+    List<String[]> fs = formats();
+    for (String[] f : fs)
+      if (f[0].equals(_view_item))
+        return f;
+    return fs.isEmpty() ? null : fs.get(0);
+  }
+
+  /** Insert the format's markers and type between them, until the scope's
+      separator (a space for Word) closes them. */
+  void start_typing()
+  {
+    String[] f = view_format();
+    InputConnection ic = _listener.input();
+    if (f == null || ic == null)
+    {
+      toast("No format in this app: pick a syntax on View");
+      return;
+    }
+    _typing_close = null;
+    ic.beginBatchEdit();
+    ic.commitText(f[1], 1);
+    if (!f[2].isEmpty())
+      ic.commitText(f[2], 0); // Cursor before the closing marker.
+    ic.endBatchEdit();
+    _view_item = f[0];
+    _typing_close = f[2].isEmpty() ? null : f[2];
+    rebuild();
+  }
+
+  /** The editor moved the cursor: close the format when the scope's
+      separator was just typed, stop when the cursor left the markers. */
+  public void selection_updated(int start, int end)
+  {
+    String close = _typing_close;
+    InputConnection ic = (close == null) ? null : _listener.input();
+    if (ic == null)
+      return;
+    CharSequence after = ic.getTextAfterCursor(close.length(), 0);
+    if (start != end || after == null || !after.toString().equals(close))
+    {
+      _typing_close = null;
+      rebuild();
+      return;
+    }
+    CharSequence before = ic.getTextBeforeCursor(1, 0);
+    if (before == null || before.length() == 0 || !is_separator(before.charAt(0)))
+      return;
+    _typing_close = null;
+    ic.beginBatchEdit();
+    ic.deleteSurroundingText(1, close.length());
+    ic.commitText(close + before, 1);
+    ic.endBatchEdit();
+    rebuild();
+  }
+
+  boolean is_separator(char c)
+  {
+    if (_scope == TextScope.ALL)
+      return false;
+    if (_scope == TextScope.LINE || _scope == TextScope.PARAGRAPH)
+      return c == '\n';
+    if (_scope == TextScope.SENTENCE)
+      return c == '.' || c == '!' || c == '?' || c == '\n';
+    return Character.isWhitespace(c);
+  }
+
+  void toast(String msg)
+  {
+    android.widget.Toast.makeText(getContext(), msg, android.widget.Toast.LENGTH_SHORT).show();
+  }
 
   /* Scope */
 

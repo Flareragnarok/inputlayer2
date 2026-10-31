@@ -465,6 +465,7 @@ public class Keyboard2 extends InputMethodService
     super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd, candidatesStart, candidatesEnd);
     _studio_sel_start = newSelStart;
     _studio_sel_end = newSelEnd;
+    _edit_strip.selection_updated(newSelStart, newSelEnd);
     _keyeventhandler.selection_updated(oldSelStart, newSelStart, newSelEnd);
     if ((oldSelStart == oldSelEnd) != (newSelStart == newSelEnd))
       _keyboard_layout_view.set_selection_state(newSelStart != newSelEnd);
@@ -618,6 +619,18 @@ public class Keyboard2 extends InputMethodService
 
         case CHANGE_DICTIONARY:
           new DictionarySwitcher(Keyboard2.this, _dictionaries, this).choose();
+          break;
+
+        case STUDIO_NESTS_RESET:
+          _edit_strip.reset_nests();
+          break;
+
+        case STUDIO_NESTS_NEXT:
+          _edit_strip.next_nest_config();
+          break;
+
+        case STUDIO_NESTS_SAVE:
+          _edit_strip.save_nest_config();
           break;
       }
     }

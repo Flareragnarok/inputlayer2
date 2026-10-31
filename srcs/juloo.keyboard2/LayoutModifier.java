@@ -90,7 +90,28 @@ public final class LayoutModifier
     // Avoid adding extra keys to the number row
     if (added_number_row != null)
       kw = kw.insert_row(added_number_row, 0);
-    return scale_rows(backspace_cut(kw));
+    return scale_rows(space_nests(backspace_cut(kw)));
+  }
+
+  /** Studio: the space bar's swipes drive the edit strip's nest configs:
+      down resets all nests, up switches to the next saved config, left
+      saves the current one. They replace upstream's layout switching (still
+      on the comfort bar) and the left half of the cursor slider (the arrow
+      keys move the cursor). */
+  static KeyboardData space_nests(KeyboardData kw)
+  {
+    final KeyValue space = KeyValue.getKeyByName("space");
+    final KeyValue reset = KeyValue.getKeyByName("studio_nests_reset");
+    final KeyValue next = KeyValue.getKeyByName("studio_nests_next");
+    final KeyValue save = KeyValue.getKeyByName("studio_nests_save");
+    return kw.mapKeys(new KeyboardData.MapKey() {
+      public KeyboardData.Key apply(KeyboardData.Key k)
+      {
+        if (k.keys[0] == null || !k.keys[0].equals(space) || k.keys.length <= 8)
+          return k;
+        return k.withKeyValue(8, reset).withKeyValue(7, next).withKeyValue(5, save);
+      }
+    });
   }
 
   /** Studio: swiping down on backspace cuts the selection (it then shows in
