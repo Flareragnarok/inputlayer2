@@ -137,8 +137,11 @@ public class EditStrip extends LinearLayout
   boolean _typing = false;
   /** Closing marker the cursor sits before, "" for none. */
   String _typing_close = "";
-  /** Absolute start of the typed text, after the opening marker. */
+  /** Absolute range of the typed text, between the markers. */
   int _typing_start = 0;
+  int _typing_end = 0;
+  /** The field's text length, to follow what is typed. */
+  int _typing_len = 0;
   /** Opening marker, for the selection bar's preview. */
   String _typing_open = "";
   /** Verse's item applied to the typed text, [null] for none. */
@@ -341,6 +344,11 @@ public class EditStrip extends LinearLayout
       case "format_restore": restore_format(); return;
     }
     Field f = read();
+    if (f == null)
+      return;
+    // Typing in format: Sector moves within the typed text only.
+    if (_typing)
+      f = within(f, _typing_start - f.base, _typing_end - f.base);
     if (f == null)
       return;
     int[] sel = { f.sel_start, f.sel_end };
@@ -582,8 +590,9 @@ public class EditStrip extends LinearLayout
   }
 
   /** Type in View's format (its markers around the text) and Verse's look
-      (applied to every letter typed) until the scope's separator, e.g. a
-      space for Word. */
+      (applied to all of it) until the scope's separator, typed at the end,
+      e.g. a space for Word. With a selection, the selection is the text:
+      it gets the format and look at once, and typing goes on inside it. */
   void start_typing()
   {
     // What View and Verse show: their last item, or the one a tap applies.
@@ -593,25 +602,31 @@ public class EditStrip extends LinearLayout
     _typing_case = n[0].equals("Case");
     if (style.equals(UnicodeStyles.PLAIN))
       style = null;
-    InputConnection ic = _listener.input();
-    if (ic == null)
+    Field fl = read();
+    if (fl == null)
       return;
+    _typing_style = style;
     String open = (f == null) ? "" : f[1], close = (f == null) ? "" : f[2];
-    int pos = Math.min(_listener.sel_start(), _listener.sel_end());
+    String body = convert(fl.text.substring(fl.sel_start, fl.sel_end));
+    int s = fl.base + fl.sel_start;
+    InputConnection ic = fl.ic;
     ic.beginBatchEdit();
-    if (!open.isEmpty())
-      ic.commitText(open, 1);
-    if (!close.isEmpty())
-      ic.commitText(close, 0); // Cursor before the closing marker.
+    ic.setSelection(s, fl.base + fl.sel_end);
+    ic.commitText(open + body + close, 1);
+    // Cursor at the end of the text, before the closing marker.
+    int end = s + open.length() + body.length();
+    ic.setSelection(end, end);
     ic.endBatchEdit();
     _typing = true;
-    _typing_close = close;
-    _typing_start = pos + open.length();
-    _typing_style = style;
     _typing_open = open;
-    _listener.preview(open + close);
+    _typing_close = close;
+    _typing_start = s + open.length();
+    _typing_end = end;
+    _typing_len = fl.text.length() - (fl.sel_end - fl.sel_start)
+      + open.length() + body.length() + close.length();
+    _listener.preview(open + body + close);
     rebuild();
-    toast("Typing in " + typing_summary() + " until " + separator_name());
+    toast("Typing in " + typing_summary() + " until " + separator_name() + " at the end");
   }
 
   /** E.g. "Bold · 𝐛𝐨𝐥𝐝", "plain" when neither applies anything. */
@@ -644,57 +659,67 @@ public class EditStrip extends LinearLayout
     rebuild();
   }
 
-  /** The editor moved the cursor: apply Verse's look to what was typed,
-      close the format when the scope's separator was just typed, stop when
-      the cursor left the typed text. */
+  /** The editor changed the text or moved the cursor. The typed text is
+      [_typing_start, _typing_end): it grows by what was typed inside it,
+      gets Verse's look again, and ends when the scope's separator is typed
+      at its end or the cursor leaves it. */
   public void selection_updated(int start, int end)
   {
     if (!_typing)
       return;
-    InputConnection ic = _listener.input();
-    if (ic == null || start != end || start < _typing_start)
+    Field f = read();
+    if (f == null)
     {
       stop_typing();
       return;
     }
-    String close = _typing_close;
-    if (!close.isEmpty())
+    int len = f.text.length();
+    int delta = len - _typing_len;
+    _typing_len = len;
+    int cursor = f.base + f.sel_end;
+    // Text typed (or deleted) inside the typed text moves its end.
+    if (delta != 0 && cursor - Math.max(delta, 0) >= _typing_start
+        && cursor - Math.max(delta, 0) <= _typing_end)
+      _typing_end += delta;
+    if (f.base + f.sel_start < _typing_start || cursor > _typing_end
+        || _typing_end < _typing_start)
     {
-      CharSequence after = ic.getTextAfterCursor(close.length(), 0);
-      if (after == null || !after.toString().equals(close))
-      {
-        stop_typing();
-        return;
-      }
+      stop_typing();
+      return;
     }
-    if (start == _typing_start)
+    int ts = _typing_start - f.base, te = _typing_end - f.base;
+    if (ts < 0 || te > f.text.length())
       return;
-    CharSequence cs = ic.getTextBeforeCursor(start - _typing_start, 0);
-    if (cs == null || cs.length() != start - _typing_start)
-      return;
-    String typed = cs.toString();
-    char last = typed.charAt(typed.length() - 1);
-    boolean sep = is_separator(last);
-    String body = sep ? typed.substring(0, typed.length() - 1) : typed;
-    String conv = convert(body);
-    if (sep)
+    String body = f.text.substring(ts, te);
+    String close = _typing_close;
+    // The separator, just typed at the end: the format closes before it.
+    if (delta > 0 && !has_selection(f) && cursor == _typing_end && body.length() > 0
+        && is_separator(body.charAt(body.length() - 1)))
     {
+      char sep = body.charAt(body.length() - 1);
+      String conv = convert(body.substring(0, body.length() - 1));
       _typing = false;
-      ic.beginBatchEdit();
-      ic.setSelection(_typing_start, start + close.length());
-      ic.commitText(conv + close + last, 1);
-      ic.endBatchEdit();
+      f.ic.beginBatchEdit();
+      f.ic.setSelection(_typing_start, _typing_end + close.length());
+      f.ic.commitText(conv + close + sep, 1);
+      f.ic.endBatchEdit();
       _listener.preview(null);
       rebuild();
       return;
     }
+    String conv = convert(body);
     _listener.preview(_typing_open + conv + close);
     if (!conv.equals(body))
     {
-      ic.beginBatchEdit();
-      ic.setSelection(_typing_start, start);
-      ic.commitText(conv, 1);
-      ic.endBatchEdit();
+      // Same cursor place in the converted text.
+      int rel = convert(f.text.substring(ts, f.sel_end)).length();
+      f.ic.beginBatchEdit();
+      f.ic.setSelection(_typing_start, _typing_end);
+      f.ic.commitText(conv, 1);
+      f.ic.setSelection(_typing_start + rel, _typing_start + rel);
+      f.ic.endBatchEdit();
+      _typing_end = _typing_start + conv.length();
+      _typing_len += conv.length() - body.length();
     }
   }
 
@@ -820,17 +845,43 @@ public class EditStrip extends LinearLayout
     SubMenu cases = m.addSubMenu("Aa  Case");
     for (final String c : UnicodeStyles.CASES)
       add(cases, case_label(c), new Runnable() {
-        public void run() { transform_target(new Transform() {
-          public String apply(String s) { return UnicodeStyles.change_case(s, c); }
-        }); }
+        public void run()
+        {
+          transform_target(new Transform() {
+            public String apply(String s) { return UnicodeStyles.change_case(s, c); }
+          });
+          lock_in_verse(c);
+        }
       });
     for (final String st : UnicodeStyles.styles())
       add(m, UnicodeStyles.label(st), new Runnable() {
-        public void run() { transform_target(new Transform() {
-          public String apply(String s) { return UnicodeStyles.apply(s, st); }
-        }); }
+        public void run()
+        {
+          transform_target(new Transform() {
+            public String apply(String s) { return UnicodeStyles.apply(s, st); }
+          });
+          lock_in_verse(st);
+        }
       });
     p.show();
+  }
+
+  /** A look picked from the list becomes Verse's nest and item, so that
+      the next tap and typing in format go on from it. */
+  void lock_in_verse(String item)
+  {
+    List<String[]> ns = UnicodeStyles.nests();
+    for (int i = 0; i < ns.size(); i++)
+      for (int j = 1; j < ns.get(i).length; j++)
+        // Plain is in every nest: stay in the current one for it.
+        if (ns.get(i)[j].equals(item)
+            && !(item.equals(UnicodeStyles.PLAIN) && i != _verse_nest))
+        {
+          _verse_nest = i;
+          _verse_item = j - 1;
+          rebuild();
+          return;
+        }
   }
 
   static String case_label(String c)
@@ -1138,6 +1189,20 @@ public class EditStrip extends LinearLayout
   }
 
   static boolean has_selection(Field f) { return f.sel_end > f.sel_start; }
+
+  /** [f] narrowed to [s, e) of its text, selection clamped into it. */
+  static Field within(Field f, int s, int e)
+  {
+    if (s < 0 || e > f.text.length() || s > e)
+      return null;
+    Field n = new Field();
+    n.ic = f.ic;
+    n.text = f.text.substring(s, e);
+    n.base = f.base + s;
+    n.sel_start = Math.max(0, Math.min(e - s, f.sel_start - s));
+    n.sel_end = Math.max(n.sel_start, Math.min(e - s, f.sel_end - s));
+    return n;
+  }
 
   Field read()
   {
