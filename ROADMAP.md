@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 31).
+Last updated: 2026-11-01 (build 32).
 
 ## Done
 
@@ -42,6 +42,7 @@ Last updated: 2026-11-01 (build 31).
 | 29 | Inclusive Sector keeps the selection: tap and left/right add the next or previous unit to it (exclusive still moves to it). Scope ↑ always starts typing in format, with what View and Verse show (even plain), so the selection bar's ✎ shows it's on. |
 | 30 | Typing in format works on a range: Scope ↑ with a selection gives the selection View's format and Verse's look at once and goes on inside it; edits anywhere inside keep the look; the separator ends it only at the end. Sector moves within that text meanwhile. A look picked from Verse's list becomes Verse's nest and item. |
 | 31 | Macros. Spec ↓ saves the last typing in format's steps (View's format, Verse's look, not the typed text); Vert ↓ saves its key replacements (the typed letters, e.g. "→ oBAmA"). Tap Spec or Vert applies the current one to the typed text during typing in format, otherwise to the selection (or Scope's unit); → picks the next, ← lists them, ↑ opens the definitions in Studio. Saved as `spec` and `vert` modules. |
+| 32 | Typing in format applies Verse's look only to letters as they are typed, so changes made to single units stay when moving to the next. Spec records those changes as steps (scope, unit index, look or format) and replays them on the same units of another selection. |
 
 Infrastructure:
 

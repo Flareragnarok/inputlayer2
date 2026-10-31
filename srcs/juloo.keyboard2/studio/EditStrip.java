@@ -149,6 +149,13 @@ public class EditStrip extends LinearLayout
   int _typing_end = 0;
   /** The field's text length, to follow what is typed. */
   int _typing_len = 0;
+  /** Text length expected after the keyboard's own edit, [-1] for none. */
+  int _own_edit_len = -1;
+  /** Steps made to units during typing in format, for Spec. */
+  JSONArray _write_steps = new JSONArray();
+  /** Look applied by the Verse action being done, for recording it. */
+  String _step_style = null;
+  boolean _step_case = false;
   /** Opening marker, for the selection bar's preview. */
   String _typing_open = "";
   /** Verse's item applied to the typed text, [null] for none. */
@@ -650,6 +657,7 @@ public class EditStrip extends LinearLayout
     ic.setSelection(end, end);
     ic.endBatchEdit();
     _typing = true;
+    _write_steps = new JSONArray();
     _typing_open = open;
     _typing_close = close;
     _typing_start = s + open.length();
@@ -729,6 +737,9 @@ public class EditStrip extends LinearLayout
     int len = f.text.length();
     int delta = len - _typing_len;
     _typing_len = len;
+    // The keyboard's own edit (View, Verse, a macro), not typed letters.
+    boolean own = (_own_edit_len >= 0 && len == _own_edit_len);
+    _own_edit_len = -1;
     int cursor = f.base + f.sel_end;
     // Text typed (or deleted) inside the typed text moves its end.
     if (delta != 0 && cursor - Math.max(delta, 0) >= _typing_start
@@ -746,12 +757,13 @@ public class EditStrip extends LinearLayout
     String body = f.text.substring(ts, te);
     String close = _typing_close;
     // The separator, just typed at the end: the format closes before it.
-    if (delta > 0 && !has_selection(f) && cursor == _typing_end && body.length() > 0
+    if (!own && delta > 0 && !has_selection(f) && cursor == _typing_end && body.length() > 0
         && is_separator(body.charAt(body.length() - 1)))
     {
       char sep = body.charAt(body.length() - 1);
-      String conv = convert(body.substring(0, body.length() - 1));
-      record_typed(body.substring(0, body.length() - 1));
+      // Already in Verse's look, letter by letter as typed.
+      String conv = body.substring(0, body.length() - 1);
+      record_typed(conv);
       _typing = false;
       f.ic.beginBatchEdit();
       f.ic.setSelection(_typing_start, _typing_end + close.length());
@@ -761,21 +773,47 @@ public class EditStrip extends LinearLayout
       rebuild();
       return;
     }
-    String conv = convert(body);
     record_typed(body);
-    _listener.preview(_typing_open + conv + close);
-    if (!conv.equals(body))
+    _listener.preview(_typing_open + body + close);
+    // Only the letters just typed get Verse's look: changes made to units
+    // of the text stay.
+    int ins_end = cursor - f.base, ins_start = ins_end - delta;
+    if (own || delta <= 0 || _typing_style == null || has_selection(f)
+        || ins_start < ts || ins_end > te)
+      return;
+    String ins = f.text.substring(ins_start, ins_end);
+    String conv = convert_typed(ins, (ins_start > 0) ? f.text.charAt(ins_start - 1) : ' ');
+    if (conv.equals(ins))
+      return;
+    f.ic.beginBatchEdit();
+    f.ic.setSelection(f.base + ins_start, f.base + ins_end);
+    f.ic.commitText(conv, 1);
+    f.ic.endBatchEdit();
+    _typing_end += conv.length() - ins.length();
+    _typing_len += conv.length() - ins.length();
+    _listener.preview(_typing_open + body.substring(0, ins_start - ts) + conv
+        + body.substring(ins_end - ts) + close);
+  }
+
+  /** [s] just typed, after the character [before], in Verse's look. Title
+      case looks at [before] to know if a word starts. */
+  String convert_typed(String s, char before)
+  {
+    if (_typing_style == null)
+      return s;
+    if (_typing_case && _typing_style.equals("title"))
     {
-      // Same cursor place in the converted text.
-      int rel = convert(f.text.substring(ts, f.sel_end)).length();
-      f.ic.beginBatchEdit();
-      f.ic.setSelection(_typing_start, _typing_end);
-      f.ic.commitText(conv, 1);
-      f.ic.setSelection(_typing_start + rel, _typing_start + rel);
-      f.ic.endBatchEdit();
-      _typing_end = _typing_start + conv.length();
-      _typing_len += conv.length() - body.length();
+      StringBuilder b = new StringBuilder();
+      boolean start = Character.isWhitespace(before);
+      for (int i = 0; i < s.length(); i++)
+      {
+        char c = s.charAt(i);
+        b.append(start ? Character.toUpperCase(c) : Character.toLowerCase(c));
+        start = Character.isWhitespace(c);
+      }
+      return b.toString();
     }
+    return convert(s);
   }
 
   String convert(String s)
@@ -881,7 +919,9 @@ public class EditStrip extends LinearLayout
         j.put("close", _last_write.optString("close", ""));
         j.put("style", _last_write.optString("style", ""));
         j.put("case", _last_write.optBoolean("case", false));
-        summary = _last_write.optString("summary", "");
+        j.put("steps", _write_steps);
+        summary = _last_write.optString("summary", "")
+          + (_write_steps.length() > 0 ? " + " + _write_steps.length() + " steps" : "");
       }
       else
       {
@@ -928,6 +968,9 @@ public class EditStrip extends LinearLayout
       String looked = style.isEmpty() ? body
         : (m.json.optBoolean("case", false) ? UnicodeStyles.change_case(body, style)
             : UnicodeStyles.apply(body, style));
+      JSONArray steps = m.json.optJSONArray("steps");
+      if (steps != null)
+        looked = WriteSteps.replay(looked, steps, _scopes, formats());
       n = m.json.optString("open", "") + looked + m.json.optString("close", "");
     }
     else
@@ -935,6 +978,7 @@ public class EditStrip extends LinearLayout
     if (_typing)
     {
       // The typed text becomes the result; typing goes on after it.
+      _own_edit_len = f.text.length() + n.length() - body.length();
       f.ic.beginBatchEdit();
       f.ic.setSelection(f.base + r[0], f.base + r[1]);
       f.ic.commitText(n, 1);
@@ -1023,6 +1067,8 @@ public class EditStrip extends LinearLayout
         int next = (k < 0) ? (_up ? 0 : n - 1) : (k + (_up ? 1 : n - 1)) % n;
         _verse_item = next;
         String item = nest[1 + next];
+        _step_style = item;
+        _step_case = is_case;
         return is_case ? UnicodeStyles.change_case(s, item) : UnicodeStyles.apply(s, item);
       }
     });
@@ -1032,6 +1078,8 @@ public class EditStrip extends LinearLayout
   /** Back to plain letters; the case stays as it is. */
   void restore_appearance()
   {
+    _step_style = UnicodeStyles.PLAIN;
+    _step_case = false;
     transform_target(new Transform() {
       public String apply(String s) { return UnicodeStyles.apply(s, UnicodeStyles.PLAIN); }
     });
@@ -1046,6 +1094,8 @@ public class EditStrip extends LinearLayout
       add(cases, case_label(c), new Runnable() {
         public void run()
         {
+          _step_style = c;
+          _step_case = true;
           transform_target(new Transform() {
             public String apply(String s) { return UnicodeStyles.change_case(s, c); }
           });
@@ -1056,6 +1106,8 @@ public class EditStrip extends LinearLayout
       add(m, UnicodeStyles.label(st), new Runnable() {
         public void run()
         {
+          _step_style = st;
+          _step_case = false;
           transform_target(new Transform() {
             public String apply(String s) { return UnicodeStyles.apply(s, st); }
           });
@@ -1140,6 +1192,14 @@ public class EditStrip extends LinearLayout
     if (r == null)
       r = new int[]{ f.sel_start, f.sel_start };
     TextFormats.Edit e = TextFormats.cycle(f.text, r, fs, _up);
+    if (_typing)
+    {
+      // Recorded as: remove the unit's format, then wrap in the new one.
+      record_step(f, r[0], "format", null, false, "", "");
+      for (String[] fm : fs)
+        if (e.name != null && fm[0].equals(e.name))
+          record_step(f, r[0], "format", null, false, fm[1], fm[2]);
+    }
     replace(f, e.start, e.end, e.text, e.sel_start, e.sel_end);
     _view_item = e.name;
     rebuild();
@@ -1227,7 +1287,41 @@ public class EditStrip extends LinearLayout
     if (r == null)
       return;
     String n = t.apply(f.text.substring(r[0], r[1]));
+    if (_typing && _step_style != null)
+      record_step(f, r[0], "look", _step_style, _step_case, null, null);
+    _step_style = null;
     replace(f, r[0], r[1], n, r[0], r[0] + n.length());
+  }
+
+  /** Record a change to the unit at [pos] of the typed text, for Spec. */
+  void record_step(Field f, int pos, String kind, String style, boolean is_case,
+      String open, String close)
+  {
+    int ts = _typing_start - f.base, te = _typing_end - f.base;
+    if (ts < 0 || te > f.text.length() || pos < ts || pos > te)
+      return;
+    int unit = WriteSteps.unit_index(_scope, f.text.substring(ts, te), pos - ts);
+    if (unit < 0)
+      return;
+    try
+    {
+      JSONObject s = new JSONObject();
+      s.put("kind", kind);
+      s.put("scope", _scope.label);
+      s.put("unit", unit);
+      if (kind.equals("look"))
+      {
+        s.put("style", style);
+        s.put("case", is_case);
+      }
+      else
+      {
+        s.put("open", open);
+        s.put("close", close);
+      }
+      _write_steps.put(s);
+    }
+    catch (Exception _e) {}
   }
 
   /** The selection [sel] (of unit [unit]) after a step forward or back:
@@ -1273,6 +1367,8 @@ public class EditStrip extends LinearLayout
   void replace(Field f, int start, int end, String text, int sel_start, int sel_end)
   {
     InputConnection ic = f.ic;
+    if (_typing)
+      _own_edit_len = f.text.length() + text.length() - (end - start);
     ic.beginBatchEdit();
     ic.setSelection(f.base + start, f.base + end);
     ic.commitText(text, 1);
