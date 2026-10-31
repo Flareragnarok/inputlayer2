@@ -14,6 +14,16 @@ Install the APK from
 [the latest release](https://github.com/Flareragnarok/input-layer/releases/latest)
 once; after that, Settings → Studio → Check for updates installs new builds.
 
+## License
+
+Input Layer is a modified version of Unexpected Keyboard, changed by
+Flareragnarok starting 2026-10-31; the commits on the `studio` branch after
+upstream tag `2.1.0` are the changes. Like upstream it is licensed under the
+GNU General Public License v3.0 (see `LICENSE`), and so is every change
+made here. Parts keep their own licenses: `vendor/cdict` is MIT,
+`srcs/layouts` has its own license (`srcs/layouts/LICENSE`) and the compose
+data comes from xorg.
+
 The upstream README follows.
 
 ---
