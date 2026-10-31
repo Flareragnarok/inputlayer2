@@ -1,0 +1,82 @@
+name: Restore Input Layer build
+
+# Republish the code of a past build under a new build number, so that it
+# installs as an update (Android refuses to install older version numbers).
+# Started by hand: Actions -> Restore Input Layer build -> Run workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      build:
+        description: "Build number to restore (e.g. 3)"
+        required: true
+        type: number
+
+permissions:
+  contents: write
+
+# Shared with studio-release.yml so build numbers never collide.
+concurrency:
+  group: studio-release
+  cancel-in-progress: false
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    env:
+      STUDIO_UPDATE_REPO: ${{ github.repository }}
+      RESTORED: ${{ inputs.build }}
+    steps:
+    - name: Checkout the restored build
+      uses: actions/checkout@v6
+      with:
+        ref: build-${{ inputs.build }}
+        submodules: true
+        fetch-depth: 0
+
+    - name: Next build number
+      run: |
+        last=$(git tag --list 'build-*' | sed 's/^build-//' | sort -n | tail -n1)
+        echo "STUDIO_BUILD=$(( ${last:-0} + 1 ))" >> "$GITHUB_ENV"
+
+    - name: Restore debug keystore
+      env:
+        DEBUG_KEYSTORE_ASC: ${{ secrets.DEBUG_KEYSTORE }}
+      run: |
+        if [[ -z "$DEBUG_KEYSTORE_ASC" ]]; then
+          echo "::error::Secret DEBUG_KEYSTORE is not set."
+          exit 1
+        fi
+        printf '%s\n' "$DEBUG_KEYSTORE_ASC" > debug.keystore.asc
+        gpg -d --passphrase "debug0" --batch debug.keystore.asc > debug.keystore
+
+    - uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+
+    - name: Build
+      run: ./gradlew assembleDebug
+      env:
+        DEBUG_KEYSTORE: "debug.keystore"
+        DEBUG_KEYSTORE_PASSWORD: debug0
+        DEBUG_KEY_ALIAS: debug
+        DEBUG_KEY_PASSWORD: debug0
+
+    - name: Publish release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        tag="build-${STUDIO_BUILD}"
+        apk="input-layer-${tag}.apk"
+        cp build/outputs/apk/debug/*.apk "$apk"
+        {
+          echo "Restore of build ${RESTORED} (same code, commit $(git rev-parse --short HEAD))."
+          echo
+          gh release view "build-${RESTORED}" --json body --jq .body
+        } > notes.md
+        gh release create "$tag" "$apk" --target "$(git rev-parse HEAD)" \
+          --title "Input Layer build ${STUDIO_BUILD} (restore of build ${RESTORED})" \
+          --notes-file notes.md

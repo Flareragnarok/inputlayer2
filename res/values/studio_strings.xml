@@ -16,6 +16,10 @@
   <string name="studio_update_available">Build %1$d is available</string>
   <string name="studio_up_to_date">You have the newest build</string>
   <string name="studio_install">Install (%1$d MB)</string>
+  <string name="studio_past_builds">Past builds</string>
+  <string name="studio_past_builds_desc">Android only installs newer builds. Restoring a past build republishes its exact code on GitHub as a new build number, which then shows up above as an update. Your settings and modules are kept.</string>
+  <string name="studio_restore">Restore build %1$d</string>
+  <string name="studio_restore_howto">On GitHub: tap "Run workflow", enter %1$d, then Run. Check for updates again in a few minutes.</string>
   <string name="studio_downloading">Downloading build %1$d…</string>
   <string name="studio_allow_installs">Allow this app to install updates, then tap Install again</string>
   <string name="studio_install_failed">Install failed: %1$s</string>

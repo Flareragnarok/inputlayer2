@@ -1,8 +1,9 @@
 name: Input Layer release
 
 # Every push to the studio branch builds a debug APK and publishes it as the
-# GitHub release "build-N" (N = run number), which the in-app updater
-# (Settings -> Studio -> Check for updates) and Obtainium pick up.
+# GitHub release "build-N" (N = highest existing build + 1, shared with
+# studio-restore.yml), which the in-app updater (Settings -> Studio -> Check
+# for updates) and Obtainium pick up.
 
 on:
   workflow_dispatch:
@@ -21,7 +22,6 @@ jobs:
   release:
     runs-on: ubuntu-latest
     env:
-      STUDIO_BUILD: ${{ github.run_number }}
       STUDIO_UPDATE_REPO: ${{ github.repository }}
     steps:
     - name: Checkout repo
@@ -29,6 +29,11 @@ jobs:
       with:
         submodules: true
         fetch-depth: 0
+
+    - name: Next build number
+      run: |
+        last=$(git tag --list 'build-*' | sed 's/^build-//' | sort -n | tail -n1)
+        echo "STUDIO_BUILD=$(( ${last:-0} + 1 ))" >> "$GITHUB_ENV"
 
     # Without the same key every build, Android refuses to install updates
     # over the previous build. See CONTRIBUTING.md for creating the secret.
@@ -65,8 +70,9 @@ jobs:
         tag="build-${STUDIO_BUILD}"
         apk="input-layer-${tag}.apk"
         cp build/outputs/apk/debug/*.apk "$apk"
-        # Notes: the commits since the previous Studio release.
-        prev=$(git tag --list 'build-*' --sort=-v:refname | head -n1)
+        # Notes: the commits since the closest earlier build on this branch
+        # (not a restore of an older commit).
+        prev=$(git describe --tags --match 'build-*' --abbrev=0 HEAD 2>/dev/null || true)
         range=${prev:+$prev..}HEAD
         { echo "Changes:"; git log --no-merges --format='- %s' "$range" | head -n 50; } > notes.md
         gh release create "$tag" "$apk" --target "$GITHUB_SHA" \

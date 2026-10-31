@@ -13,15 +13,19 @@ import android.text.InputType;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 import juloo.keyboard2.DirectBootAwarePreferences;
 import juloo.keyboard2.Logs;
@@ -255,25 +259,84 @@ public class StudioActivity extends Activity
       _update_status.setText(R.string.studio_no_releases);
       return;
     }
-    Updater.Release newest = rs.get(0);
-    _update_status.setText(newest.build > _installed_build ?
-        getString(R.string.studio_update_available, newest.build) :
-        getString(R.string.studio_up_to_date));
-    for (final Updater.Release r : rs)
-    {
-      TextView title = text(r.title
-          + (r.build == _installed_build ? "  " + getString(R.string.studio_installed_mark) : ""));
-      title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-      title.setPadding(0, dp(12), 0, 0);
-      _releases.addView(title);
-      if (!r.notes.isEmpty())
-        _releases.addView(text(r.notes));
+    final List<Updater.Release> newer = new ArrayList<Updater.Release>();
+    List<Updater.Release> older = new ArrayList<Updater.Release>();
+    for (Updater.Release r : rs)
       if (r.build > _installed_build)
-        _releases.addView(button(getString(R.string.studio_install,
-                r.apk_size / (1024 * 1024)), new View.OnClickListener() {
-          public void onClick(View v) { start_install(r); }
-        }));
+        newer.add(r);
+      else if (r.build < _installed_build)
+        older.add(r);
+    _update_status.setText(newer.isEmpty() ?
+        getString(R.string.studio_up_to_date) :
+        getString(R.string.studio_update_available, newer.get(0).build));
+    if (!newer.isEmpty())
+      show_newer(newer);
+    if (!older.isEmpty())
+    {
+      _releases.addView(heading(R.string.studio_past_builds));
+      _releases.addView(text(getString(R.string.studio_past_builds_desc)));
+      for (Updater.Release r : older)
+        show_past(r);
     }
+  }
+
+  /** A dropdown of the builds not installed yet, newest first and selected. */
+  void show_newer(final List<Updater.Release> newer)
+  {
+    List<String> labels = new ArrayList<String>();
+    for (Updater.Release r : newer)
+      labels.add(r.title);
+    final Spinner spinner = new Spinner(this);
+    ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+        android.R.layout.simple_spinner_item, labels);
+    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    spinner.setAdapter(adapter);
+    final TextView notes = text(newer.get(0).notes);
+    final Button install = button(install_label(newer.get(0)), null);
+    spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+      public void onItemSelected(AdapterView<?> parent, View v, int pos, long id)
+      {
+        notes.setText(newer.get(pos).notes);
+        install.setText(install_label(newer.get(pos)));
+      }
+      public void onNothingSelected(AdapterView<?> parent) {}
+    });
+    install.setOnClickListener(new View.OnClickListener() {
+      public void onClick(View v)
+      {
+        start_install(newer.get(spinner.getSelectedItemPosition()));
+      }
+    });
+    _releases.addView(spinner);
+    _releases.addView(notes);
+    _releases.addView(install);
+  }
+
+  /** An older build. Android doesn't install older versions over newer
+      ones, so restoring republishes it as a new build on GitHub. */
+  void show_past(final Updater.Release r)
+  {
+    TextView title = text(r.title);
+    title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+    title.setPadding(0, dp(12), 0, 0);
+    _releases.addView(title);
+    if (!r.notes.isEmpty())
+      _releases.addView(text(r.notes));
+    _releases.addView(button(getString(R.string.studio_restore, r.build),
+          new View.OnClickListener() {
+      public void onClick(View v)
+      {
+        toast(getString(R.string.studio_restore_howto, r.build));
+        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(
+                "https://github.com/" + _prefs.getString(KEY_UPDATE_REPO, "")
+                + "/actions/workflows/studio-restore.yml")));
+      }
+    }));
+  }
+
+  String install_label(Updater.Release r)
+  {
+    return getString(R.string.studio_install, r.apk_size / (1024 * 1024));
   }
 
   void start_install(final Updater.Release r)
