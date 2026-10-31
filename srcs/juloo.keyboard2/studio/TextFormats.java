@@ -155,6 +155,78 @@ public final class TextFormats
     return new Edit(s, e, t, s, s + t.length());
   }
 
+  /** Formats cycled by the Format key: the syntax's, then the user's own
+      ({ name, open, close } each). */
+  public static List<String[]> cycle_list(Syntax s, List<String[]> custom)
+  {
+    List<String[]> l = new ArrayList<String[]>();
+    for (Map.Entry<String, String[]> e : s.formats.entrySet())
+      l.add(new String[]{ e.getKey(), e.getValue()[0], e.getValue()[1] });
+    l.addAll(custom);
+    return l;
+  }
+
+  /** Index into [formats] of the format wrapping [text][sel] (markers just
+      outside or just inside), the longest markers winning ("**" over "*").
+      [-1] if none. [outer] receives the range with the markers, [inner]
+      the one without. */
+  static int current(String text, int[] sel, List<String[]> formats,
+      int[] outer, int[] inner)
+  {
+    int best = -1, best_len = -1;
+    int s = sel[0], e = sel[1];
+    for (int i = 0; i < formats.size(); i++)
+    {
+      String o = formats.get(i)[1], c = formats.get(i)[2];
+      int len = o.length() + c.length();
+      if (len == 0 || len <= best_len)
+        continue;
+      if (s >= o.length() && e + c.length() <= text.length()
+          && text.startsWith(o, s - o.length()) && text.startsWith(c, e))
+      {
+        best = i; best_len = len;
+        outer[0] = s - o.length(); outer[1] = e + c.length();
+        inner[0] = s; inner[1] = e;
+      }
+      else if (e - s >= len && text.startsWith(o, s) && text.startsWith(c, e - c.length()))
+      {
+        best = i; best_len = len;
+        outer[0] = s; outer[1] = e;
+        inner[0] = s + o.length(); inner[1] = e - c.length();
+      }
+    }
+    return best;
+  }
+
+  /** Unwrap the current format of [text][sel] and wrap it in the next one
+      (or previous, if not [forward]). After the last comes plain text, then
+      the first again. */
+  public static Edit cycle(String text, int[] sel, List<String[]> formats, boolean forward)
+  {
+    int[] outer = { sel[0], sel[1] }, inner = { sel[0], sel[1] };
+    int i = current(text, sel, formats, outer, inner);
+    int n = formats.size();
+    int j;
+    if (i < 0)
+      j = forward ? 0 : n - 1;
+    else
+      j = forward ? i + 1 : i - 1;
+    String body = text.substring(inner[0], inner[1]);
+    if (j < 0 || j >= n)
+      return new Edit(outer[0], outer[1], body, outer[0], outer[0] + body.length());
+    String o = formats.get(j)[1], c = formats.get(j)[2];
+    String t = o + body + c;
+    return new Edit(outer[0], outer[1], t, outer[0] + o.length(),
+        outer[0] + o.length() + body.length());
+  }
+
+  /** Name of the format wrapping [text][sel], [null] if none. */
+  public static String current_name(String text, int[] sel, List<String[]> formats)
+  {
+    int i = current(text, sel, formats, new int[2], new int[2]);
+    return (i < 0) ? null : formats.get(i)[0];
+  }
+
   public static List<String> syntax_names()
   {
     List<String> l = new ArrayList<String>();

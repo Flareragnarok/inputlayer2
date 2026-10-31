@@ -1,28 +1,33 @@
 package juloo.keyboard2.studio;
 
 import java.text.BreakIterator;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
-/** Named scopes for the edit strip's selector: the containers text is made
-    of, from small to big. Positions are offsets into a text, ranges are
-    [start, end) as an int[2]. */
-public enum TextScope
+/** Scopes for the edit strip's selector: the containers text is made of.
+    Built in: Word, Sentence, Line, Paragraph, All. Custom ones (from
+    [selection] modules): text between two delimiters, or matches of a
+    pattern. Positions are offsets into a text, ranges are [start, end) as an
+    int[2]. */
+public abstract class TextScope
 {
-  WORD("Word"), SENTENCE("Sentence"), LINE("Line"), PARAGRAPH("Paragraph"), ALL("All");
-
   public final String label;
 
-  TextScope(String l) { label = l; }
+  protected TextScope(String l) { label = l; }
 
-  public TextScope next()
-  {
-    return values()[(ordinal() + 1) % values().length];
-  }
+  /** The unit [pos] is inside of, [null] if [pos] is between units. */
+  abstract int[] unit_containing(String text, int pos);
 
-  public TextScope prev()
-  {
-    int n = values().length;
-    return values()[(ordinal() + n - 1) % n];
-  }
+  public static final TextScope WORD = new Builtin("Word", 0);
+  public static final TextScope SENTENCE = new Builtin("Sentence", 1);
+  public static final TextScope LINE = new Builtin("Line", 2);
+  public static final TextScope PARAGRAPH = new Builtin("Paragraph", 3);
+  public static final TextScope ALL = new Builtin("All", 4);
+  public static final List<TextScope> BUILTIN =
+    Arrays.asList(WORD, SENTENCE, LINE, PARAGRAPH, ALL);
 
   /** The unit containing [pos], or the closest one after it, or before it.
       [null] if the text has none. */
@@ -86,19 +91,142 @@ public enum TextScope
     return new int[]{ sel[0], before[1] };
   }
 
-  /** The unit [pos] is inside of, [null] if [pos] is between units
-      (spaces, punctuation between words, blank lines). */
-  int[] unit_containing(String text, int pos)
+  /** The scope after [s] in [l] (or before, if not [forward]), wrapping
+      around. The first one if [s] isn't in [l]. */
+  public static TextScope cycle(List<TextScope> l, TextScope s, boolean forward)
   {
-    if (pos < 0 || pos >= text.length())
-      return null;
-    switch (this)
+    int i = l.indexOf(s);
+    if (i < 0)
+      return l.get(0);
+    int n = l.size();
+    return l.get((i + (forward ? 1 : n - 1)) % n);
+  }
+
+  /** The text between [open] and [close], without them. Same delimiters
+      (quotes) pair up from the start of the text. Nesting is not followed. */
+  public static TextScope delimited(String label, String open, String close)
+  {
+    return new Delimited(label, open, close);
+  }
+
+  /** Matches of [regex]; [null] if it doesn't compile. */
+  public static TextScope pattern(String label, String regex)
+  {
+    try
     {
-      case WORD: return word_at(text, pos);
-      case SENTENCE: return sentence_at(text, pos);
-      case LINE: return line_at(text, pos);
-      case PARAGRAPH: return paragraph_at(text, pos);
-      default: return trim(text, 0, text.length());
+      return new PatternScope(label, Pattern.compile(regex));
+    }
+    catch (PatternSyntaxException _e)
+    {
+      return null;
+    }
+  }
+
+  static final class Builtin extends TextScope
+  {
+    final int _kind;
+
+    Builtin(String l, int kind) { super(l); _kind = kind; }
+
+    int[] unit_containing(String text, int pos)
+    {
+      if (pos < 0 || pos >= text.length())
+        return null;
+      switch (_kind)
+      {
+        case 0: return word_at(text, pos);
+        case 1: return sentence_at(text, pos);
+        case 2: return line_at(text, pos);
+        case 3: return paragraph_at(text, pos);
+        default: return trim(text, 0, text.length());
+      }
+    }
+  }
+
+  static final class Delimited extends TextScope
+  {
+    final String _open, _close;
+
+    Delimited(String l, String open, String close)
+    {
+      super(l);
+      _open = open;
+      _close = close;
+    }
+
+    int[] unit_containing(String text, int pos)
+    {
+      if (pos < 0 || pos >= text.length() || _open.isEmpty() || _close.isEmpty())
+        return null;
+      if (_open.equals(_close))
+      {
+        // Delimiters pair up: 1st with 2nd, 3rd with 4th...
+        int i = text.indexOf(_open);
+        while (i >= 0)
+        {
+          int j = text.indexOf(_close, i + _open.length());
+          if (j < 0)
+            return null;
+          if (pos >= i + _open.length() && pos < j)
+            return (j > i + _open.length()) ? new int[]{ i + _open.length(), j } : null;
+          if (pos < j)
+            return null;
+          i = text.indexOf(_open, j + _close.length());
+        }
+        return null;
+      }
+      int o = text.lastIndexOf(_open, pos - _open.length());
+      if (o < 0)
+        return null;
+      int s = o + _open.length();
+      int closed = text.indexOf(_close, s);
+      if (closed >= 0 && closed < pos)
+        return null;
+      int c = text.indexOf(_close, pos);
+      if (c < 0 || c == s)
+        return null;
+      return new int[]{ s, c };
+    }
+  }
+
+  static final class PatternScope extends TextScope
+  {
+    final Pattern _p;
+
+    PatternScope(String l, Pattern p) { super(l); _p = p; }
+
+    int[] unit_containing(String text, int pos)
+    {
+      Matcher m = _p.matcher(text);
+      while (m.find())
+      {
+        if (m.start() > pos)
+          return null;
+        if (m.end() > pos && m.end() > m.start())
+          return new int[]{ m.start(), m.end() };
+      }
+      return null;
+    }
+
+    @Override
+    public int[] next_unit(String text, int pos)
+    {
+      Matcher m = _p.matcher(text);
+      while (m.find())
+        if (m.start() >= pos && m.end() > m.start())
+          return new int[]{ m.start(), m.end() };
+      return null;
+    }
+
+    @Override
+    public int[] prev_unit(String text, int pos)
+    {
+      Matcher m = _p.matcher(text);
+      int[] last = null;
+      while (m.find() && m.end() <= pos)
+        if (m.end() > m.start())
+          last = new int[]{ m.start(), m.end() };
+      return last;
     }
   }
 

@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import org.json.JSONObject;
 import juloo.keyboard2.DirectBootAwarePreferences;
 import juloo.keyboard2.Logs;
 import juloo.keyboard2.R;
@@ -100,6 +101,18 @@ public class StudioActivity extends Activity
     root.addView(_update_status);
     _releases = vertical();
     root.addView(_releases);
+
+    root.addView(heading(R.string.studio_tools));
+    root.addView(text(getString(R.string.studio_tools_desc)));
+    tool_form(root, "selection", R.string.studio_tool_selection,
+        new String[]{ "open", "close", "pattern" },
+        new int[]{ R.string.studio_tool_open, R.string.studio_tool_close, R.string.studio_tool_pattern });
+    tool_form(root, "format", R.string.studio_tool_format,
+        new String[]{ "open", "close" },
+        new int[]{ R.string.studio_tool_before, R.string.studio_tool_after });
+    tool_form(root, "font", R.string.studio_tool_font,
+        new String[]{ "lower", "upper", "digits" },
+        new int[]{ R.string.studio_tool_lower, R.string.studio_tool_upper, R.string.studio_tool_digits });
 
     root.addView(heading(R.string.studio_modules));
     root.addView(text(getString(R.string.studio_modules_desc)));
@@ -252,6 +265,64 @@ public class StudioActivity extends Activity
       Logs.exn("Studio file", e);
       toast(e.toString());
     }
+  }
+
+  /* Edit strip tools */
+
+  /** A small form creating a [type] module from a name and [fields]. */
+  void tool_form(LinearLayout root, final String type, int title,
+      final String[] fields, int[] hints)
+  {
+    TextView t = text(getString(title));
+    t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+    t.setPadding(0, dp(12), 0, 0);
+    root.addView(t);
+    final EditText name = new EditText(this);
+    name.setSingleLine(true);
+    name.setHint(R.string.studio_tool_name);
+    root.addView(name);
+    final EditText[] inputs = new EditText[fields.length];
+    for (int i = 0; i < fields.length; i++)
+    {
+      inputs[i] = new EditText(this);
+      inputs[i].setSingleLine(true);
+      inputs[i].setHint(hints[i]);
+      root.addView(inputs[i]);
+    }
+    root.addView(button(R.string.studio_category_add, new View.OnClickListener() {
+      public void onClick(View v)
+      {
+        try
+        {
+          JSONObject j = new JSONObject();
+          for (int i = 0; i < fields.length; i++)
+          {
+            String s = inputs[i].getText().toString();
+            if (!s.isEmpty())
+              j.put(fields[i], s);
+          }
+          Module m = Module.create(type, name.getText().toString().trim(), j);
+          boolean ok = type.equals("selection") ? CustomTools.selection(m) != null
+            : type.equals("format") ? CustomTools.format(m) != null
+            : CustomTools.font(m) != null;
+          if (!ok)
+          {
+            toast(getString(R.string.studio_tool_invalid));
+            return;
+          }
+          _store.save(m);
+          name.setText("");
+          for (EditText e : inputs)
+            e.setText("");
+          refresh_modules();
+          toast(getString(R.string.studio_imported, m.type, m.name));
+        }
+        catch (Exception e)
+        {
+          toast(getString(R.string.studio_tool_invalid) + " " + e.getMessage());
+        }
+      }
+    }));
   }
 
   /* Memory categories */

@@ -95,6 +95,11 @@ final class ComfortKey extends View implements Runnable
       boolean center = (i == 0);
       _paint.setTypeface(l.key_font ? _key_font : Typeface.DEFAULT);
       _paint.setTextSize(h * (center ? 0.55f : 0.3f));
+      // Long labels ("Paragraph") shrink to fit the key.
+      float max_w = center ? w * 0.9f : w * 0.4f;
+      float tw = _paint.measureText(l.text);
+      if (tw > max_w)
+        _paint.setTextSize(_paint.getTextSize() * max_w / tw);
       _paint.setColor(_label_color);
       _paint.setAlpha((isPressed() && i == _dir) ? 255 : (center ? 230 : 140));
       float x = cx + OFFSETS[i][0] * (w / 2 - h * 0.22f);

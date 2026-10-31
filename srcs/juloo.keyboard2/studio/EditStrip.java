@@ -14,16 +14,26 @@ import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
+import java.util.ArrayList;
+import java.util.List;
 import juloo.keyboard2.Config;
 import juloo.keyboard2.Keyboard2View;
 import juloo.keyboard2.Theme;
 
-/** The edit strip, under the space bar. Left: the scope (Word, Sentence,
-    Line, Paragraph, All) and the selector, which selects the scope's unit at
-    the cursor, moves to the previous or next one, grows or shrinks the
-    selection by one. Right: Appearance (case, unicode styles) and Format
-    (the app's markup), applied to the selection or to the scope's unit at
-    the cursor. */
+/** The edit strip, under the space bar, seven keys:
+    - Scope: Word, Sentence, Line, Paragraph, All, then custom selections.
+    - Selector: select the scope's unit at the cursor, then the next (or
+      previous) one; swipes grow, shrink or drop the selection.
+    - Custom selection: opens Studio to define selections.
+    - Direction: forward/up or backward/down, for the selector and for
+      cycling the scope, appearance and format.
+    - Appearance: cycles unicode styles, then saved fonts; swipe up cycles
+      the case, down opens the list.
+    - Format: cycles the app's markup formats, then custom formats; swipe
+      down opens the list and the syntax choice.
+    - Custom format: opens Studio to define formats and fonts.
+    Appearance and Format act on the selection, or on the scope's unit at
+    the cursor, and select the result so that the next tap cycles on. */
 public class EditStrip extends LinearLayout
   implements ComfortKey.Host, Keyboard2View.BottomInsetTaker
 {
@@ -36,26 +46,36 @@ public class EditStrip extends LinearLayout
     /** Absolute selection, as last reported by the editor. */
     int sel_start();
     int sel_end();
+    void open_studio();
   }
 
   static final String KEY_SYNTAX_PREFIX = "studio_format_";
   /** Text read around the cursor when the editor doesn't give it all. */
   static final int CONTEXT_CHARS = 4000;
 
-  static final ComfortKeySpec SCOPE_KEY =
-    ComfortKeySpec.of("c", "scope_next", "s", "scope_prev");
+  static final ComfortKeySpec SCOPE_KEY = ComfortKeySpec.of("c", "scope");
   static final ComfortKeySpec SELECTOR_KEY =
     ComfortKeySpec.of("c", "select", "w", "select_prev", "e", "select_next",
         "n", "select_extend", "s", "select_shrink", "sw", "deselect");
-  static final ComfortKeySpec APPEARANCE_KEY = ComfortKeySpec.of("c", "appearance");
-  static final ComfortKeySpec FORMAT_KEY = ComfortKeySpec.of("c", "format");
+  static final ComfortKeySpec CUSTOM_SELECTION_KEY = ComfortKeySpec.of("c", "custom_selection");
+  static final ComfortKeySpec DIRECTION_KEY = ComfortKeySpec.of("c", "direction");
+  static final ComfortKeySpec APPEARANCE_KEY =
+    ComfortKeySpec.of("c", "appearance", "n", "case", "s", "appearance_menu");
+  static final ComfortKeySpec FORMAT_KEY =
+    ComfortKeySpec.of("c", "format", "s", "format_menu");
+  static final ComfortKeySpec CUSTOM_FORMAT_KEY = ComfortKeySpec.of("c", "custom_format");
 
   Listener _listener;
   SharedPreferences _prefs;
   Config _config;
   TextScope _scope = TextScope.WORD;
-  LinearLayout _left;
-  LinearLayout _right;
+  /** Built-in scopes then custom selections. */
+  List<TextScope> _scopes = TextScope.BUILTIN;
+  /** Custom formats, { name, open, close }. */
+  List<String[]> _custom_formats = new ArrayList<String[]>();
+  /** Forward and up, or backward and down. */
+  boolean _forward = true;
+  int _case = -1;
   View _appearance_key;
   View _format_key;
   /** Navigation bar height on Android 15+, kept clear below the keys. */
@@ -65,7 +85,7 @@ public class EditStrip extends LinearLayout
   {
     super(ctx, attrs);
     setOrientation(HORIZONTAL);
-    setGravity(Gravity.CENTER_VERTICAL);
+    setGravity(Gravity.CENTER);
   }
 
   public void setup(Listener l, SharedPreferences prefs)
@@ -83,19 +103,62 @@ public class EditStrip extends LinearLayout
       setVisibility(GONE);
       return;
     }
+    load_custom();
     setVisibility(VISIBLE);
     ViewGroup.LayoutParams p = getLayoutParams();
     p.height = (int)(dp * density()) + _bottom_inset;
     setLayoutParams(p);
     setPadding(0, 0, 0, _bottom_inset);
+    rebuild();
+  }
+
+  void rebuild()
+  {
     removeAllViews();
-    addView(make_key(SCOPE_KEY, 2.6f));
-    addView(make_key(SELECTOR_KEY, 2.2f));
-    addView(new View(getContext()), new LayoutParams(0, 1, 1f));
-    _appearance_key = make_key(APPEARANCE_KEY, 1.7f);
-    _format_key = make_key(FORMAT_KEY, 1.7f);
+    addView(make_key(SCOPE_KEY, 1.9f));
+    addView(make_key(SELECTOR_KEY, 1.9f));
+    addView(make_key(CUSTOM_SELECTION_KEY, 1.3f));
+    addView(make_key(DIRECTION_KEY, 1.3f));
+    _appearance_key = make_key(APPEARANCE_KEY, 1.6f);
+    _format_key = make_key(FORMAT_KEY, 1.6f);
     addView(_appearance_key);
     addView(_format_key);
+    addView(make_key(CUSTOM_FORMAT_KEY, 1.3f));
+  }
+
+  /** Custom selections, formats and fonts, from their modules. */
+  void load_custom()
+  {
+    ModuleStore store = new ModuleStore(_prefs);
+    List<TextScope> scopes = new ArrayList<TextScope>(TextScope.BUILTIN);
+    for (Module m : store.list("selection"))
+    {
+      TextScope s = CustomTools.selection(m);
+      if (s != null)
+        scopes.add(s);
+    }
+    _scopes = scopes;
+    TextScope current = null;
+    for (TextScope s : scopes)
+      if (s.label.equals(_scope.label))
+        current = s;
+    _scope = (current == null) ? TextScope.WORD : current;
+    List<String[]> formats = new ArrayList<String[]>();
+    for (Module m : store.list("format"))
+    {
+      String[] f = CustomTools.format(m);
+      if (f != null)
+        formats.add(f);
+    }
+    _custom_formats = formats;
+    List<UnicodeStyles.Font> fonts = new ArrayList<UnicodeStyles.Font>();
+    for (Module m : store.list("font"))
+    {
+      UnicodeStyles.Font f = CustomTools.font(m);
+      if (f != null)
+        fonts.add(f);
+    }
+    UnicodeStyles.set_fonts(fonts);
   }
 
   View make_key(ComfortKeySpec s, float width)
@@ -103,7 +166,7 @@ public class EditStrip extends LinearLayout
     View k = new ComfortKey(getContext(), s, this, Theme.getKeyFont(getContext()));
     int h = (int)(_config.studio.edit_strip_dp * density());
     LayoutParams p = new LayoutParams((int)(h * width), h - dp(4));
-    p.setMargins(dp(8), dp(2), dp(8), dp(2));
+    p.setMargins(dp(3), dp(2), dp(3), dp(2));
     k.setLayoutParams(p);
     return k;
   }
@@ -127,10 +190,23 @@ public class EditStrip extends LinearLayout
   {
     switch (action)
     {
-      case "scope_next": _scope = _scope.next(); refresh(_config); return;
-      case "scope_prev": _scope = _scope.prev(); refresh(_config); return;
-      case "appearance": appearance_menu(); return;
-      case "format": format_menu(); return;
+      case "scope":
+        _scope = TextScope.cycle(_scopes, _scope, _forward);
+        rebuild();
+        return;
+      case "direction":
+        _forward = !_forward;
+        rebuild();
+        return;
+      case "custom_selection":
+      case "custom_format":
+        _listener.open_studio();
+        return;
+      case "appearance": cycle_appearance(); return;
+      case "case": cycle_case(); return;
+      case "appearance_menu": appearance_menu(); return;
+      case "format": cycle_format(); return;
+      case "format_menu": format_menu(); return;
     }
     Field f = read();
     if (f == null)
@@ -140,7 +216,12 @@ public class EditStrip extends LinearLayout
     switch (action)
     {
       case "select":
-        r = _scope.unit_at(f.text, f.sel_start);
+        // First the unit at the cursor, then the next ones.
+        if (!has_selection(f))
+          r = _scope.unit_at(f.text, f.sel_start);
+        else
+          r = _forward ? _scope.next_unit(f.text, f.sel_end)
+            : _scope.prev_unit(f.text, f.sel_start);
         break;
       case "select_next":
         r = _scope.next_unit(f.text, f.sel_end);
@@ -166,16 +247,21 @@ public class EditStrip extends LinearLayout
   {
     switch (action)
     {
-      case "scope_next": return new ComfortKey.Label(_scope.label, false);
-      case "scope_prev": return new ComfortKey.Label("▾", false);
+      case "scope": return new ComfortKey.Label(_scope.label, false);
       case "select": return new ComfortKey.Label("[ ]", false);
       case "select_prev": return new ComfortKey.Label("‹", false);
       case "select_next": return new ComfortKey.Label("›", false);
       case "select_extend": return new ComfortKey.Label("+", false);
       case "select_shrink": return new ComfortKey.Label("−", false);
       case "deselect": return new ComfortKey.Label("×", false);
+      case "custom_selection": return new ComfortKey.Label("+[ ]", false);
+      case "direction": return new ComfortKey.Label(_forward ? "→↑" : "←↓", false);
       case "appearance": return new ComfortKey.Label("Aa", false);
+      case "case": return new ComfortKey.Label("aA", false);
+      case "appearance_menu": return new ComfortKey.Label("☰", false);
       case "format": return new ComfortKey.Label("¶", false);
+      case "format_menu": return new ComfortKey.Label("☰", false);
+      case "custom_format": return new ComfortKey.Label("+¶", false);
       default: return new ComfortKey.Label("?", false);
     }
   }
@@ -189,7 +275,31 @@ public class EditStrip extends LinearLayout
 
   public long repeat_interval() { return _config.longPressInterval; }
 
-  /* Appearance and Format */
+  /* Appearance */
+
+  void cycle_appearance()
+  {
+    final boolean forward = _forward;
+    transform_target(new Transform() {
+      public String apply(String s)
+      {
+        return UnicodeStyles.apply(s, UnicodeStyles.cycle(s, forward));
+      }
+    });
+  }
+
+  void cycle_case()
+  {
+    int n = UnicodeStyles.CASES.length;
+    if (_case < 0)
+      _case = _forward ? 0 : n - 1;
+    else
+      _case = (_case + (_forward ? 1 : n - 1)) % n;
+    final String c = UnicodeStyles.CASES[_case];
+    transform_target(new Transform() {
+      public String apply(String s) { return UnicodeStyles.change_case(s, c); }
+    });
+  }
 
   void appearance_menu()
   {
@@ -202,7 +312,7 @@ public class EditStrip extends LinearLayout
           public String apply(String s) { return UnicodeStyles.change_case(s, c); }
         }); }
       });
-    for (final String st : UnicodeStyles.STYLES)
+    for (final String st : UnicodeStyles.styles())
       add(m, UnicodeStyles.label(st), new Runnable() {
         public void run() { transform_target(new Transform() {
           public String apply(String s) { return UnicodeStyles.apply(s, st); }
@@ -222,11 +332,43 @@ public class EditStrip extends LinearLayout
     }
   }
 
+  /* Format */
+
+  TextFormats.Syntax syntax()
+  {
+    String app = _listener.app();
+    return TextFormats.for_app(app,
+        (app == null) ? null : _prefs.getString(KEY_SYNTAX_PREFIX + app, null));
+  }
+
+  List<String[]> formats()
+  {
+    return TextFormats.cycle_list(syntax(), _custom_formats);
+  }
+
+  void cycle_format()
+  {
+    List<String[]> fs = formats();
+    if (fs.isEmpty())
+    {
+      // No markup in this app: the unicode styles look formatted anywhere.
+      cycle_appearance();
+      return;
+    }
+    Field f = read();
+    if (f == null)
+      return;
+    int[] r = target(f);
+    if (r == null)
+      r = new int[]{ f.sel_start, f.sel_start };
+    TextFormats.Edit e = TextFormats.cycle(f.text, r, fs, _forward);
+    replace(f, e.start, e.end, e.text, e.sel_start, e.sel_end);
+  }
+
   void format_menu()
   {
     final String app = _listener.app();
-    final TextFormats.Syntax syntax = TextFormats.for_app(app,
-        (app == null) ? null : _prefs.getString(KEY_SYNTAX_PREFIX + app, null));
+    final TextFormats.Syntax syntax = syntax();
     PopupMenu p = new PopupMenu(getContext(), _format_key);
     Menu m = p.getMenu();
     SubMenu choose = m.addSubMenu("Syntax: " + syntax.name + " ▸");
@@ -240,15 +382,30 @@ public class EditStrip extends LinearLayout
         }
       });
     if (syntax.formats.isEmpty())
-      add(m, "No formatting in this app: use Aa", new Runnable() {
+      add(m, "No markup in this app: ¶ cycles Aa styles", new Runnable() {
         public void run() { appearance_menu(); }
       });
-    for (final java.util.Map.Entry<String, String[]> e : syntax.formats.entrySet())
-      add(m, e.getKey(), new Runnable() {
-        public void run() { format_target(e.getValue()); }
+    for (final String[] fm : TextFormats.cycle_list(syntax, _custom_formats))
+      add(m, fm[0], new Runnable() {
+        public void run() { format_target(new String[]{ fm[1], fm[2] }); }
       });
     p.show();
   }
+
+  void format_target(String[] markers)
+  {
+    Field f = read();
+    if (f == null)
+      return;
+    int[] r = target(f);
+    if (r == null)
+      // Nothing to wrap: insert the markers around the cursor.
+      r = new int[]{ f.sel_start, f.sel_start };
+    TextFormats.Edit e = TextFormats.toggle(f.text, r, markers);
+    replace(f, e.start, e.end, e.text, e.sel_start, e.sel_end);
+  }
+
+  /* Editing */
 
   interface Transform { String apply(String s); }
 
@@ -264,21 +421,6 @@ public class EditStrip extends LinearLayout
       return;
     String n = t.apply(f.text.substring(r[0], r[1]));
     replace(f, r[0], r[1], n, r[0], r[0] + n.length());
-  }
-
-  void format_target(String[] markers)
-  {
-    Field f = read();
-    if (f == null)
-      return;
-    int[] r = target(f);
-    if (r == null)
-    {
-      // Nothing to wrap: insert the markers around the cursor.
-      r = new int[]{ f.sel_start, f.sel_start };
-    }
-    TextFormats.Edit e = TextFormats.toggle(f.text, r, markers);
-    replace(f, e.start, e.end, e.text, e.sel_start, e.sel_end);
   }
 
   int[] target(Field f)

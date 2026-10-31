@@ -188,6 +188,7 @@ public class Keyboard2 extends InputMethodService
       }
       public int sel_start() { return _studio_sel_start; }
       public int sel_end() { return _studio_sel_end; }
+      public void open_studio() { start_activity(StudioActivity.class); }
     }, Config.globalPrefs());
     _keyboard_container_view.findViewById(R.id.corner_memory)
       .setOnClickListener(new View.OnClickListener() {

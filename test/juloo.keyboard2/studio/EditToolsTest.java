@@ -52,8 +52,83 @@ public class EditToolsTest
     assertEquals("One two. Three four?\nFive six", sub(t, TextScope.PARAGRAPH.unit_at(t, 3)));
     assertEquals("Seven.  Eight", sub(t, TextScope.PARAGRAPH.next_unit(t, 25)));
     assertEquals(t, sub(t, TextScope.ALL.unit_at(t, 40)));
-    assertEquals(TextScope.SENTENCE, TextScope.WORD.next());
-    assertEquals(TextScope.ALL, TextScope.WORD.prev());
+    assertEquals(TextScope.SENTENCE, TextScope.cycle(TextScope.BUILTIN, TextScope.WORD, true));
+    assertEquals(TextScope.ALL, TextScope.cycle(TextScope.BUILTIN, TextScope.WORD, false));
+  }
+
+  @Test
+  public void custom_selections()
+  {
+    String t = "call(a, b) then (c) and \"quoted text\" or \"two\"";
+    TextScope paren = TextScope.delimited("Parens", "(", ")");
+    assertEquals("a, b", sub(t, paren.unit_at(t, 6)));
+    assertEquals("c", sub(t, paren.next_unit(t, 10)));
+    assertNull(paren.unit_containing(t, 12));             // Between the pairs
+    assertEquals("a, b", sub(t, paren.prev_unit(t, 15)));
+    TextScope quotes = TextScope.delimited("Quotes", "\"", "\"");
+    assertEquals("quoted text", sub(t, quotes.unit_at(t, 27)));
+    assertNull(quotes.unit_containing(t, 38));            // " or " is between pairs
+    assertEquals("two", sub(t, quotes.next_unit(t, 37)));
+    TextScope tags = TextScope.pattern("Tags", "#\\w+");
+    String h = "hi #one and #two";
+    assertEquals("#one", sub(h, tags.unit_at(h, 4)));
+    assertEquals("#two", sub(h, tags.next_unit(h, 7)));
+    assertEquals("#one", sub(h, tags.prev_unit(h, 12)));
+    assertNull(TextScope.pattern("Bad", "(unclosed"));
+  }
+
+  @Test
+  public void format_cycle()
+  {
+    java.util.List<String[]> fs = TextFormats.cycle_list(TextFormats.syntax("Markdown"),
+        java.util.Arrays.asList(new String[][]{ { "Angles", "<<", ">>" } }));
+    assertEquals("Bold", fs.get(0)[0]);
+    assertEquals("Angles", fs.get(fs.size() - 1)[0]);
+    TextFormats.Edit e = TextFormats.cycle("a hi b", new int[]{ 2, 4 }, fs, true);
+    assertEquals("**hi**", e.text);
+    String t = "a **hi** b";
+    // Selection kept on the inner text: next format replaces bold by italic.
+    e = TextFormats.cycle(t, new int[]{ 4, 6 }, fs, true);
+    assertEquals(2, e.start);
+    assertEquals(8, e.end);
+    assertEquals("*hi*", e.text);
+    assertEquals("Bold", TextFormats.current_name(t, new int[]{ 4, 6 }, fs));
+    // Backward from bold: plain.
+    e = TextFormats.cycle(t, new int[]{ 4, 6 }, fs, false);
+    assertEquals("hi", e.text);
+    // After the last one: plain.
+    e = TextFormats.cycle("<<hi>>", new int[]{ 2, 4 }, fs, true);
+    assertEquals("hi", e.text);
+    // Backward from plain: the last one.
+    assertEquals("<<hi>>", TextFormats.cycle("hi", new int[]{ 0, 2 }, fs, false).text);
+  }
+
+  @Test
+  public void fonts_and_style_cycle()
+  {
+    UnicodeStyles.Font f = UnicodeStyles.font("Greekish",
+        "αβςδεφγηιξκλμνοπθρστυvωχψζ", "", "");
+    assertNotNull(f);
+    assertNull(UnicodeStyles.font("Short", "abc", "", ""));
+    assertNull(UnicodeStyles.font("Digits", "αβςδεφγηιξκλμνοπθρστυvωχψζ", "", "12"));
+    UnicodeStyles.set_fonts(java.util.Arrays.asList(f));
+    try
+    {
+      assertEquals("Greekish", UnicodeStyles.styles().get(UnicodeStyles.styles().size() - 1));
+      String g = UnicodeStyles.apply("Bad", "Greekish");
+      assertEquals("βαδ", g);
+      assertEquals("bad", UnicodeStyles.to_plain(g));
+      assertEquals("Greekish", UnicodeStyles.style_of(g));
+      // Cycling: plain -> bold -> italic ... -> zalgo -> Greekish -> plain.
+      assertEquals("bold", UnicodeStyles.cycle("abc", true));
+      assertEquals("Greekish", UnicodeStyles.cycle("abc", false));
+      assertEquals(UnicodeStyles.PLAIN, UnicodeStyles.cycle(g, true));
+      assertEquals("italic", UnicodeStyles.cycle(UnicodeStyles.apply("x", "bold"), true));
+    }
+    finally
+    {
+      UnicodeStyles.set_fonts(new java.util.ArrayList<UnicodeStyles.Font>());
+    }
   }
 
   @Test

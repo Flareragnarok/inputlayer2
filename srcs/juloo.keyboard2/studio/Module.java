@@ -9,7 +9,7 @@ import org.json.JSONObject;
     fields depend on the type. */
 public final class Module
 {
-  public static final String[] TYPES = { "changeheight", "comfortbar", "snippets", "theme" };
+  public static final String[] TYPES = { "changeheight", "comfortbar", "font", "format", "selection", "snippets", "theme" };
   /** Bigger files are refused on import. */
   public static final int MAX_JSON_LENGTH = 64 * 1024;
 

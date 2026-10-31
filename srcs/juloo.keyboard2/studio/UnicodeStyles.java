@@ -1,6 +1,9 @@
 package juloo.keyboard2.studio;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -105,6 +108,101 @@ public final class UnicodeStyles
           FROM.put(e.getValue(), e.getKey());
   }
 
+  /** A saved font (from a [font] module): the user's own letters for a-z,
+      optionally A-Z and 0-9. */
+  public static final class Font
+  {
+    public final String name;
+    final Map<Character, Integer> map = new HashMap<Character, Integer>();
+
+    Font(String n) { name = n; }
+  }
+
+  /** Saved fonts, after the built-in styles in the cycle. */
+  static List<Font> _fonts = new ArrayList<Font>();
+  static Map<Integer, Character> _fonts_from = new HashMap<Integer, Character>();
+
+  /** [null] unless [lower] has 26 characters, [upper] 26 or none and
+      [digits] 10 or none. Characters can be outside the BMP. */
+  public static Font font(String name, String lower, String upper, String digits)
+  {
+    int[] lo = code_points(lower);
+    int[] up = code_points(upper);
+    int[] di = code_points(digits);
+    if (name == null || name.trim().isEmpty() || lo.length != 26
+        || (up.length != 0 && up.length != 26) || (di.length != 0 && di.length != 10))
+      return null;
+    Font f = new Font(name.trim());
+    for (int i = 0; i < 26; i++)
+    {
+      f.map.put((char)('a' + i), lo[i]);
+      // Without capitals, capitals use the lowercase forms.
+      f.map.put((char)('A' + i), (up.length == 26) ? up[i] : lo[i]);
+    }
+    for (int i = 0; i < di.length; i++)
+      f.map.put((char)('0' + i), di[i]);
+    return f;
+  }
+
+  /** [String.codePoints] needs Android 7. */
+  static int[] code_points(String s)
+  {
+    if (s == null)
+      return new int[0];
+    int[] r = new int[s.codePointCount(0, s.length())];
+    for (int i = 0, k = 0; i < s.length(); k++)
+    {
+      r[k] = s.codePointAt(i);
+      i += Character.charCount(r[k]);
+    }
+    return r;
+  }
+
+  public static synchronized void set_fonts(List<Font> fonts)
+  {
+    Map<Integer, Character> from = new HashMap<Integer, Character>();
+    for (Font f : fonts)
+      for (Map.Entry<Character, Integer> e : f.map.entrySet())
+        if (e.getValue() != (int)e.getKey().charValue() && !from.containsKey(e.getValue()))
+          // Lowercase first: 'a' and 'A' may share a form.
+          from.put(e.getValue(), Character.toLowerCase(e.getKey()));
+    for (Font f : fonts)
+      for (Map.Entry<Character, Integer> e : f.map.entrySet())
+        if (Character.isLowerCase(e.getKey()))
+          from.put(e.getValue(), e.getKey());
+    _fonts = new ArrayList<Font>(fonts);
+    _fonts_from = from;
+  }
+
+  /** Built-in styles then saved fonts, in cycle order. */
+  public static List<String> styles()
+  {
+    List<String> l = new ArrayList<String>(Arrays.asList(STYLES));
+    for (Font f : _fonts)
+      l.add(f.name);
+    return l;
+  }
+
+  static Map<Character, Integer> table(String style)
+  {
+    Map<Character, Integer> t = TO.get(style);
+    if (t != null)
+      return t;
+    for (Font f : _fonts)
+      if (f.name.equals(style))
+        return f.map;
+    return null;
+  }
+
+  /** The style after (or before) the style of [s], wrapping around. */
+  public static String cycle(String s, boolean forward)
+  {
+    List<String> l = styles();
+    int i = l.indexOf(style_of(s));
+    int n = l.size();
+    return l.get(((i < 0 ? 0 : i) + (forward ? 1 : n - 1)) % n);
+  }
+
   /** Back to plain letters: styled letters mapped back, strike and
       underline marks and zalgo's piles of marks removed. Accents (a single
       combining mark) are kept. */
@@ -133,6 +231,8 @@ public final class UnicodeStyles
         continue;
       }
       Character p = FROM.get(cp);
+      if (p == null)
+        p = _fonts_from.get(cp);
       if (p != null)
         b.append(p.charValue());
       else
@@ -152,7 +252,7 @@ public final class UnicodeStyles
       case "underline": return combine(plain, UNDERLINE);
       case "zalgo": return zalgo(plain, new Random(plain.hashCode()));
     }
-    Map<Character, Integer> t = TO.get(style);
+    Map<Character, Integer> t = table(style);
     if (t == null)
       return s;
     // Small caps only have lowercase forms.
@@ -198,11 +298,11 @@ public final class UnicodeStyles
     {
       int cp = s.codePointAt(i);
       i += Character.charCount(cp);
-      if (!FROM.containsKey(cp))
+      if (!FROM.containsKey(cp) && !_fonts_from.containsKey(cp))
         continue;
-      for (String st : STYLES)
+      for (String st : styles())
       {
-        Map<Character, Integer> t = TO.get(st);
+        Map<Character, Integer> t = table(st);
         if (t != null && t.containsValue(cp))
           return st;
       }
