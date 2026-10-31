@@ -121,6 +121,8 @@ public class EditStrip extends LinearLayout
   boolean _forward = true;
   /** The same, for the layout: the arrow key's tap label. */
   public static boolean selection_forward = true;
+  /** Backspace removes after the cursor (switched with its up swipe). */
+  public static boolean forward_delete = false;
   /** Cycling direction (↑↓): up or down, for View and Verse. */
   boolean _up = true;
   /** Pinned selection (Sector up-left): its text and absolute start, kept

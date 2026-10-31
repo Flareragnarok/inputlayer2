@@ -152,20 +152,31 @@ public final class LayoutModifier
     });
   }
 
-  /** Studio: swiping down on backspace cuts the selection (it then shows in
-      the clipboard history), where the layout leaves that spot free. */
+  /** Studio: backspace. Swipe down cuts the selection (it then shows in the
+      clipboard history), swipe up switches between removing before the
+      cursor and forward removal (the tap and its label follow), which
+      retires the forward delete on its up-right swipe. */
   static KeyboardData backspace_cut(KeyboardData kw)
   {
     final KeyValue backspace = KeyValue.getKeyByName("backspace");
+    final KeyValue delete = KeyValue.getKeyByName("delete");
+    final KeyValue tap = juloo.keyboard2.studio.EditStrip.forward_delete ? delete : backspace;
     // Cuts the pinned selection when there is one.
     final KeyValue cut = KeyValue.getKeyByName("studio_cut");
+    final KeyValue toggle = KeyValue.getKeyByName("studio_backspace_toggle");
     return kw.mapKeys(new KeyboardData.MapKey() {
       public KeyboardData.Key apply(KeyboardData.Key k)
       {
-        if (k.keys[0] == null || !k.keys[0].equals(backspace)
-            || k.keys.length <= 8 || k.keys[8] != null)
+        if (k.keys[0] == null || !k.keys[0].equals(backspace) || k.keys.length <= 8)
           return k;
-        return k.withKeyValue(8, cut);
+        k = k.withKeyValue(0, tap);
+        if (k.keys[8] == null)
+          k = k.withKeyValue(8, cut);
+        if (k.keys[7] == null)
+          k = k.withKeyValue(7, toggle);
+        if (delete.equals(k.keys[2]))
+          k = k.withKeyValue(2, null);
+        return k;
       }
     });
   }

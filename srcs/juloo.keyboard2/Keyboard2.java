@@ -725,6 +725,11 @@ public class Keyboard2 extends InputMethodService
           _edit_strip.save_nest_config();
           break;
 
+        case STUDIO_BACKSPACE_TOGGLE:
+          EditStrip.forward_delete = !EditStrip.forward_delete;
+          _keyboard_layout_view.setKeyboard(current_layout());
+          break;
+
         case STUDIO_SECTOR_STEP:
           _edit_strip.sector_step();
           break;

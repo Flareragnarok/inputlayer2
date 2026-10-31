@@ -34,6 +34,8 @@ public final class KeyValue implements Comparable<KeyValue>
     STUDIO_CUT,
     /** Sector's step in the direction of its arrow. */
     STUDIO_SECTOR_STEP,
+    /** Backspace between removing before and after the cursor. */
+    STUDIO_BACKSPACE_TOGGLE,
   }
 
   // Must be evaluated in the reverse order of their values.
@@ -677,6 +679,7 @@ public final class KeyValue implements Comparable<KeyValue>
       case "studio_cut": return eventKey(0xE031, Event.STUDIO_CUT, 0);
       case "studio_sector_step": return eventKey("⇢", Event.STUDIO_SECTOR_STEP, FLAG_SMALLER_FONT);
       case "studio_sector_step_back": return eventKey("⇠", Event.STUDIO_SECTOR_STEP, FLAG_SMALLER_FONT);
+      case "studio_backspace_toggle": return eventKey("⇄", Event.STUDIO_BACKSPACE_TOGGLE, FLAG_SMALLER_FONT);
 
       /* Key events */
       case "esc": return keyeventKey("Esc", KeyEvent.KEYCODE_ESCAPE, FLAG_SMALLER_FONT);
