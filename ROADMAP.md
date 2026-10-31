@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-10-31 (build 17).
+Last updated: 2026-10-31 (build 18).
 
 ## Done
 
@@ -28,6 +28,7 @@ Last updated: 2026-10-31 (build 17).
 | 15 | Edit strip has seven keys and cycles on tap: Scope, Selector (unit at the cursor, then next or previous), +[ ] custom selection, →↑/←↓ direction, Aa (next unicode style; swipe up: case, down: list), ¶ (next format, plain in between; swipe down: list and syntax), +¶ custom format. Your own selections (delimiters or pattern), formats (before/after) and fonts (your letters) are `selection`, `format` and `font` modules, made in Studio → Edit strip tools, and join the cycles. |
 | 16 | Edit strip reordered into eight keys: ←→ (selection direction), Scope, Spec (defines selections), Sector (selector), View (appearance), Vers (defines formats and fonts), Vex (format), ↑↓ (cycling direction for View and Vex). |
 | 17 | Swipe down on backspace cuts the selection, which then shows in the clipboard history (every layout; none used that spot). |
+| 18 | Sector is built around taps: tap jumps to the next unit, swipe up adds one, down removes one, on the side the ←→ arrow points to (it only grew forward before). View and Vex: swipe left or right for the menu, down to restore (plain letters, format removed). |
 
 Infrastructure:
 

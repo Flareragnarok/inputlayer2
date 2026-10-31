@@ -24,13 +24,16 @@ import juloo.keyboard2.Theme;
     - ←→: selection direction, forward or backward, for Sector and Scope.
     - Scope: Word, Sentence, Line, Paragraph, All, then custom selections.
     - Spec: opens Studio to define selections.
-    - Sector (the selector): select the scope's unit at the cursor, then the
-      next (or previous) one; swipes grow, shrink or drop the selection.
+    - Sector (the selector): tap selects the scope's unit at the cursor,
+      then jumps to the next (or previous) one; swipe up adds a unit, down
+      removes one, on the side the ←→ arrow points to.
     - View (appearance): cycles unicode styles, then saved fonts; swipe up
-      cycles the case, down opens the list.
+      cycles the case, left or right opens the list, down restores plain
+      letters.
     - Vers: opens Studio to define formats and fonts.
     - Vex (format): cycles the app's markup formats, then custom formats;
-      swipe down opens the list and the syntax choice.
+      swipe left or right opens the list and the syntax choice, down
+      removes the format.
     - ↑↓: cycling direction, up or down, for View and Vex.
     Appearance and Format act on the selection, or on the scope's unit at
     the cursor, and select the result so that the next tap cycles on. */
@@ -54,16 +57,19 @@ public class EditStrip extends LinearLayout
   static final int CONTEXT_CHARS = 4000;
 
   static final ComfortKeySpec SCOPE_KEY = ComfortKeySpec.of("c", "scope");
+  /** Designed around taps: tap jumps to the next unit, up adds one, down
+      removes one, all in the ←→ direction. */
   static final ComfortKeySpec SELECTOR_KEY =
-    ComfortKeySpec.of("c", "select", "w", "select_prev", "e", "select_next",
-        "n", "select_extend", "s", "select_shrink", "sw", "deselect");
+    ComfortKeySpec.of("c", "select", "n", "select_extend", "s", "select_shrink");
   static final ComfortKeySpec CUSTOM_SELECTION_KEY = ComfortKeySpec.of("c", "custom_selection");
   static final ComfortKeySpec SELECTION_DIRECTION_KEY = ComfortKeySpec.of("c", "selection_direction");
   static final ComfortKeySpec CYCLE_DIRECTION_KEY = ComfortKeySpec.of("c", "cycle_direction");
   static final ComfortKeySpec APPEARANCE_KEY =
-    ComfortKeySpec.of("c", "appearance", "n", "case", "s", "appearance_menu");
+    ComfortKeySpec.of("c", "appearance", "n", "case", "w", "appearance_menu",
+        "e", "appearance_menu", "s", "appearance_restore");
   static final ComfortKeySpec FORMAT_KEY =
-    ComfortKeySpec.of("c", "format", "s", "format_menu");
+    ComfortKeySpec.of("c", "format", "w", "format_menu", "e", "format_menu",
+        "s", "format_restore");
   static final ComfortKeySpec CUSTOM_FORMAT_KEY = ComfortKeySpec.of("c", "custom_format");
 
   Listener _listener;
@@ -213,8 +219,10 @@ public class EditStrip extends LinearLayout
       case "appearance": cycle_appearance(); return;
       case "case": cycle_case(); return;
       case "appearance_menu": appearance_menu(); return;
+      case "appearance_restore": restore_appearance(); return;
       case "format": cycle_format(); return;
       case "format_menu": format_menu(); return;
+      case "format_restore": restore_format(); return;
     }
     Field f = read();
     if (f == null)
@@ -231,20 +239,12 @@ public class EditStrip extends LinearLayout
           r = _forward ? _scope.next_unit(f.text, f.sel_end)
             : _scope.prev_unit(f.text, f.sel_start);
         break;
-      case "select_next":
-        r = _scope.next_unit(f.text, f.sel_end);
-        break;
-      case "select_prev":
-        r = _scope.prev_unit(f.text, f.sel_start);
-        break;
       case "select_extend":
-        r = has_selection(f) ? _scope.extend(f.text, sel) : _scope.unit_at(f.text, f.sel_start);
+        r = has_selection(f) ? _scope.extend(f.text, sel, _forward)
+          : _scope.unit_at(f.text, f.sel_start);
         break;
       case "select_shrink":
-        r = _scope.shrink(f.text, sel);
-        break;
-      case "deselect":
-        r = new int[]{ f.sel_end, f.sel_end };
+        r = _scope.shrink(f.text, sel, _forward);
         break;
     }
     if (r != null)
@@ -257,17 +257,16 @@ public class EditStrip extends LinearLayout
     {
       case "scope": return new ComfortKey.Label(_scope.label, false);
       case "select": return new ComfortKey.Label("Sector", false);
-      case "select_prev": return new ComfortKey.Label("‹", false);
-      case "select_next": return new ComfortKey.Label("›", false);
       case "select_extend": return new ComfortKey.Label("+", false);
       case "select_shrink": return new ComfortKey.Label("−", false);
-      case "deselect": return new ComfortKey.Label("×", false);
       case "custom_selection": return new ComfortKey.Label("Spec", false);
       case "selection_direction": return new ComfortKey.Label(_forward ? "→" : "←", false);
       case "cycle_direction": return new ComfortKey.Label(_up ? "↑" : "↓", false);
       case "appearance": return new ComfortKey.Label("View", false);
       case "case": return new ComfortKey.Label("aA", false);
       case "appearance_menu": return new ComfortKey.Label("☰", false);
+      case "appearance_restore": return new ComfortKey.Label("⟲", false);
+      case "format_restore": return new ComfortKey.Label("⟲", false);
       case "format": return new ComfortKey.Label("Vex", false);
       case "format_menu": return new ComfortKey.Label("☰", false);
       case "custom_format": return new ComfortKey.Label("Vers", false);
@@ -307,6 +306,14 @@ public class EditStrip extends LinearLayout
     final String c = UnicodeStyles.CASES[_case];
     transform_target(new Transform() {
       public String apply(String s) { return UnicodeStyles.change_case(s, c); }
+    });
+  }
+
+  /** Back to plain letters; the case stays as it is. */
+  void restore_appearance()
+  {
+    transform_target(new Transform() {
+      public String apply(String s) { return UnicodeStyles.apply(s, UnicodeStyles.PLAIN); }
     });
   }
 
@@ -372,6 +379,19 @@ public class EditStrip extends LinearLayout
       r = new int[]{ f.sel_start, f.sel_start };
     TextFormats.Edit e = TextFormats.cycle(f.text, r, fs, _up);
     replace(f, e.start, e.end, e.text, e.sel_start, e.sel_end);
+  }
+
+  void restore_format()
+  {
+    Field f = read();
+    if (f == null)
+      return;
+    int[] r = target(f);
+    if (r == null)
+      return;
+    TextFormats.Edit e = TextFormats.unwrap(f.text, r, formats());
+    if (e != null)
+      replace(f, e.start, e.end, e.text, e.sel_start, e.sel_end);
   }
 
   void format_menu()

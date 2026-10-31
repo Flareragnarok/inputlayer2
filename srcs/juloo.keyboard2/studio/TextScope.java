@@ -72,16 +72,33 @@ public abstract class TextScope
     return null;
   }
 
-  /** [sel] grown to the end of the next unit. */
-  public int[] extend(String text, int[] sel)
+  /** [sel] grown to the end of the next unit, or to the start of the
+      previous one if not [forward]. */
+  public int[] extend(String text, int[] sel, boolean forward)
   {
+    if (!forward)
+    {
+      int[] p = prev_unit(text, sel[0]);
+      return (p == null) ? sel : new int[]{ p[0], sel[1] };
+    }
     int[] n = next_unit(text, sel[1]);
     return (n == null) ? sel : new int[]{ sel[0], n[1] };
   }
 
-  /** [sel] without its last unit, unchanged if it holds only one. */
-  public int[] shrink(String text, int[] sel)
+  /** [sel] without its last unit, or its first one if not [forward].
+      Unchanged if it holds only one. */
+  public int[] shrink(String text, int[] sel, boolean forward)
   {
+    if (!forward)
+    {
+      int[] first = next_unit(text, sel[0]);
+      if (first == null || first[1] >= sel[1])
+        return sel;
+      int[] second = next_unit(text, first[1]);
+      if (second == null || second[0] >= sel[1])
+        return sel;
+      return new int[]{ second[0], sel[1] };
+    }
     int[] last = prev_unit(text, sel[1]);
     if (last == null || last[0] <= sel[0])
       return sel;

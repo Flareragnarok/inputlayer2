@@ -22,14 +22,23 @@ public class EditToolsTest
     assertEquals("Hello", sub(t, w.prev_unit(t, 7)));
     assertNull(w.prev_unit(t, 0));
     int[] sel = w.unit_at(t, 8);
-    sel = w.extend(t, sel);
+    sel = w.extend(t, sel, true);
     assertEquals("wonderful world", sub(t, sel));
-    sel = w.extend(t, sel);
+    sel = w.extend(t, sel, true);
     assertEquals("wonderful world! It's", sub(t, sel));
-    sel = w.shrink(t, sel);
+    sel = w.shrink(t, sel, true);
     assertEquals("wonderful world", sub(t, sel));
-    sel = w.shrink(t, w.shrink(t, sel));
+    sel = w.shrink(t, w.shrink(t, sel, true), true);
     assertEquals("wonderful", sub(t, sel));               // Never below one unit
+    // Backward: grows and shrinks at the start.
+    sel = w.extend(t, sel, false);
+    assertEquals("Hello, wonderful", sub(t, sel));
+    sel = w.extend(t, w.extend(t, sel, true), false);      // Nothing before Hello
+    assertEquals("Hello, wonderful world", sub(t, sel));
+    sel = w.shrink(t, sel, false);
+    assertEquals("wonderful world", sub(t, sel));
+    sel = w.shrink(t, w.shrink(t, sel, false), false);
+    assertEquals("world", sub(t, sel));
   }
 
   @Test
@@ -99,6 +108,10 @@ public class EditToolsTest
     // After the last one: plain.
     e = TextFormats.cycle("<<hi>>", new int[]{ 2, 4 }, fs, true);
     assertEquals("hi", e.text);
+    // Restore removes the format, or does nothing.
+    assertEquals("hi", TextFormats.unwrap(t, new int[]{ 4, 6 }, fs).text);
+    assertEquals(2, TextFormats.unwrap(t, new int[]{ 2, 8 }, fs).start);
+    assertNull(TextFormats.unwrap("a hi b", new int[]{ 2, 4 }, fs));
     // Backward from plain: the last one.
     assertEquals("<<hi>>", TextFormats.cycle("hi", new int[]{ 0, 2 }, fs, false).text);
   }

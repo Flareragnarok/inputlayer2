@@ -220,6 +220,16 @@ public final class TextFormats
         outer[0] + o.length() + body.length());
   }
 
+  /** Remove the format wrapping [text][sel], [null] if it has none. */
+  public static Edit unwrap(String text, int[] sel, List<String[]> formats)
+  {
+    int[] outer = new int[2], inner = new int[2];
+    if (current(text, sel, formats, outer, inner) < 0)
+      return null;
+    String body = text.substring(inner[0], inner[1]);
+    return new Edit(outer[0], outer[1], body, outer[0], outer[0] + body.length());
+  }
+
   /** Name of the format wrapping [text][sel], [null] if none. */
   public static String current_name(String text, int[] sel, List<String[]> formats)
   {
