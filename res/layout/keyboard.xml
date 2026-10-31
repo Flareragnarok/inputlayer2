@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:hardwareAccelerated="false" android:orientation="vertical" android:background="?attr/colorKeyboard">
   <juloo.keyboard2.studio.ComfortBar android:id="@+id/comfort_bar" android:layout_width="match_parent" android:layout_height="26dp"/>
   <FrameLayout android:id="@+id/candidates_frame" android:layout_width="match_parent" android:layout_height="wrap_content">
-  <juloo.keyboard2.suggestions.CandidatesView android:id="@+id/candidates_view" style="@style/candidates_view">
+  <juloo.keyboard2.suggestions.CandidatesView android:id="@+id/candidates_view" style="@style/candidates_view" android:paddingStart="@dimen/studio_corner_icon_width">
     <TextView android:id="@+id/candidates_emoji" style="@style/candidates_emoji"/>
     <TextView android:id="@+id/candidates_left" style="@style/candidates_item"/>
     <TextView android:id="@+id/candidates_middle" style="@style/candidates_item"/>

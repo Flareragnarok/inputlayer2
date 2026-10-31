@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+  <dimen name="studio_corner_icon_width">34dp</dimen>
   <style name="studio_corner_icon">
-    <item name="android:layout_width">22dp</item>
-    <item name="android:layout_height">16dp</item>
+    <item name="android:layout_width">@dimen/studio_corner_icon_width</item>
+    <item name="android:layout_height">24dp</item>
     <item name="android:gravity">center</item>
-    <item name="android:textSize">11sp</item>
-    <item name="android:alpha">0.45</item>
+    <item name="android:textSize">17sp</item>
+    <item name="android:alpha">0.55</item>
     <item name="android:textColor">?attr/colorLabel</item>
   </style>
 </resources>
