@@ -130,6 +130,9 @@ public class EditStrip extends LinearLayout
   /** Selections include what surrounds a unit (trailing space,
       delimiters). Switched by swiping down on Sector. */
   boolean _inclusive = false;
+  /** Third selection mode (after exclusive and inclusive): steps remove
+      the unit at the end the arrow points to, until nothing is selected. */
+  boolean _deselect = false;
   /** Scope's nest: 0 for the built-in scopes, 1 for custom selections. */
   int _scope_nest = 0;
   /** Verse's nest, index into [UnicodeStyles.nests()], and the item last
@@ -222,7 +225,7 @@ public class EditStrip extends LinearLayout
     addView(_spec_key);
     View sector = make_key(SELECTOR_KEY, 1.5f);
     // The selection type sits at the bottom, by the down swipe switching it.
-    ((ComfortKey)sector).set_lines("Sector", _inclusive ? "incl" : "excl");
+    ((ComfortKey)sector).set_lines("Sector", _deselect ? "desel" : (_inclusive ? "incl" : "excl"));
     addView(sector);
     _format_key = make_key(FORMAT_KEY, 1.6f);
     ((ComfortKey)_format_key).set_lines(syntax().name,
@@ -438,9 +441,24 @@ public class EditStrip extends LinearLayout
           set_pin(null, 0);
         return;
       case "inclusive_toggle":
-        _inclusive = !_inclusive;
-        if (has_selection(f))
-          r = _inclusive ? _scope.inclusive(f.text, sel) : _scope.exclusive(f.text, sel);
+        // excl -> incl -> desel -> excl.
+        if (_deselect)
+        {
+          _deselect = false;
+          if (has_selection(f))
+            r = _scope.exclusive(f.text, sel);
+        }
+        else if (_inclusive)
+        {
+          _inclusive = false;
+          _deselect = true;
+        }
+        else
+        {
+          _inclusive = true;
+          if (has_selection(f))
+            r = _scope.inclusive(f.text, sel);
+        }
         rebuild();
         break;
     }
@@ -1297,6 +1315,8 @@ public class EditStrip extends LinearLayout
       to that unit. [null] when there is none. */
   int[] step(String text, int[] sel, int[] unit, boolean forward)
   {
+    if (_deselect)
+      return deselect_step(text, sel, forward);
     int[] n = forward ? _scope.next_unit(text, unit[1]) : _scope.prev_unit(text, unit[0]);
     if (n == null)
       return null;
@@ -1304,6 +1324,18 @@ public class EditStrip extends LinearLayout
       return n;
     n = _scope.inclusive(text, n);
     return new int[]{ Math.min(sel[0], n[0]), Math.max(sel[1], n[1]) };
+  }
+
+  /** Deselect mode: [sel] without its last unit (its first one if not
+      [forward]); with one unit left, nothing selected, the cursor where the
+      selection started (ended, going back). */
+  int[] deselect_step(String text, int[] sel, boolean forward)
+  {
+    int[] r = _scope.shrink(text, sel, forward);
+    if (r[0] != sel[0] || r[1] != sel[1])
+      return r;
+    int c = forward ? sel[0] : sel[1];
+    return new int[]{ c, c };
   }
 
   /** A unit as Sector selects it: exclusive, or inclusive. */

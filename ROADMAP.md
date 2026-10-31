@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 34).
+Last updated: 2026-11-01 (build 35).
 
 ## Done
 
@@ -45,6 +45,7 @@ Last updated: 2026-11-01 (build 34).
 | 32 | Typing in format applies Verse's look only to letters as they are typed, so changes made to single units stay when moving to the next. Spec records those changes as steps (scope, unit index, look or format) and replays them on the same units of another selection. |
 | 33 | Typing in format starts with Scope ↓ and is pushed with Scope ↑ (no longer ended by typing a space). Scope shows "Scope" over the current scope, like Sector (nests get a name once they have a use). Spec lights up and counts the recorded steps while typing in format. |
 | 34 | Scope lights up while typing in format (not Spec). In typing in format: Spec tap applies the current Spec to the typed text, → picks one, ↓ saves what was recorded since Scope ↓ started it. |
+| 35 | Third Sector mode: Sector ↓ cycles excl → incl → desel. In desel, tap (in the arrow's direction) and ←/→ remove the unit at that end of the selection, until nothing is selected. |
 
 Infrastructure:
 

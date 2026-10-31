@@ -39,6 +39,8 @@ public class EditToolsTest
     assertEquals("wonderful world", sub(t, sel));
     sel = w.shrink(t, w.shrink(t, sel, false), false);
     assertEquals("world", sub(t, sel));
+    // Until one unit is left: shrink then keeps it (deselect mode clears it).
+    assertEquals("world", sub(t, w.shrink(t, sel, true)));
   }
 
   @Test
