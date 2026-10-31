@@ -17,7 +17,7 @@ android {
   compileSdkVersion = "android-36"
 
   defaultConfig {
-    applicationId = "juloo.keyboard2"
+    applicationId = "juloo.keyboard2.studio"
     minSdk = 21
     targetSdk { version = release(36) }
     versionCode = 56
@@ -74,7 +74,7 @@ android {
         "proguard-rules.pro")
       isShrinkResources = true
       isDebuggable = false
-      resValue("string", "app_name", "@string/app_name_release")
+      resValue("string", "app_name", "Unexpected Keyboard Studio")
       signingConfig = signingConfigs["release"]
     }
 
@@ -83,7 +83,7 @@ android {
       isShrinkResources = false
       isDebuggable = true
       applicationIdSuffix = ".debug"
-      resValue("string", "app_name", "@string/app_name_debug")
+      resValue("string", "app_name", "Unexpected Keyboard Studio (Debug)")
       resValue("bool", "debug_logs", "true")
       signingConfig = signingConfigs["debug"]
     }
