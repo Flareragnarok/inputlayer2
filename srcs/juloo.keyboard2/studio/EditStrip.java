@@ -26,10 +26,10 @@ import juloo.keyboard2.Theme;
     - ←→: selection direction, forward or backward, for Sector and Scope.
     - Scope, View, Verse are nested: the nest shows on top, its current item
       at the bottom; tap cycles the items, swipe right the nests, swipe left
-      lists everything, swipe down goes back to the default nest. Scope's up
-      types in View's format and Verse's look until the scope's separator
-      (e.g. a space for Word), previewed in the selection bar. View and
-      Verse: swipe up restores the text.
+      lists everything, swipe down goes back to the default nest (Scope's
+      down starts typing in View's format and Verse's look, previewed in the
+      selection bar, and its up pushes it). View and Verse: swipe up
+      restores the text. Scope and Sector show their name over their state.
     - The space bar's swipes keep nest configs: down resets every nest, left
       saves them as a config, up switches to the next saved config.
     - Scope: nests Text (Word, Sentence, Line, Paragraph, All) and Custom
@@ -77,7 +77,7 @@ public class EditStrip extends LinearLayout
       default nest. Scope's down instead starts typing in View's format. */
   static final ComfortKeySpec SCOPE_KEY =
     ComfortKeySpec.of("c", "scope", "e", "scope_nest", "w", "scope_menu",
-        "s", "scope_default", "n", "scope_type");
+        "s", "scope_type", "n", "scope_push");
   /** Designed around taps: tap jumps to the next unit in the ←→
       direction; left and right move the cursor by a unit without
       selecting; up selects the unit at the cursor or deselects; down
@@ -140,7 +140,7 @@ public class EditStrip extends LinearLayout
   String _view_item = null;
   /** View's syntax when the app is unknown and the user picked one. */
   String _syntax_override = null;
-  /** Typing in View's format and Verse's look (Scope swiped up). */
+  /** Typing in View's format and Verse's look (Scope swiped down). */
   boolean _typing = false;
   /** Closing marker the cursor sits before, "" for none. */
   String _typing_close = "";
@@ -211,18 +211,20 @@ public class EditStrip extends LinearLayout
     removeAllViews();
     addView(make_key(SELECTION_DIRECTION_KEY, 1.0f));
     _scope_key = make_key(SCOPE_KEY, 1.6f);
-    if (_typing)
-    {
-      // Typing in format: say so where it was started.
-      ((ComfortKey)_scope_key).set_lines("✎ typing", typing_summary());
-      ((ComfortKey)_scope_key)._highlight = true;
-    }
-    else
-      ((ComfortKey)_scope_key).set_lines(scope_nest_name(), _scope.label);
+    // Like Sector: its name on top, the scope at the bottom.
+    ((ComfortKey)_scope_key).set_lines("Scope", _scope.label);
     addView(_scope_key);
     _spec_key = make_key(CUSTOM_SELECTION_KEY, 1.4f);
     Module spec = current_macro("spec");
-    ((ComfortKey)_spec_key).set_lines("Spec", (spec == null) ? "—" : spec.name);
+    if (_typing)
+    {
+      // Spec tracks the typing in format it can save.
+      int n = _write_steps.length();
+      ((ComfortKey)_spec_key).set_lines("✎ Spec", n + (n == 1 ? " step" : " steps"));
+      ((ComfortKey)_spec_key)._highlight = true;
+    }
+    else
+      ((ComfortKey)_spec_key).set_lines("Spec", (spec == null) ? "—" : spec.name);
     addView(_spec_key);
     View sector = make_key(SELECTOR_KEY, 1.5f);
     // The selection type sits at the bottom, by the down swipe switching it.
@@ -326,10 +328,8 @@ public class EditStrip extends LinearLayout
       case "scope_type":
         start_typing();
         return;
-      case "scope_default":
-        _scope_nest = 0;
-        _scope = TextScope.WORD;
-        rebuild();
+      case "scope_push":
+        push_typing();
         return;
       case "appearance_default":
         // Plain letters, and the default nest.
@@ -465,7 +465,7 @@ public class EditStrip extends LinearLayout
       case "cursor_next": return new ComfortKey.Label("▸", false);
       case "select_toggle": return new ComfortKey.Label("[ ]", false);
       case "inclusive_toggle": return new ComfortKey.Label("⊂", false);
-      case "scope_default": return new ComfortKey.Label("⌂", false);
+      case "scope_push": return new ComfortKey.Label("⤒", false);
       case "custom_selection": case "custom_format": return new ComfortKey.Label("⚙", false);
       case "spec_apply": case "vert_apply": return new ComfortKey.Label("", false);
       case "spec_next": case "vert_next": return new ComfortKey.Label("›", false);
@@ -615,7 +615,7 @@ public class EditStrip extends LinearLayout
         + verse_nest()[0]);
   }
 
-  /* Typing in View's format and Verse's look (Scope swiped up) */
+  /* Typing in View's format and Verse's look (Scope down, pushed with Scope up) */
 
   /** The format View last applied, [null] when it shows plain. */
   String[] view_format()
@@ -629,9 +629,9 @@ public class EditStrip extends LinearLayout
   }
 
   /** Type in View's format (its markers around the text) and Verse's look
-      (applied to all of it) until the scope's separator, typed at the end,
-      e.g. a space for Word. With a selection, the selection is the text:
-      it gets the format and look at once, and typing goes on inside it. */
+      (applied to the letters typed) until Scope ↑ pushes it. With a
+      selection, the selection is the text: it gets the format and look at
+      once, and typing goes on inside it. */
   void start_typing()
   {
     // What View and Verse show: their last item, or the one a tap applies.
@@ -678,7 +678,7 @@ public class EditStrip extends LinearLayout
     }
     catch (Exception _e) {}
     rebuild();
-    toast("Typing in " + typing_summary() + " until " + separator_name() + " at the end");
+    toast("Typing in " + typing_summary() + ": Scope ↑ pushes it");
   }
 
   /** E.g. "Bold · 𝐛𝐨𝐥𝐝", "plain" when neither applies anything. */
@@ -692,18 +692,6 @@ public class EditStrip extends LinearLayout
     return (f != null) ? f : (v != null ? v : "plain");
   }
 
-  /** What ends typing in format, for the scope. */
-  String separator_name()
-  {
-    if (_scope == TextScope.ALL)
-      return "moving the cursor away";
-    if (_scope == TextScope.LINE || _scope == TextScope.PARAGRAPH)
-      return "a new line";
-    if (_scope == TextScope.SENTENCE)
-      return ". ! ? or a new line";
-    return "a space";
-  }
-
   /** The keys' result in letters (the look removed), for Vert. */
   void record_typed(String body)
   {
@@ -711,6 +699,19 @@ public class EditStrip extends LinearLayout
       return;
     try { _last_write.put("typed", UnicodeStyles.to_plain(body)); }
     catch (Exception _e) {}
+  }
+
+  /** Scope ↑: the typed text is done; the cursor goes after the closing
+      marker. */
+  void push_typing()
+  {
+    if (!_typing)
+      return;
+    InputConnection ic = _listener.input();
+    int after = _typing_end + _typing_close.length();
+    stop_typing();
+    if (ic != null)
+      ic.setSelection(after, after);
   }
 
   void stop_typing()
@@ -722,8 +723,7 @@ public class EditStrip extends LinearLayout
 
   /** The editor changed the text or moved the cursor. The typed text is
       [_typing_start, _typing_end): it grows by what was typed inside it,
-      gets Verse's look again, and ends when the scope's separator is typed
-      at its end or the cursor leaves it. */
+      whose letters get Verse's look; it ends when the cursor leaves it. */
   public void selection_updated(int start, int end)
   {
     if (!_typing)
@@ -756,23 +756,6 @@ public class EditStrip extends LinearLayout
       return;
     String body = f.text.substring(ts, te);
     String close = _typing_close;
-    // The separator, just typed at the end: the format closes before it.
-    if (!own && delta > 0 && !has_selection(f) && cursor == _typing_end && body.length() > 0
-        && is_separator(body.charAt(body.length() - 1)))
-    {
-      char sep = body.charAt(body.length() - 1);
-      // Already in Verse's look, letter by letter as typed.
-      String conv = body.substring(0, body.length() - 1);
-      record_typed(conv);
-      _typing = false;
-      f.ic.beginBatchEdit();
-      f.ic.setSelection(_typing_start, _typing_end + close.length());
-      f.ic.commitText(conv + close + sep, 1);
-      f.ic.endBatchEdit();
-      _listener.preview(null);
-      rebuild();
-      return;
-    }
     record_typed(body);
     _listener.preview(_typing_open + body + close);
     // Only the letters just typed get Verse's look: changes made to units
@@ -824,16 +807,7 @@ public class EditStrip extends LinearLayout
       : UnicodeStyles.apply(s, _typing_style);
   }
 
-  boolean is_separator(char c)
-  {
-    if (_scope == TextScope.ALL)
-      return false;
-    if (_scope == TextScope.LINE || _scope == TextScope.PARAGRAPH)
-      return c == '\n';
-    if (_scope == TextScope.SENTENCE)
-      return c == '.' || c == '!' || c == '?' || c == '\n';
-    return Character.isWhitespace(c);
-  }
+
 
   void toast(String msg)
   {

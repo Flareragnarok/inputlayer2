@@ -11,7 +11,7 @@ import android.widget.TextView;
 import juloo.keyboard2.Config;
 import juloo.keyboard2.R;
 
-/** The selection bar: while typing in format (Scope swiped up) it shows
+/** The selection bar: while typing in format (Scope swiped down) it shows
     what the typing produces, the format and look applied, as it goes to the
     cursor. Only shown then (or while the height key places it). It can
     also show a pinned selection: tap selects it again, ✕ drops it. */
@@ -100,7 +100,7 @@ public class SelectionBar extends LinearLayout
     else if (_pinned != null)
       _text.setText("📌 " + _pinned.replace('\n', ' '));
     else
-      _text.setText("Selection bar: shows what typing in format (Scope ↑) makes");
+      _text.setText("Selection bar: shows what typing in format (Scope ↓) makes");
   }
 
   int dp(int v)
