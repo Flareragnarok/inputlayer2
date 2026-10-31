@@ -70,11 +70,13 @@ public class EditStrip extends LinearLayout
       default nest. Scope's down instead starts typing in View's format. */
   static final ComfortKeySpec SCOPE_KEY =
     ComfortKeySpec.of("c", "scope", "e", "scope_nest", "w", "scope_menu", "s", "scope_type");
-  /** Designed around taps: tap jumps to the next unit, up adds one, down
-      removes one, all in the ←→ direction. */
+  /** Designed around taps: tap jumps to the next unit in the ←→
+      direction; left and right move the cursor by a unit without
+      selecting; up selects the unit at the cursor or deselects; down
+      switches between exclusive and inclusive selection. */
   static final ComfortKeySpec SELECTOR_KEY =
-    ComfortKeySpec.of("c", "select", "n", "select_extend", "s", "select_shrink",
-        "e", "deselect");
+    ComfortKeySpec.of("c", "select", "w", "cursor_prev", "e", "cursor_next",
+        "n", "select_toggle", "s", "inclusive_toggle");
   static final ComfortKeySpec CUSTOM_SELECTION_KEY = ComfortKeySpec.of("c", "custom_selection");
   static final ComfortKeySpec SELECTION_DIRECTION_KEY = ComfortKeySpec.of("c", "selection_direction");
   static final ComfortKeySpec CYCLE_DIRECTION_KEY = ComfortKeySpec.of("c", "cycle_direction");
@@ -102,6 +104,9 @@ public class EditStrip extends LinearLayout
   boolean _forward = true;
   /** Cycling direction (↑↓): up or down, for View and Verse. */
   boolean _up = true;
+  /** Selections include what surrounds a unit (trailing space,
+      delimiters). Switched by swiping down on Sector. */
+  boolean _inclusive = false;
   /** Scope's nest: 0 for the built-in scopes, 1 for custom selections. */
   int _scope_nest = 0;
   /** Verse's nest, index into [UnicodeStyles.nests()], and the item last
@@ -112,9 +117,15 @@ public class EditStrip extends LinearLayout
   String _view_item = null;
   /** View's syntax when the app is unknown and the user picked one. */
   String _syntax_override = null;
-  /** Typing in View's format (Scope swiped down): the closing marker the
-      cursor sits before, [null] when not typing in a format. */
-  String _typing_close = null;
+  /** Typing in View's format and Verse's look (Scope swiped down). */
+  boolean _typing = false;
+  /** Closing marker the cursor sits before, "" for none. */
+  String _typing_close = "";
+  /** Absolute start of the typed text, after the opening marker. */
+  int _typing_start = 0;
+  /** Verse's item applied to the typed text, [null] for none. */
+  String _typing_style = null;
+  boolean _typing_case = false;
   View _scope_key;
   View _appearance_key;
   View _format_key;
@@ -160,14 +171,17 @@ public class EditStrip extends LinearLayout
     ((ComfortKey)_scope_key).set_lines(scope_nest_name(), _scope.label);
     addView(_scope_key);
     addView(make_key(CUSTOM_SELECTION_KEY, 1.3f));
-    addView(make_key(SELECTOR_KEY, 1.5f));
+    View sector = make_key(SELECTOR_KEY, 1.5f);
+    ((ComfortKey)sector).set_lines(_inclusive ? "incl" : "excl", "Sector");
+    addView(sector);
     _format_key = make_key(FORMAT_KEY, 1.6f);
     ((ComfortKey)_format_key).set_lines(syntax().name,
-        (_typing_close != null ? "✎ " : "") + ((_view_item == null) ? "plain" : _view_item));
+        (_typing ? "✎ " : "") + ((_view_item == null) ? "plain" : _view_item));
     _appearance_key = make_key(APPEARANCE_KEY, 1.6f);
     String[] vn = verse_nest();
     ((ComfortKey)_appearance_key).set_lines(vn[0],
-        verse_item_label(vn, Math.max(0, _verse_item)));
+        ((_typing && _typing_style != null) ? "✎ " : "")
+        + verse_item_label(vn, Math.max(0, _verse_item)));
     // View formats, Vert defines formats and fonts, Verse changes the look.
     addView(_format_key);
     addView(make_key(CUSTOM_FORMAT_KEY, 1.3f));
@@ -295,6 +309,8 @@ public class EditStrip extends LinearLayout
       return;
     int[] sel = { f.sel_start, f.sel_end };
     int[] r = null;
+    // Jumps start from the unit itself, without what inclusive added.
+    int[] unit = _inclusive ? _scope.exclusive(f.text, sel) : sel;
     switch (action)
     {
       case "select":
@@ -302,18 +318,39 @@ public class EditStrip extends LinearLayout
         if (!has_selection(f))
           r = _scope.unit_at(f.text, f.sel_start);
         else
-          r = _forward ? _scope.next_unit(f.text, f.sel_end)
-            : _scope.prev_unit(f.text, f.sel_start);
+          r = _forward ? _scope.next_unit(f.text, unit[1])
+            : _scope.prev_unit(f.text, unit[0]);
+        r = adjust(f.text, r);
         break;
-      case "select_extend":
-        r = has_selection(f) ? _scope.extend(f.text, sel, _forward)
-          : _scope.unit_at(f.text, f.sel_start);
+      case "cursor_next":
+      {
+        int p = unit[1];
+        int[] u = _scope.unit_containing(f.text, p);
+        if (u == null || u[1] <= p)
+          u = _scope.next_unit(f.text, p);
+        int to = (u == null) ? f.text.length() : u[1];
+        r = new int[]{ to, to };
         break;
-      case "select_shrink":
-        r = _scope.shrink(f.text, sel, _forward);
+      }
+      case "cursor_prev":
+      {
+        int p = unit[0];
+        int[] u = (p > 0) ? _scope.unit_containing(f.text, p - 1) : null;
+        if (u == null || u[0] >= p)
+          u = _scope.prev_unit(f.text, p);
+        int to = (u == null) ? 0 : u[0];
+        r = new int[]{ to, to };
         break;
-      case "deselect":
-        r = new int[]{ f.sel_end, f.sel_end };
+      }
+      case "select_toggle":
+        r = has_selection(f) ? new int[]{ f.sel_end, f.sel_end }
+          : adjust(f.text, _scope.unit_at(f.text, f.sel_start));
+        break;
+      case "inclusive_toggle":
+        _inclusive = !_inclusive;
+        if (has_selection(f))
+          r = _inclusive ? _scope.inclusive(f.text, sel) : _scope.exclusive(f.text, sel);
+        rebuild();
         break;
     }
     if (r != null)
@@ -326,10 +363,11 @@ public class EditStrip extends LinearLayout
     {
       case "scope": return new ComfortKey.Label("Scope", false);
       case "scope_menu": return new ComfortKey.Label("☰", false);
-      case "deselect": return new ComfortKey.Label("×", false);
       case "select": return new ComfortKey.Label("Sector", false);
-      case "select_extend": return new ComfortKey.Label("+", false);
-      case "select_shrink": return new ComfortKey.Label("−", false);
+      case "cursor_prev": return new ComfortKey.Label("◂", false);
+      case "cursor_next": return new ComfortKey.Label("▸", false);
+      case "select_toggle": return new ComfortKey.Label("[ ]", false);
+      case "inclusive_toggle": return new ComfortKey.Label("⊂", false);
       case "custom_selection": return new ComfortKey.Label("Spec", false);
       case "selection_direction": return new ComfortKey.Label(_forward ? "→" : "←", false);
       case "cycle_direction": return new ComfortKey.Label(_up ? "↑" : "↓", false);
@@ -476,64 +514,118 @@ public class EditStrip extends LinearLayout
         + verse_nest()[0]);
   }
 
-  /* Typing in View's format (Scope swiped down) */
+  /* Typing in View's format and Verse's look (Scope swiped down) */
 
-  /** The format View last applied, or the first one of the syntax. */
+  /** The format View last applied, [null] when it shows plain. */
   String[] view_format()
   {
-    List<String[]> fs = formats();
-    for (String[] f : fs)
+    if (_view_item == null)
+      return null;
+    for (String[] f : formats())
       if (f[0].equals(_view_item))
         return f;
-    return fs.isEmpty() ? null : fs.get(0);
+    return null;
   }
 
-  /** Insert the format's markers and type between them, until the scope's
-      separator (a space for Word) closes them. */
+  /** Type in View's format (its markers around the text) and Verse's look
+      (applied to every letter typed) until the scope's separator, e.g. a
+      space for Word. */
   void start_typing()
   {
     String[] f = view_format();
-    InputConnection ic = _listener.input();
-    if (f == null || ic == null)
+    String style = null;
+    if (_verse_item >= 0)
     {
-      toast("No format in this app: pick a syntax on View");
+      String[] n = verse_nest();
+      style = n[1 + Math.min(_verse_item, n.length - 2)];
+      _typing_case = n[0].equals("Case");
+    }
+    InputConnection ic = _listener.input();
+    if (ic == null)
+      return;
+    if (f == null && style == null)
+    {
+      toast("Pick a format on View or a look on Verse first");
       return;
     }
-    _typing_close = null;
+    String open = (f == null) ? "" : f[1], close = (f == null) ? "" : f[2];
+    int pos = Math.min(_listener.sel_start(), _listener.sel_end());
     ic.beginBatchEdit();
-    ic.commitText(f[1], 1);
-    if (!f[2].isEmpty())
-      ic.commitText(f[2], 0); // Cursor before the closing marker.
+    if (!open.isEmpty())
+      ic.commitText(open, 1);
+    if (!close.isEmpty())
+      ic.commitText(close, 0); // Cursor before the closing marker.
     ic.endBatchEdit();
-    _view_item = f[0];
-    _typing_close = f[2].isEmpty() ? null : f[2];
+    _typing = true;
+    _typing_close = close;
+    _typing_start = pos + open.length();
+    _typing_style = style;
     rebuild();
   }
 
-  /** The editor moved the cursor: close the format when the scope's
-      separator was just typed, stop when the cursor left the markers. */
+  void stop_typing()
+  {
+    _typing = false;
+    rebuild();
+  }
+
+  /** The editor moved the cursor: apply Verse's look to what was typed,
+      close the format when the scope's separator was just typed, stop when
+      the cursor left the typed text. */
   public void selection_updated(int start, int end)
   {
-    String close = _typing_close;
-    InputConnection ic = (close == null) ? null : _listener.input();
-    if (ic == null)
+    if (!_typing)
       return;
-    CharSequence after = ic.getTextAfterCursor(close.length(), 0);
-    if (start != end || after == null || !after.toString().equals(close))
+    InputConnection ic = _listener.input();
+    if (ic == null || start != end || start < _typing_start)
     {
-      _typing_close = null;
-      rebuild();
+      stop_typing();
       return;
     }
-    CharSequence before = ic.getTextBeforeCursor(1, 0);
-    if (before == null || before.length() == 0 || !is_separator(before.charAt(0)))
+    String close = _typing_close;
+    if (!close.isEmpty())
+    {
+      CharSequence after = ic.getTextAfterCursor(close.length(), 0);
+      if (after == null || !after.toString().equals(close))
+      {
+        stop_typing();
+        return;
+      }
+    }
+    if (start == _typing_start)
       return;
-    _typing_close = null;
-    ic.beginBatchEdit();
-    ic.deleteSurroundingText(1, close.length());
-    ic.commitText(close + before, 1);
-    ic.endBatchEdit();
-    rebuild();
+    CharSequence cs = ic.getTextBeforeCursor(start - _typing_start, 0);
+    if (cs == null || cs.length() != start - _typing_start)
+      return;
+    String typed = cs.toString();
+    char last = typed.charAt(typed.length() - 1);
+    boolean sep = is_separator(last);
+    String body = sep ? typed.substring(0, typed.length() - 1) : typed;
+    String conv = convert(body);
+    if (sep)
+    {
+      _typing = false;
+      ic.beginBatchEdit();
+      ic.setSelection(_typing_start, start + close.length());
+      ic.commitText(conv + close + last, 1);
+      ic.endBatchEdit();
+      rebuild();
+    }
+    else if (!conv.equals(body))
+    {
+      ic.beginBatchEdit();
+      ic.setSelection(_typing_start, start);
+      ic.commitText(conv, 1);
+      ic.endBatchEdit();
+    }
+  }
+
+  String convert(String s)
+  {
+    if (_typing_style == null)
+      return s;
+    return _typing_case ? UnicodeStyles.change_case(s, _typing_style)
+      : UnicodeStyles.apply(s, _typing_style);
   }
 
   boolean is_separator(char c)
@@ -805,6 +897,12 @@ public class EditStrip extends LinearLayout
       return;
     String n = t.apply(f.text.substring(r[0], r[1]));
     replace(f, r[0], r[1], n, r[0], r[0] + n.length());
+  }
+
+  /** A unit as Sector selects it: exclusive, or inclusive. */
+  int[] adjust(String text, int[] r)
+  {
+    return (r == null || !_inclusive) ? r : _scope.inclusive(text, r);
   }
 
   int[] target(Field f)

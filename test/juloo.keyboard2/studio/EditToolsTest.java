@@ -42,6 +42,25 @@ public class EditToolsTest
   }
 
   @Test
+  public void inclusive_exclusive()
+  {
+    String t = "say \"hi there\" now\nnext";
+    TextScope w = TextScope.WORD;
+    int[] say = w.unit_at(t, 1);
+    assertEquals("say ", sub(t, w.inclusive(t, say)));
+    assertEquals("say", sub(t, w.exclusive(t, w.inclusive(t, say))));
+    int[] now = w.unit_at(t, 16);
+    assertEquals(" now", sub(t, w.inclusive(t, now)));      // End of line: space before
+    TextScope q = TextScope.delimited("Quotes", "\"", "\"");
+    int[] hi = q.unit_at(t, 6);
+    assertEquals("hi there", sub(t, hi));
+    assertEquals("\"hi there\"", sub(t, q.inclusive(t, hi)));
+    assertEquals("hi there", sub(t, q.exclusive(t, q.inclusive(t, hi))));
+    int[] line = TextScope.LINE.unit_at(t, 2);
+    assertEquals("say \"hi there\" now\n", sub(t, TextScope.LINE.inclusive(t, line)));
+  }
+
+  @Test
   public void styled_words()
   {
     String t = "a " + UnicodeStyles.apply("bold", "bold") + " z";

@@ -108,6 +108,34 @@ public abstract class TextScope
     return new int[]{ sel[0], before[1] };
   }
 
+  /** [r] with what surrounds a unit: the spaces after it (before it at the
+      end of a line), the line break for lines and paragraphs. Delimited
+      scopes add their delimiters instead. */
+  public int[] inclusive(String text, int[] r)
+  {
+    int s = r[0], e = r[1];
+    while (e < text.length() && (text.charAt(e) == ' ' || text.charAt(e) == '\t'))
+      e++;
+    if ((this == LINE || this == PARAGRAPH) && e < text.length() && text.charAt(e) == '\n')
+      e++;
+    if (e == r[1])
+      while (s > 0 && (text.charAt(s - 1) == ' ' || text.charAt(s - 1) == '\t'))
+        s--;
+    return new int[]{ s, e };
+  }
+
+  /** [r] without the spaces around it (without the delimiters, for
+      delimited scopes). */
+  public int[] exclusive(String text, int[] r)
+  {
+    int s = r[0], e = r[1];
+    while (s < e && Character.isWhitespace(text.charAt(s)))
+      s++;
+    while (e > s && Character.isWhitespace(text.charAt(e - 1)))
+      e--;
+    return new int[]{ s, e };
+  }
+
   /** The scope after [s] in [l] (or before, if not [forward]), wrapping
       around. The first one if [s] isn't in [l]. */
   public static TextScope cycle(List<TextScope> l, TextScope s, boolean forward)
@@ -169,6 +197,24 @@ public abstract class TextScope
       super(l);
       _open = open;
       _close = close;
+    }
+
+    @Override
+    public int[] inclusive(String text, int[] r)
+    {
+      if (r[0] >= _open.length() && text.startsWith(_open, r[0] - _open.length())
+          && text.startsWith(_close, r[1]))
+        return new int[]{ r[0] - _open.length(), r[1] + _close.length() };
+      return r;
+    }
+
+    @Override
+    public int[] exclusive(String text, int[] r)
+    {
+      if (r[1] - r[0] >= _open.length() + _close.length()
+          && text.startsWith(_open, r[0]) && text.startsWith(_close, r[1] - _close.length()))
+        return new int[]{ r[0] + _open.length(), r[1] - _close.length() };
+      return r;
     }
 
     int[] unit_containing(String text, int pos)
