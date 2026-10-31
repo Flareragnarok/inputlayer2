@@ -174,23 +174,25 @@ public final class UnicodeStyles
     _fonts_from = from;
   }
 
-  /** Verse's nests: { name, items... }. "Case" holds [CASES]; "Fonts" the
-      saved fonts, only when there are some. */
+  /** Verse's nests: { name, items... }. Every nest but "Case" (which holds
+      [CASES]) starts with [PLAIN]; "Fonts" holds the saved fonts, only when
+      there are some. */
   public static List<String[]> nests()
   {
     List<String[]> l = new ArrayList<String[]>();
     l.add(new String[]{ "Case", "upper", "lower", "title", "toggle" });
-    l.add(new String[]{ "Serif", "bold", "italic", "bold_italic" });
-    l.add(new String[]{ "Sans", "sans", "sans_bold", "sans_italic", "sans_bold_italic" });
-    l.add(new String[]{ "Type", "mono", "script", "bold_script", "fraktur", "bold_fraktur", "double" });
-    l.add(new String[]{ "Shapes", "small_caps", "circled", "fullwidth" });
-    l.add(new String[]{ "Marks", "strike", "underline", "zalgo" });
+    l.add(new String[]{ "Serif", PLAIN, "bold", "italic", "bold_italic" });
+    l.add(new String[]{ "Sans", PLAIN, "sans", "sans_bold", "sans_italic", "sans_bold_italic" });
+    l.add(new String[]{ "Type", PLAIN, "mono", "script", "bold_script", "fraktur", "bold_fraktur", "double" });
+    l.add(new String[]{ "Shapes", PLAIN, "small_caps", "circled", "fullwidth" });
+    l.add(new String[]{ "Marks", PLAIN, "strike", "underline", "zalgo" });
     if (!_fonts.isEmpty())
     {
-      String[] f = new String[_fonts.size() + 1];
+      String[] f = new String[_fonts.size() + 2];
       f[0] = "Fonts";
+      f[1] = PLAIN;
       for (int i = 0; i < _fonts.size(); i++)
-        f[i + 1] = _fonts.get(i).name;
+        f[i + 2] = _fonts.get(i).name;
       l.add(f);
     }
     return l;

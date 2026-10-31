@@ -204,6 +204,10 @@ public class EditToolsTest
           assertTrue(n[i], styles.contains(n[i]));
         seen.add(n[i]);
       }
+    // Every nest but Case starts with plain.
+    for (String[] n : UnicodeStyles.nests())
+      if (!n[0].equals("Case"))
+        assertEquals(n[0], UnicodeStyles.PLAIN, n[1]);
     // Every style but plain is in a nest.
     for (String st : UnicodeStyles.STYLES)
       if (!st.equals(UnicodeStyles.PLAIN))

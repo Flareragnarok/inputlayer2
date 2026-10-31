@@ -269,11 +269,15 @@ public class EditStrip extends LinearLayout
         start_typing();
         return;
       case "appearance_default":
+        // Plain letters, and the default nest.
+        restore_appearance();
         _verse_nest = DEFAULT_VERSE_NEST;
         _verse_item = -1;
         rebuild();
         return;
       case "format_default":
+        // Format removed, and the app's own syntax.
+        restore_format();
         default_syntax();
         rebuild();
         return;
@@ -322,23 +326,35 @@ public class EditStrip extends LinearLayout
             : _scope.prev_unit(f.text, unit[0]);
         r = adjust(f.text, r);
         break;
+      // With a selection, the selection moves by a unit, staying selected
+      // (and inclusive or exclusive). Without, the cursor moves.
       case "cursor_next":
       {
+        if (has_selection(f))
+        {
+          r = adjust(f.text, _scope.next_unit(f.text, unit[1]));
+          break;
+        }
         int p = unit[1];
         int[] u = _scope.unit_containing(f.text, p);
         if (u == null || u[1] <= p)
           u = _scope.next_unit(f.text, p);
-        int to = (u == null) ? f.text.length() : u[1];
+        int to = (u == null) ? f.text.length() : adjust(f.text, u)[1];
         r = new int[]{ to, to };
         break;
       }
       case "cursor_prev":
       {
+        if (has_selection(f))
+        {
+          r = adjust(f.text, _scope.prev_unit(f.text, unit[0]));
+          break;
+        }
         int p = unit[0];
         int[] u = (p > 0) ? _scope.unit_containing(f.text, p - 1) : null;
         if (u == null || u[0] >= p)
           u = _scope.prev_unit(f.text, p);
-        int to = (u == null) ? 0 : u[0];
+        int to = (u == null) ? 0 : adjust(f.text, u)[0];
         r = new int[]{ to, to };
         break;
       }
@@ -856,6 +872,9 @@ public class EditStrip extends LinearLayout
       add(m, "No markup in this app: View cycles Verse's styles", new Runnable() {
         public void run() { appearance_menu(); }
       });
+    add(m, "plain", new Runnable() {
+      public void run() { restore_format(); }
+    });
     for (final String[] fm : TextFormats.cycle_list(syntax, _custom_formats))
       add(m, fm[0], new Runnable() {
         public void run()
