@@ -20,18 +20,18 @@ import juloo.keyboard2.Config;
 import juloo.keyboard2.Keyboard2View;
 import juloo.keyboard2.Theme;
 
-/** The edit strip, under the space bar, seven keys:
+/** The edit strip, under the space bar, eight keys:
+    - ←→: selection direction, forward or backward, for Sector and Scope.
     - Scope: Word, Sentence, Line, Paragraph, All, then custom selections.
-    - Selector: select the scope's unit at the cursor, then the next (or
-      previous) one; swipes grow, shrink or drop the selection.
-    - Custom selection: opens Studio to define selections.
-    - Direction: forward/up or backward/down, for the selector and for
-      cycling the scope, appearance and format.
-    - Appearance: cycles unicode styles, then saved fonts; swipe up cycles
-      the case, down opens the list.
-    - Format: cycles the app's markup formats, then custom formats; swipe
-      down opens the list and the syntax choice.
-    - Custom format: opens Studio to define formats and fonts.
+    - Spec: opens Studio to define selections.
+    - Sector (the selector): select the scope's unit at the cursor, then the
+      next (or previous) one; swipes grow, shrink or drop the selection.
+    - View (appearance): cycles unicode styles, then saved fonts; swipe up
+      cycles the case, down opens the list.
+    - Vers: opens Studio to define formats and fonts.
+    - Vex (format): cycles the app's markup formats, then custom formats;
+      swipe down opens the list and the syntax choice.
+    - ↑↓: cycling direction, up or down, for View and Vex.
     Appearance and Format act on the selection, or on the scope's unit at
     the cursor, and select the result so that the next tap cycles on. */
 public class EditStrip extends LinearLayout
@@ -58,7 +58,8 @@ public class EditStrip extends LinearLayout
     ComfortKeySpec.of("c", "select", "w", "select_prev", "e", "select_next",
         "n", "select_extend", "s", "select_shrink", "sw", "deselect");
   static final ComfortKeySpec CUSTOM_SELECTION_KEY = ComfortKeySpec.of("c", "custom_selection");
-  static final ComfortKeySpec DIRECTION_KEY = ComfortKeySpec.of("c", "direction");
+  static final ComfortKeySpec SELECTION_DIRECTION_KEY = ComfortKeySpec.of("c", "selection_direction");
+  static final ComfortKeySpec CYCLE_DIRECTION_KEY = ComfortKeySpec.of("c", "cycle_direction");
   static final ComfortKeySpec APPEARANCE_KEY =
     ComfortKeySpec.of("c", "appearance", "n", "case", "s", "appearance_menu");
   static final ComfortKeySpec FORMAT_KEY =
@@ -73,8 +74,10 @@ public class EditStrip extends LinearLayout
   List<TextScope> _scopes = TextScope.BUILTIN;
   /** Custom formats, { name, open, close }. */
   List<String[]> _custom_formats = new ArrayList<String[]>();
-  /** Forward and up, or backward and down. */
+  /** Selection direction (←→): forward or backward, for Sector and Scope. */
   boolean _forward = true;
+  /** Cycling direction (↑↓): up or down, for View and Vex. */
+  boolean _up = true;
   int _case = -1;
   View _appearance_key;
   View _format_key;
@@ -115,15 +118,16 @@ public class EditStrip extends LinearLayout
   void rebuild()
   {
     removeAllViews();
-    addView(make_key(SCOPE_KEY, 1.9f));
-    addView(make_key(SELECTOR_KEY, 1.9f));
+    addView(make_key(SELECTION_DIRECTION_KEY, 1.0f));
+    addView(make_key(SCOPE_KEY, 1.8f));
     addView(make_key(CUSTOM_SELECTION_KEY, 1.3f));
-    addView(make_key(DIRECTION_KEY, 1.3f));
-    _appearance_key = make_key(APPEARANCE_KEY, 1.6f);
-    _format_key = make_key(FORMAT_KEY, 1.6f);
+    addView(make_key(SELECTOR_KEY, 1.5f));
+    _appearance_key = make_key(APPEARANCE_KEY, 1.3f);
+    _format_key = make_key(FORMAT_KEY, 1.3f);
     addView(_appearance_key);
-    addView(_format_key);
     addView(make_key(CUSTOM_FORMAT_KEY, 1.3f));
+    addView(_format_key);
+    addView(make_key(CYCLE_DIRECTION_KEY, 1.0f));
   }
 
   /** Custom selections, formats and fonts, from their modules. */
@@ -194,8 +198,12 @@ public class EditStrip extends LinearLayout
         _scope = TextScope.cycle(_scopes, _scope, _forward);
         rebuild();
         return;
-      case "direction":
+      case "selection_direction":
         _forward = !_forward;
+        rebuild();
+        return;
+      case "cycle_direction":
+        _up = !_up;
         rebuild();
         return;
       case "custom_selection":
@@ -248,20 +256,21 @@ public class EditStrip extends LinearLayout
     switch (action)
     {
       case "scope": return new ComfortKey.Label(_scope.label, false);
-      case "select": return new ComfortKey.Label("[ ]", false);
+      case "select": return new ComfortKey.Label("Sector", false);
       case "select_prev": return new ComfortKey.Label("‹", false);
       case "select_next": return new ComfortKey.Label("›", false);
       case "select_extend": return new ComfortKey.Label("+", false);
       case "select_shrink": return new ComfortKey.Label("−", false);
       case "deselect": return new ComfortKey.Label("×", false);
-      case "custom_selection": return new ComfortKey.Label("+[ ]", false);
-      case "direction": return new ComfortKey.Label(_forward ? "→↑" : "←↓", false);
-      case "appearance": return new ComfortKey.Label("Aa", false);
+      case "custom_selection": return new ComfortKey.Label("Spec", false);
+      case "selection_direction": return new ComfortKey.Label(_forward ? "→" : "←", false);
+      case "cycle_direction": return new ComfortKey.Label(_up ? "↑" : "↓", false);
+      case "appearance": return new ComfortKey.Label("View", false);
       case "case": return new ComfortKey.Label("aA", false);
       case "appearance_menu": return new ComfortKey.Label("☰", false);
-      case "format": return new ComfortKey.Label("¶", false);
+      case "format": return new ComfortKey.Label("Vex", false);
       case "format_menu": return new ComfortKey.Label("☰", false);
-      case "custom_format": return new ComfortKey.Label("+¶", false);
+      case "custom_format": return new ComfortKey.Label("Vers", false);
       default: return new ComfortKey.Label("?", false);
     }
   }
@@ -279,7 +288,7 @@ public class EditStrip extends LinearLayout
 
   void cycle_appearance()
   {
-    final boolean forward = _forward;
+    final boolean forward = _up;
     transform_target(new Transform() {
       public String apply(String s)
       {
@@ -292,9 +301,9 @@ public class EditStrip extends LinearLayout
   {
     int n = UnicodeStyles.CASES.length;
     if (_case < 0)
-      _case = _forward ? 0 : n - 1;
+      _case = _up ? 0 : n - 1;
     else
-      _case = (_case + (_forward ? 1 : n - 1)) % n;
+      _case = (_case + (_up ? 1 : n - 1)) % n;
     final String c = UnicodeStyles.CASES[_case];
     transform_target(new Transform() {
       public String apply(String s) { return UnicodeStyles.change_case(s, c); }
@@ -361,7 +370,7 @@ public class EditStrip extends LinearLayout
     int[] r = target(f);
     if (r == null)
       r = new int[]{ f.sel_start, f.sel_start };
-    TextFormats.Edit e = TextFormats.cycle(f.text, r, fs, _forward);
+    TextFormats.Edit e = TextFormats.cycle(f.text, r, fs, _up);
     replace(f, e.start, e.end, e.text, e.sel_start, e.sel_end);
   }
 
@@ -382,7 +391,7 @@ public class EditStrip extends LinearLayout
         }
       });
     if (syntax.formats.isEmpty())
-      add(m, "No markup in this app: ¶ cycles Aa styles", new Runnable() {
+      add(m, "No markup in this app: Vex cycles View's styles", new Runnable() {
         public void run() { appearance_menu(); }
       });
     for (final String[] fm : TextFormats.cycle_list(syntax, _custom_formats))
