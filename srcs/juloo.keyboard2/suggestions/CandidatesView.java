@@ -80,8 +80,8 @@ public class CandidatesView extends LinearLayout
         v.setVisibility(View.GONE);
       }
     }
-    int dict_vis =
-      (should_show_dictionary_switch && s.count == 0) ? View.VISIBLE : View.GONE;
+    // Studio: the language switch is on the comfort bar instead.
+    int dict_vis = View.GONE;
     _dictionary_switch_button.setVisibility(dict_vis);
     _lang_name_view.setVisibility(dict_vis);
   }

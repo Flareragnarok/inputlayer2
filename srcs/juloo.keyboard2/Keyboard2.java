@@ -176,6 +176,7 @@ public class Keyboard2 extends InputMethodService
         _keyeventhandler.key_up(kv, Pointers.Modifiers.EMPTY);
       }
       public void open_studio() { start_activity(StudioActivity.class); }
+      public void open_dictionaries() { launch_dictionaries_activity(); }
     }, Config.globalPrefs());
   }
 

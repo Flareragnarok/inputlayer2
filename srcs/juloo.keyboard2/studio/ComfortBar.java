@@ -26,11 +26,14 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     /** Act as if key [kv] was typed. */
     void comfort_key(KeyValue kv);
     void open_studio();
+    void open_dictionaries();
   }
 
   static final int HEIGHT_STEP = 2;
+  /** Tap: the suggestions' language, as upstream's button on the suggestion
+      bar did. Swipes: next keyboard layout, system keyboard picker. */
   static final ComfortKeySpec LANGUAGE_KEY =
-    ComfortKeySpec.of("c", "language", "sw", "keyboard_picker");
+    ComfortKeySpec.of("c", "dictionary", "sw", "layout", "se", "keyboard_picker");
 
   Listener _listener;
   SharedPreferences _prefs;
@@ -97,7 +100,16 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
 
   public void perform(String action)
   {
-    if (action.equals("height_up"))
+    if (action.equals("dictionary"))
+    {
+      // Without installed dictionaries there is no language to switch to;
+      // offer to download them.
+      if (_config.should_show_dictionary_switch)
+        _listener.comfort_key(KeyValue.getKeyByName("change_dictionary"));
+      else
+        _listener.open_dictionaries();
+    }
+    else if (action.equals("height_up"))
       change_height(HEIGHT_STEP);
     else if (action.equals("height_down"))
       change_height(-HEIGHT_STEP);
@@ -121,7 +133,8 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       case "height_up": return new ComfortKey.Label("+", false);
       case "height_down": return new ComfortKey.Label("−", false);
       case "studio": return new ComfortKey.Label("⚙", false);
-      case "language": return new ComfortKey.Label("🌐", false);
+      case "dictionary": return new ComfortKey.Label(language_label(), false);
+      case "layout": return new ComfortKey.Label("🌐", false);
       case "keyboard_picker": return new ComfortKey.Label("⌨", false);
     }
     if (action.startsWith("switch:"))
@@ -158,7 +171,7 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       case "copy": case "cut": case "paste": case "undo": case "redo":
         return action;
       case "select_all": return "selectAll";
-      case "language": return "switch_forward";
+      case "layout": return "switch_forward";
       case "keyboard_picker": return "change_method";
       case "clipboard": return "switch_clipboard";
       default: return null;
@@ -187,6 +200,15 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       case "theme": return "◐";
       default: return type;
     }
+  }
+
+  /** Short name of the suggestions' language, e.g. "EN". */
+  String language_label()
+  {
+    String n = _config.current_dictionary_name;
+    if (n == null || n.isEmpty())
+      return "🌐";
+    return n.substring(0, Math.min(2, n.length())).toUpperCase();
   }
 
   static String shorten(String s)

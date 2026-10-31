@@ -86,14 +86,14 @@ public class StudioConfigTest
   public void applet_keys_exist()
   {
     String[] actions = { "left", "right", "up", "down", "select_all", "copy",
-      "cut", "paste", "undo", "redo", "language", "keyboard_picker", "clipboard" };
+      "cut", "paste", "undo", "redo", "layout", "keyboard_picker", "clipboard" };
     for (String a : actions)
       assertNotNull(a, KeyValue.getKeyByName(ComfortBar.key_name(a)));
     for (ComfortKeySpec s : StudioConfig.DEFAULT_KEYS)
       for (String a : s.actions)
         if (a != null && ComfortBar.key_name(a) != null)
           assertNotNull(a, KeyValue.getKeyByName(ComfortBar.key_name(a)));
-    for (String name : new String[]{ "switch_forward", "change_method", "switch_clipboard" })
+    for (String name : new String[]{ "change_dictionary", "switch_forward", "change_method", "switch_clipboard" })
       assertNotNull(name, KeyValue.getKeyByName(name));
   }
 }
