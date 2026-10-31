@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 33).
+Last updated: 2026-11-01 (build 34).
 
 ## Done
 
@@ -44,6 +44,7 @@ Last updated: 2026-11-01 (build 33).
 | 31 | Macros. Spec ↓ saves the last typing in format's steps (View's format, Verse's look, not the typed text); Vert ↓ saves its key replacements (the typed letters, e.g. "→ oBAmA"). Tap Spec or Vert applies the current one to the typed text during typing in format, otherwise to the selection (or Scope's unit); → picks the next, ← lists them, ↑ opens the definitions in Studio. Saved as `spec` and `vert` modules. |
 | 32 | Typing in format applies Verse's look only to letters as they are typed, so changes made to single units stay when moving to the next. Spec records those changes as steps (scope, unit index, look or format) and replays them on the same units of another selection. |
 | 33 | Typing in format starts with Scope ↓ and is pushed with Scope ↑ (no longer ended by typing a space). Scope shows "Scope" over the current scope, like Sector (nests get a name once they have a use). Spec lights up and counts the recorded steps while typing in format. |
+| 34 | Scope lights up while typing in format (not Spec). In typing in format: Spec tap applies the current Spec to the typed text, → picks one, ↓ saves what was recorded since Scope ↓ started it. |
 
 Infrastructure:
 

@@ -211,20 +211,14 @@ public class EditStrip extends LinearLayout
     removeAllViews();
     addView(make_key(SELECTION_DIRECTION_KEY, 1.0f));
     _scope_key = make_key(SCOPE_KEY, 1.6f);
-    // Like Sector: its name on top, the scope at the bottom.
+    // Like Sector: its name on top, the scope at the bottom; lit while
+    // typing in format, which it starts and pushes.
     ((ComfortKey)_scope_key).set_lines("Scope", _scope.label);
+    ((ComfortKey)_scope_key)._highlight = _typing;
     addView(_scope_key);
     _spec_key = make_key(CUSTOM_SELECTION_KEY, 1.4f);
     Module spec = current_macro("spec");
-    if (_typing)
-    {
-      // Spec tracks the typing in format it can save.
-      int n = _write_steps.length();
-      ((ComfortKey)_spec_key).set_lines("✎ Spec", n + (n == 1 ? " step" : " steps"));
-      ((ComfortKey)_spec_key)._highlight = true;
-    }
-    else
-      ((ComfortKey)_spec_key).set_lines("Spec", (spec == null) ? "—" : spec.name);
+    ((ComfortKey)_spec_key).set_lines("Spec", (spec == null) ? "—" : spec.name);
     addView(_spec_key);
     View sector = make_key(SELECTOR_KEY, 1.5f);
     // The selection type sits at the bottom, by the down swipe switching it.
