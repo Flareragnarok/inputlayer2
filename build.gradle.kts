@@ -10,7 +10,15 @@ dependencies {
   implementation("androidx.window:window-java:1.4.0")
   implementation("androidx.core:core:1.16.0") // Version 1.17.0 available with sdk 36
   testImplementation("junit:junit:4.13.2")
+  // The android.jar used by unit tests only has stubs of org.json.
+  testImplementation("org.json:json:20240303")
 }
+
+// Studio builds are numbered by CI (STUDIO_BUILD = workflow run number) and
+// published as release "build-N" of STUDIO_UPDATE_REPO; the in-app updater
+// compares against that number. Local builds are build 0.
+val studioBuild = (System.getenv("STUDIO_BUILD") ?: "0").toInt()
+val studioUpdateRepo = System.getenv("STUDIO_UPDATE_REPO") ?: ""
 
 android {
   namespace = "juloo.keyboard2"
@@ -20,8 +28,11 @@ android {
     applicationId = "juloo.keyboard2.studio"
     minSdk = 21
     targetSdk { version = release(36) }
-    versionCode = 56
-    versionName = "2.1.0"
+    // Upstream 2.1.0 is versionCode 56.
+    versionCode = 56 * 10000 + studioBuild
+    versionName = "2.1.0-studio.$studioBuild"
+    resValue("integer", "studio_build", "$studioBuild")
+    resValue("string", "studio_update_repo", studioUpdateRepo)
   }
 
   sourceSets {

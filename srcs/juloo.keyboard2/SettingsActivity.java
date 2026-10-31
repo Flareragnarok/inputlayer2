@@ -1,11 +1,13 @@
 package juloo.keyboard2;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
+import juloo.keyboard2.studio.StudioActivity;
 
 public class SettingsActivity extends PreferenceActivity
 {
@@ -23,6 +25,7 @@ public class SettingsActivity extends PreferenceActivity
     }
     catch (Exception _e) { fallbackEncrypted(); return; }
     addPreferencesFromResource(R.xml.settings);
+    findPreference("studio").setIntent(new Intent(this, StudioActivity.class));
 
     boolean foldableDevice = FoldStateTracker.isFoldableDevice(this);
     findPreference("margin_bottom_portrait_unfolded").setEnabled(foldableDevice);

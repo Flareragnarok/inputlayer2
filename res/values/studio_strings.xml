@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Studio fork strings, English only (kept out of strings.xml so upstream
+     translation syncs don't touch them). -->
+<resources>
+  <string name="studio_title">Studio</string>
+  <string name="studio_summary">Updates and modules: bar and row heights, snippets, colours</string>
+  <string name="studio_updates">Updates</string>
+  <string name="studio_installed">Installed: %1$s (build %2$d)</string>
+  <string name="studio_installed_mark">(installed)</string>
+  <string name="studio_repo_hint">GitHub repository, owner/name</string>
+  <string name="studio_repo_invalid">Enter the repository as owner/name</string>
+  <string name="studio_check_updates">Check for updates</string>
+  <string name="studio_checking">Checking GitHub releases…</string>
+  <string name="studio_no_releases">No Studio builds published in this repository yet</string>
+  <string name="studio_update_available">Build %1$d is available</string>
+  <string name="studio_up_to_date">You have the newest build</string>
+  <string name="studio_install">Install (%1$d MB)</string>
+  <string name="studio_downloading">Downloading build %1$d…</string>
+  <string name="studio_allow_installs">Allow this app to install updates, then tap Install again</string>
+  <string name="studio_install_failed">Install failed: %1$s</string>
+  <string name="studio_modules">Modules</string>
+  <string name="studio_modules_desc">Modules are small JSON files of settings, never code. Import one, or create one by resizing the keyboard.</string>
+  <string name="studio_no_modules">None saved</string>
+  <string name="studio_use">Use</string>
+  <string name="studio_stop_using">Stop</string>
+  <string name="studio_export">Export</string>
+  <string name="studio_delete">Delete</string>
+  <string name="studio_import">Import module…</string>
+  <string name="studio_imported">Imported %1$s module \"%2$s\"</string>
+  <string name="studio_exported">Exported \"%1$s\"</string>
+  <string name="studio_import_failed">Not a Studio module: %1$s</string>
+</resources>
