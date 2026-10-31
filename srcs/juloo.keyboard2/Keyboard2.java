@@ -724,6 +724,10 @@ public class Keyboard2 extends InputMethodService
           _edit_strip.save_nest_config();
           break;
 
+        case STUDIO_SECTOR_STEP:
+          _edit_strip.sector_step();
+          break;
+
         case STUDIO_CUT:
           if (!_edit_strip.cut_pinned())
           {

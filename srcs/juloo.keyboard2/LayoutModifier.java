@@ -90,7 +90,7 @@ public final class LayoutModifier
     // Avoid adding extra keys to the number row
     if (added_number_row != null)
       kw = kw.insert_row(added_number_row, 0);
-    return scale_rows(space_nests(backspace_cut(kw)));
+    return scale_rows(arrows_and_shift(space_nests(backspace_cut(kw))));
   }
 
   /** Studio: the space bar's swipes drive the edit strip's nest configs:
@@ -110,6 +110,38 @@ public final class LayoutModifier
         if (k.keys[0] == null || !k.keys[0].equals(space) || k.keys.length <= 8)
           return k;
         return k.withKeyValue(8, reset).withKeyValue(7, next).withKeyValue(5, save);
+      }
+    });
+  }
+
+  /** Studio: the arrow key next to the space bar taps Sector's step (its
+      tap was a Compose placeholder, off unless enabled). Shift gets Caps
+      Lock on its up swipe and Compose on its right swipe, where free (or
+      holding a Caps Lock placeholder). */
+  static KeyboardData arrows_and_shift(KeyboardData kw)
+  {
+    final KeyValue up = KeyValue.getKeyByName("up");
+    final KeyValue down = KeyValue.getKeyByName("down");
+    final KeyValue shift = KeyValue.getKeyByName("shift");
+    final KeyValue capslock = KeyValue.getKeyByName("capslock");
+    final KeyValue compose = KeyValue.getKeyByName("compose");
+    final KeyValue step = KeyValue.getKeyByName("studio_sector_step");
+    return kw.mapKeys(new KeyboardData.MapKey() {
+      public KeyboardData.Key apply(KeyboardData.Key k)
+      {
+        if (k.keys.length <= 8)
+          return k;
+        if (up.equals(k.keys[7]) && down.equals(k.keys[8])
+            && (k.keys[0] == null || k.keys[0].equals(compose)))
+          return k.withKeyValue(0, step);
+        if (k.keys[0] != null && k.keys[0].equals(shift))
+        {
+          if (k.keys[7] == null)
+            k = k.withKeyValue(7, capslock);
+          if (k.keys[6] == null || k.keys[6].equals(capslock))
+            k = k.withKeyValue(6, compose);
+        }
+        return k;
       }
     });
   }

@@ -32,6 +32,8 @@ public final class KeyValue implements Comparable<KeyValue>
     STUDIO_NESTS_SAVE,
     /** Cut the pinned selection if there is one, the selection otherwise. */
     STUDIO_CUT,
+    /** Sector's step in the direction of its arrow. */
+    STUDIO_SECTOR_STEP,
   }
 
   // Must be evaluated in the reverse order of their values.
@@ -673,6 +675,7 @@ public final class KeyValue implements Comparable<KeyValue>
       case "studio_nests_next": return eventKey("⇵", Event.STUDIO_NESTS_NEXT, FLAG_SMALLER_FONT);
       case "studio_nests_save": return eventKey("✓", Event.STUDIO_NESTS_SAVE, FLAG_SMALLER_FONT);
       case "studio_cut": return eventKey(0xE031, Event.STUDIO_CUT, 0);
+      case "studio_sector_step": return eventKey("⇢", Event.STUDIO_SECTOR_STEP, FLAG_SMALLER_FONT);
 
       /* Key events */
       case "esc": return keyeventKey("Esc", KeyEvent.KEYCODE_ESCAPE, FLAG_SMALLER_FONT);

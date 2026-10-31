@@ -78,13 +78,13 @@ public class EditStrip extends LinearLayout
   static final ComfortKeySpec SCOPE_KEY =
     ComfortKeySpec.of("c", "scope", "e", "scope_nest", "w", "scope_menu",
         "s", "scope_type", "n", "scope_push");
-  /** Designed around taps: tap jumps to the next unit in the ←→
-      direction; left and right move the cursor by a unit without
-      selecting; up selects the unit at the cursor or deselects; down
-      switches between exclusive and inclusive selection. */
+  /** Tap cycles the selection mode (excl, incl, desel); the step in the
+      ←→ direction is on the arrow key's tap, next to the space bar; left
+      and right move the cursor (or the selection) by a unit; up selects
+      the unit at the cursor or deselects. */
   static final ComfortKeySpec SELECTOR_KEY =
-    ComfortKeySpec.of("c", "select", "w", "cursor_prev", "e", "cursor_next",
-        "n", "select_toggle", "s", "inclusive_toggle");
+    ComfortKeySpec.of("c", "inclusive_toggle", "w", "cursor_prev", "e", "cursor_next",
+        "n", "select_toggle");
   /** Spec and Vert: tap applies the current macro, right picks the next,
       left lists them, down saves the last typing in format as one (Spec:
       its steps, Vert: its key replacements), up opens the definitions. */
@@ -224,7 +224,7 @@ public class EditStrip extends LinearLayout
     ((ComfortKey)_spec_key).set_lines("Spec", (spec == null) ? "—" : spec.name);
     addView(_spec_key);
     View sector = make_key(SELECTOR_KEY, 1.5f);
-    // The selection type sits at the bottom, by the down swipe switching it.
+    // The selection mode at the bottom; tapping Sector switches it.
     ((ComfortKey)sector).set_lines("Sector", _deselect ? "desel" : (_inclusive ? "incl" : "excl"));
     addView(sector);
     _format_key = make_key(FORMAT_KEY, 1.6f);
@@ -1386,6 +1386,13 @@ public class EditStrip extends LinearLayout
     else
       ic.setSelection(f.base + sel_start, f.base + sel_end);
     ic.endBatchEdit();
+  }
+
+  /** The arrow key's tap: Sector's step in the ←→ direction (select the
+      unit at the cursor, then jump to, add or remove the next unit). */
+  public void sector_step()
+  {
+    perform("select");
   }
 
   /* Pinned selection */

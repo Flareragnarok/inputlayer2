@@ -389,13 +389,17 @@ public final class UnicodeStyles
     return b.toString();
   }
 
+  /** "tOGGLE cASE": each word's first letter small, the others capital
+      (flipping every letter gave UPPER for lowercase text). */
   static String toggle(String s)
   {
     StringBuilder b = new StringBuilder();
+    boolean start = true;
     for (int i = 0; i < s.length(); i++)
     {
       char c = s.charAt(i);
-      b.append(Character.isUpperCase(c) ? Character.toLowerCase(c) : Character.toUpperCase(c));
+      b.append(start ? Character.toLowerCase(c) : Character.toUpperCase(c));
+      start = Character.isWhitespace(c);
     }
     return b.toString();
   }
