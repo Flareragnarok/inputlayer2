@@ -13,18 +13,21 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/** Memory: items the user keeps (links, unicode combinations, snippets,
-    notes), sorted into categories. Stored in a file in the app's
+/** Memory: what the user keeps (links, unicode combinations, snippets, text,
+    and what is copied, see [ClipKeeper]), sorted into categories. Stored in a file in the app's
     credential-protected storage, so it is only readable once the phone is
     unlocked, unlike the keyboard's settings. */
 public final class MemoryStore
 {
+  /** Content types, in which copied things are kept automatically. */
+  public static final String TEXT = "Text";
   public static final String LINKS = "Links";
-  public static final String SYMBOLS = "Symbols";
   public static final String SNIPPETS = "Snippets";
-  public static final String NOTES = "Notes";
+  public static final String SYMBOLS = "Symbols";
+  public static final String IMAGES = "Images";
+  public static final String FILES = "Files";
   public static final List<String> DEFAULT_CATEGORIES =
-    Arrays.asList(LINKS, SYMBOLS, SNIPPETS, NOTES);
+    Arrays.asList(TEXT, LINKS, SNIPPETS, SYMBOLS, IMAGES, FILES);
   public static final int MAX_ITEMS = 500;
   public static final int MAX_CATEGORY_LENGTH = 24;
 
@@ -71,6 +74,15 @@ public final class MemoryStore
     return l;
   }
 
+  /** Whether [text] is kept, in any category. */
+  public boolean contains(String text)
+  {
+    for (Item it : _items)
+      if (it.text.equals(text))
+        return true;
+    return false;
+  }
+
   /** Store [text] in [category], moving it to the top if it is already
       there. Returns [false] if nothing was stored. */
   public boolean add(String text, String category)
@@ -114,7 +126,7 @@ public final class MemoryStore
     return true;
   }
 
-  /** Removing a category moves its items to Notes. Default categories stay. */
+  /** Removing a category moves its items to Text. Default categories stay. */
   public void remove_category(String name)
   {
     if (!_custom.remove(name))
@@ -123,7 +135,7 @@ public final class MemoryStore
     {
       Item it = _items.get(i);
       if (it.category.equals(name))
-        _items.set(i, new Item(it.text, NOTES, it.added));
+        _items.set(i, new Item(it.text, TEXT, it.added));
     }
     save();
   }
@@ -140,7 +152,7 @@ public final class MemoryStore
     for (int i = 0; i < t.length(); i++)
       if (Character.isLetterOrDigit(t.charAt(i)))
         letters = true;
-    return letters ? NOTES : SYMBOLS;
+    return letters ? TEXT : SYMBOLS;
   }
 
   void remove_matching(String text, String category)
@@ -176,9 +188,9 @@ public final class MemoryStore
           JSONObject o = is.optJSONObject(i);
           if (o == null || o.optString("text", "").isEmpty())
             continue;
-          String c = o.optString("category", NOTES);
+          String c = o.optString("category", TEXT);
           if (!categories().contains(c))
-            c = NOTES;
+            c = TEXT;
           _items.add(new Item(o.optString("text"), c, o.optLong("added", 0)));
         }
     }

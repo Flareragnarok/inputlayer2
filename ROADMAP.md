@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-10-31 (build 11).
+Last updated: 2026-10-31 (build 12).
 
 ## Done
 
@@ -22,6 +22,7 @@ Last updated: 2026-10-31 (build 11).
 | 9 | Comfort bar keys look like the keyboard's keys, smaller and a shade brighter. The height key selects a whole container (comfort bar, suggestions, keyboard) and highlights it; swiping up/down resizes it. |
 | 10 | Suggestion bar only shows suggestions: the language name, language button and "install a dictionary" message are gone from it (the comfort bar's language key shows `⬇ EN` when that dictionary is missing). Memory icon in the bottom-right corner (the pane itself comes next). |
 | 11 | Clipboard / Memory pane with tabs, replacing upstream's clipboard pane. Clipboard: history on the left third, pins on the right two thirds (existing pins kept), one tap to turn history on. Memory: items by category (Links, Symbols, Snippets, Notes and your own, managed in Studio). Long-press menus: pin, save to Memory (likely category first), copy to clipboard, move, delete. |
+| 12 | Memory keeps what is copied: every copied text is saved automatically under its content type (Text, Links, Snippets, Symbols; Images and Files come next), and stays after restarts. Skipped: copies from password fields and copies marked sensitive (Android 13+). Off switch in Studio. Clipboard tab filters by content type. The clipboard itself works as before. Source app is not used: Android doesn't tell which app a copy came from (decided 2026-10-31). |
 
 Infrastructure:
 
@@ -34,8 +35,9 @@ Infrastructure:
 
 ## Next
 
-1. **Files.** Copied files in the clipboard history, and adding files from
-   the phone's storage to Memory.
+1. **Images and files.** Copied images and files kept in Memory (Images,
+   Files) and shown in the Clipboard tab, pasted back into apps that accept
+   them; adding files from the phone's storage to Memory.
 2. **Adding Memory categories from the pane** (today: in Studio, since the
    keyboard can't easily type into its own dialogs).
 3. **Language and suggestions, rethought** (see Undecided).

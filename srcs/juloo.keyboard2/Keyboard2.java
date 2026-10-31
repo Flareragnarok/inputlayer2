@@ -33,6 +33,7 @@ import juloo.keyboard2.dict.DictionariesActivity;
 import juloo.keyboard2.dict.DictionarySwitcher;
 import juloo.keyboard2.dict.SupportedDictionaries;
 import juloo.keyboard2.prefs.LayoutsPreference;
+import juloo.keyboard2.studio.ClipKeeper;
 import juloo.keyboard2.studio.ComfortBar;
 import juloo.keyboard2.studio.MemoryPane;
 import juloo.keyboard2.studio.StudioActivity;
@@ -47,6 +48,7 @@ public class Keyboard2 extends InputMethodService
   private Keyboard2View _keyboard_layout_view;
   private CandidatesView _candidates_view;
   private ComfortBar _comfort_bar;
+  private ClipKeeper _clip_keeper;
   private Suggestions _suggestions;
   private KeyEventHandler _keyeventhandler;
   /** If not 'null', the layout to use instead of [_config.current_layout]. */
@@ -154,6 +156,7 @@ public class Keyboard2 extends InputMethodService
     refreshSubtypeImm();
     create_keyboard_view();
     ClipboardHistoryService.on_startup(this, _keyeventhandler);
+    _clip_keeper = ClipKeeper.start(this, prefs);
     _foldStateTracker.setChangedCallback(() -> { refresh_config(); });
   }
 
@@ -346,6 +349,7 @@ public class Keyboard2 extends InputMethodService
     _keyboard_layout_view.setKeyboard(current_layout());
     _keyeventhandler.started(_config);
     _comfort_bar.reset_target();
+    _clip_keeper.editor_started(info);
     setInputView(_keyboard_container_view);
     Logs.debug_startup_input_view(info, _config);
   }

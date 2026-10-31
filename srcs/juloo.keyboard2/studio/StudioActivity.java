@@ -16,6 +16,8 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -107,6 +109,18 @@ public class StudioActivity extends Activity
       public void onClick(View v) { start_import(); }
     }));
 
+    CheckBox autokeep = new CheckBox(this);
+    autokeep.setText(R.string.studio_autokeep);
+    autokeep.setChecked(_prefs.getBoolean(ClipKeeper.KEY_AUTOKEEP, true));
+    autokeep.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+      public void onCheckedChanged(CompoundButton b, boolean checked)
+      {
+        _prefs.edit().putBoolean(ClipKeeper.KEY_AUTOKEEP, checked).apply();
+      }
+    });
+    root.addView(heading(R.string.studio_memory));
+    root.addView(autokeep);
+    root.addView(text(getString(R.string.studio_autokeep_desc)));
     root.addView(heading(R.string.studio_memory_categories));
     root.addView(text(getString(R.string.studio_memory_categories_desc)));
     _categories = vertical();

@@ -44,6 +44,8 @@ public class MemoryPane extends LinearLayout
   boolean _memory_tab = false;
   /** Memory category shown, [null] for all. */
   String _category = null;
+  /** Content type shown in the Clipboard tab, [null] for all. */
+  String _clip_type = null;
   TextView _tab_clipboard;
   TextView _tab_memory;
   FrameLayout _content;
@@ -100,8 +102,32 @@ public class MemoryPane extends LinearLayout
 
   View clipboard_view()
   {
+    ClipboardHistoryService service = ClipboardHistoryService.get_service(getContext());
+    List<String> h = (service == null || !Config.globalConfig().clipboard_history_enabled) ?
+      new ArrayList<String>() : service.clear_expired_and_get_history();
+    List<String> ps = load_pins();
+    // Content types present, as filters.
+    List<String> types = new ArrayList<String>();
+    for (String t : MemoryStore.DEFAULT_CATEGORIES)
+      for (String s : concat(h, ps))
+        if (t.equals(MemoryStore.guess_category(s)) && !types.contains(t))
+          types.add(t);
+    if (_clip_type != null && !types.contains(_clip_type))
+      _clip_type = null;
+    LinearLayout v = new LinearLayout(getContext());
+    v.setOrientation(VERTICAL);
+    LinearLayout chips = new LinearLayout(getContext());
+    chips.setOrientation(HORIZONTAL);
+    chips.addView(type_chip(null, getContext().getString(R.string.studio_all)), chip_params());
+    for (String t : types)
+      chips.addView(type_chip(t, t), chip_params());
+    HorizontalScrollView hs = new HorizontalScrollView(getContext());
+    hs.setHorizontalScrollBarEnabled(false);
+    hs.addView(chips);
+    v.addView(hs, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(32)));
     LinearLayout row = new LinearLayout(getContext());
     row.setOrientation(HORIZONTAL);
+    v.addView(row, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
     LinearLayout history = column(R.string.studio_history);
     if (!Config.globalConfig().clipboard_history_enabled)
     {
@@ -117,23 +143,46 @@ public class MemoryPane extends LinearLayout
     }
     else
     {
-      ClipboardHistoryService s = ClipboardHistoryService.get_service(getContext());
-      List<String> h = (s == null) ? new ArrayList<String>() : s.clear_expired_and_get_history();
       // Newest first.
       for (int i = h.size() - 1; i >= 0; i--)
-        history.addView(history_item(h.get(i)));
+        if (shown(h.get(i)))
+          history.addView(history_item(h.get(i)));
       if (h.isEmpty())
         history.addView(hint(R.string.studio_history_empty));
     }
     LinearLayout pins = column(R.string.studio_pinned);
-    List<String> ps = load_pins();
     for (String p : ps)
-      pins.addView(pin_item(p));
+      if (shown(p))
+        pins.addView(pin_item(p));
     if (ps.isEmpty())
       pins.addView(hint(R.string.studio_pins_empty));
     row.addView(scroll(history), new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 34f));
     row.addView(scroll(pins), new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 66f));
-    return row;
+    return v;
+  }
+
+  /** Whether [text] passes the content type filter. */
+  boolean shown(String text)
+  {
+    return _clip_type == null || _clip_type.equals(MemoryStore.guess_category(text));
+  }
+
+  View type_chip(final String type, String label)
+  {
+    TextView t = chip(label);
+    boolean selected = (type == null) ? _clip_type == null : type.equals(_clip_type);
+    t.setBackgroundColor(selected ? _selected_color : _item_color);
+    t.setOnClickListener(new View.OnClickListener() {
+      public void onClick(View v) { _clip_type = type; show(false); }
+    });
+    return t;
+  }
+
+  static List<String> concat(List<String> a, List<String> b)
+  {
+    List<String> l = new ArrayList<String>(a);
+    l.addAll(b);
+    return l;
   }
 
   View history_item(final String text)

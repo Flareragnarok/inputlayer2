@@ -27,7 +27,7 @@ public class MemoryStoreTest
     assertTrue(s.add("https://example.org", MemoryStore.LINKS));
     assertTrue(s.add("¯\\_(ツ)_/¯", MemoryStore.SYMBOLS));
     assertTrue(s.add("https://example.org", MemoryStore.LINKS)); // Moves to top, no duplicate
-    assertFalse(s.add("", MemoryStore.NOTES));
+    assertFalse(s.add("", MemoryStore.TEXT));
     assertFalse(s.add("x", "No such category"));
     assertEquals(2, s.items(null).size());
     assertEquals("https://example.org", s.items(null).get(0).text);
@@ -50,8 +50,8 @@ public class MemoryStoreTest
     assertFalse(s.add_category("   "));
     assertFalse(s.add_category("a very very long category name"));
     s.add("ls -la", "Commands");
-    s.add("ls -la", MemoryStore.NOTES);
-    assertEquals(5, s.categories().size());
+    s.add("ls -la", MemoryStore.TEXT);
+    assertEquals(MemoryStore.DEFAULT_CATEGORIES.size() + 1, s.categories().size());
     MemoryStore.Item it = s.items("Commands").get(0);
     s.move(it, MemoryStore.SNIPPETS);
     assertEquals(1, s.items(MemoryStore.SNIPPETS).size());
@@ -59,8 +59,10 @@ public class MemoryStoreTest
     s.remove_category("Commands");
     s.remove_category(MemoryStore.LINKS); // Default categories stay
     assertEquals(MemoryStore.DEFAULT_CATEGORIES, s.categories());
-    assertEquals(2, s.items(MemoryStore.NOTES).size()); // git status moved to Notes
-    assertEquals(4, new MemoryStore(f).categories().size());
+    assertEquals(2, s.items(MemoryStore.TEXT).size()); // git status moved to Text
+    assertTrue(s.contains("git status"));
+    assertFalse(s.contains("git log"));
+    assertEquals(MemoryStore.DEFAULT_CATEGORIES.size(), new MemoryStore(f).categories().size());
   }
 
   @Test
@@ -70,8 +72,8 @@ public class MemoryStoreTest
     assertEquals(MemoryStore.LINKS, MemoryStore.guess_category(" www.example.org "));
     assertEquals(MemoryStore.SYMBOLS, MemoryStore.guess_category("→ ★ ✓"));
     assertEquals(MemoryStore.SNIPPETS, MemoryStore.guess_category("line one\nline two"));
-    assertEquals(MemoryStore.NOTES, MemoryStore.guess_category("call back at 5"));
-    assertEquals(MemoryStore.NOTES, MemoryStore.guess_category("see https://x.org later"));
+    assertEquals(MemoryStore.TEXT, MemoryStore.guess_category("call back at 5"));
+    assertEquals(MemoryStore.TEXT, MemoryStore.guess_category("see https://x.org later"));
   }
 
   @Test

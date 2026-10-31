@@ -19,10 +19,12 @@
   <string name="studio_copied">Copied to the clipboard</string>
   <string name="studio_move_to">Move to</string>
   <string name="studio_all">All</string>
-  <string name="studio_memory_empty">Nothing here yet. Long-press something in Clipboard to save it to Memory.</string>
+  <string name="studio_memory_empty">Nothing here yet. Copied text lands here automatically, or long-press something in Clipboard to save it.</string>
   <string name="studio_memory_locked">Memory is available once the phone is unlocked</string>
   <string name="studio_memory_categories">Memory categories</string>
-  <string name="studio_memory_categories_desc">Links, Symbols, Snippets and Notes are always there. Add your own:</string>
+  <string name="studio_memory_categories_desc">Text, Links, Snippets, Symbols, Images and Files are always there. Add your own:</string>
+  <string name="studio_autokeep">Keep everything copied in Memory</string>
+  <string name="studio_autokeep_desc">Copied text goes into Memory under its content type and stays after a restart. Never kept: copies made in password fields and copies an app marks as sensitive (password managers do, on Android 13 and newer).</string>
   <string name="studio_category_hint">New category</string>
   <string name="studio_category_add">Add</string>
   <string name="studio_category_invalid">Empty, too long or already there</string>
