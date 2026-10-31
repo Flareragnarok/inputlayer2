@@ -1,0 +1,114 @@
+package juloo.keyboard2.studio;
+
+import android.content.SharedPreferences;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+/** What the active modules change in the keyboard, read with the rest of the
+    config. Values that are not set keep upstream's behavior. */
+public final class StudioConfig
+{
+  public static final int KEYBOARD_PERCENT_MIN = 10;
+  public static final int KEYBOARD_PERCENT_MAX = 100;
+  public static final float DEFAULT_COMFORT_BAR_DP = 36f;
+
+  /** Applets shown when no [comfortbar] module is active. */
+  public static final List<String> DEFAULT_APPLETS = Arrays.asList(
+      "height", "switch:changeheight", "left", "right", "select_all", "copy",
+      "cut", "paste", "undo", "redo", "memory");
+
+  /** [-1] when not set. */
+  public int keyboard_percent_portrait = -1;
+  public int keyboard_percent_landscape = -1;
+  /** [NaN] when not set. */
+  public float bar_dp = Float.NaN;
+  public float margin_bottom_dp = Float.NaN;
+  public float comfort_bar_dp = DEFAULT_COMFORT_BAR_DP;
+  /** Height factor for each row, top to bottom. [null] when not set. */
+  public float[] rows = null;
+  public List<String> applets = DEFAULT_APPLETS;
+
+  public static StudioConfig load(SharedPreferences prefs)
+  {
+    ModuleStore store = new ModuleStore(prefs);
+    StudioConfig c = new StudioConfig();
+    Module h = store.active("changeheight");
+    if (h != null)
+      c.read_heights(h.json);
+    Module b = store.active("comfortbar");
+    if (b != null)
+      c.read_comfortbar(b.json);
+    return c;
+  }
+
+  void read_heights(JSONObject j)
+  {
+    JSONObject kp = j.optJSONObject("keyboard_percent");
+    if (kp != null)
+    {
+      keyboard_percent_portrait = clamp_percent(kp.optInt("portrait", -1));
+      keyboard_percent_landscape = clamp_percent(kp.optInt("landscape", -1));
+    }
+    bar_dp = clamp_dp(j.optDouble("bar_dp", Double.NaN), 12, 96);
+    margin_bottom_dp = clamp_dp(j.optDouble("margin_bottom_dp", Double.NaN), 0, 64);
+    // 0 hides the comfort bar.
+    float cb = clamp_dp(j.optDouble("comfort_bar_dp", Double.NaN), 0, 96);
+    if (!Float.isNaN(cb))
+      comfort_bar_dp = (cb < 12) ? 0 : cb;
+    JSONArray rs = j.optJSONArray("rows");
+    if (rs != null && rs.length() > 0)
+    {
+      rows = new float[rs.length()];
+      for (int i = 0; i < rows.length; i++)
+      {
+        float f = (float)rs.optDouble(i, 1.0);
+        rows[i] = Float.isNaN(f) ? 1f : Math.max(0.3f, Math.min(3f, f));
+      }
+    }
+  }
+
+  void read_comfortbar(JSONObject j)
+  {
+    JSONArray as = j.optJSONArray("applets");
+    if (as == null)
+      return;
+    List<String> l = new ArrayList<String>();
+    for (int i = 0; i < as.length(); i++)
+    {
+      String a = as.optString(i, "");
+      if (!a.isEmpty())
+        l.add(a);
+    }
+    applets = l;
+  }
+
+  /** [current] if the active module doesn't set it. */
+  public int keyboard_percent(boolean landscape, int current)
+  {
+    int p = landscape ? keyboard_percent_landscape : keyboard_percent_portrait;
+    return (p < 0) ? current : p;
+  }
+
+  /** Row height factor for row [i] of a layout with [n] rows. */
+  public float row_factor(int i)
+  {
+    return (rows == null || i >= rows.length) ? 1f : rows[i];
+  }
+
+  static int clamp_percent(int p)
+  {
+    if (p < 0)
+      return -1;
+    return Math.max(KEYBOARD_PERCENT_MIN, Math.min(KEYBOARD_PERCENT_MAX, p));
+  }
+
+  static float clamp_dp(double v, float min, float max)
+  {
+    if (Double.isNaN(v))
+      return Float.NaN;
+    return (float)Math.max(min, Math.min(max, v));
+  }
+}

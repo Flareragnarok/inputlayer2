@@ -2,6 +2,7 @@ package juloo.keyboard2;
 
 import android.content.res.Resources;
 import android.view.KeyEvent;
+import java.util.ArrayList;
 import java.util.TreeMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -89,7 +90,18 @@ public final class LayoutModifier
     // Avoid adding extra keys to the number row
     if (added_number_row != null)
       kw = kw.insert_row(added_number_row, 0);
-    return kw;
+    return scale_rows(kw);
+  }
+
+  /** Studio: row heights from the active [changeheight] module. */
+  static KeyboardData scale_rows(KeyboardData kw)
+  {
+    if (globalConfig.studio == null || globalConfig.studio.rows == null)
+      return kw;
+    ArrayList<KeyboardData.Row> rows = new ArrayList<KeyboardData.Row>();
+    for (int i = 0; i < kw.rows.size(); i++)
+      rows.add(kw.rows.get(i).scale_height(globalConfig.studio.row_factor(i)));
+    return kw.with_rows(rows);
   }
 
   /** Handle the numpad layout. The [main_kw] is used to adapt the numpad to

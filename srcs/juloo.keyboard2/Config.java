@@ -53,6 +53,10 @@ public final class Config
   public long longPressInterval;
   public boolean keyrepeat_enabled;
   public float margin_bottom;
+  /** Keyboard height setting in use, in % of the screen. */
+  public int keyboard_height_percent;
+  /** Changes made by the active Studio modules. */
+  public juloo.keyboard2.studio.StudioConfig studio;
   public int keyboard_rows_height_pixels;
   public int screenHeightPixels;
   public float horizontal_margin;
@@ -142,6 +146,9 @@ public final class Config
     {
       keyboardHeightPercent = _prefs.getInt(foldable_unfolded ? "keyboard_height_unfolded" : "keyboard_height", 35);
     }
+    studio = juloo.keyboard2.studio.StudioConfig.load(_prefs);
+    keyboardHeightPercent = studio.keyboard_percent(orientation_landscape, keyboardHeightPercent);
+    keyboard_height_percent = keyboardHeightPercent;
     layouts = LayoutsPreference.load_from_preferences(res, _prefs);
     inverse_numpad = _prefs.getString("numpad_layout", "default").equals("low_first");
     String number_row = _prefs.getString("number_row", "no_number_row");
@@ -164,6 +171,8 @@ public final class Config
     longPressInterval = _prefs.getInt("longpress_interval", 65);
     keyrepeat_enabled = _prefs.getBoolean("keyrepeat_enabled", true);
     margin_bottom = get_dip_pref_oriented(dm, "margin_bottom", 7, 3);
+    if (!Float.isNaN(studio.margin_bottom_dp))
+      margin_bottom = studio.margin_bottom_dp * dm.density;
     key_vertical_margin = get_dip_pref(dm, "key_vertical_margin", 1.5f) / 100;
     key_horizontal_margin = get_dip_pref(dm, "key_horizontal_margin", 2) / 100;
     // Label brightness is used as the alpha channel

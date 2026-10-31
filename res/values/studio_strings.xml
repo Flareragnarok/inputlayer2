@@ -3,6 +3,7 @@
      translation syncs don't touch them). -->
 <resources>
   <string name="studio_title">Studio</string>
+  <string name="studio_memory">Memory</string>
   <string name="studio_summary">Updates and modules: bar and row heights, snippets, colours</string>
   <string name="studio_updates">Updates</string>
   <string name="studio_installed">Installed: %1$s (build %2$d)</string>

@@ -31,6 +31,8 @@ import juloo.keyboard2.dict.DictionariesActivity;
 import juloo.keyboard2.dict.DictionarySwitcher;
 import juloo.keyboard2.dict.SupportedDictionaries;
 import juloo.keyboard2.prefs.LayoutsPreference;
+import juloo.keyboard2.studio.ComfortBar;
+import juloo.keyboard2.studio.StudioActivity;
 import juloo.keyboard2.suggestions.CandidatesView;
 import juloo.keyboard2.suggestions.Suggestions;
 
@@ -41,6 +43,7 @@ public class Keyboard2 extends InputMethodService
   private ViewGroup _keyboard_container_view;
   private Keyboard2View _keyboard_layout_view;
   private CandidatesView _candidates_view;
+  private ComfortBar _comfort_bar;
   private Suggestions _suggestions;
   private KeyEventHandler _keyeventhandler;
   /** If not 'null', the layout to use instead of [_config.current_layout]. */
@@ -163,6 +166,15 @@ public class Keyboard2 extends InputMethodService
     _keyboard_container_view = (ViewGroup)inflate_view(R.layout.keyboard);
     _keyboard_layout_view = (Keyboard2View)_keyboard_container_view.findViewById(R.id.keyboard_view);
     _candidates_view = (CandidatesView)_keyboard_container_view.findViewById(R.id.candidates_view);
+    _comfort_bar = (ComfortBar)_keyboard_container_view.findViewById(R.id.comfort_bar);
+    _comfort_bar.setup(new ComfortBar.Listener() {
+      public void comfort_key(KeyValue kv)
+      {
+        _keyeventhandler.key_down(kv, false);
+        _keyeventhandler.key_up(kv, Pointers.Modifiers.EMPTY);
+      }
+      public void open_studio() { start_activity(StudioActivity.class); }
+    }, Config.globalPrefs());
   }
 
   InputMethodManager get_imm()
@@ -221,6 +233,7 @@ public class Keyboard2 extends InputMethodService
       _keyeventhandler.dictionary_changed();
     }
     _candidates_view.setVisibility(should_show ? View.VISIBLE : View.GONE);
+    _comfort_bar.refresh(_config);
   }
 
   /** Might re-create the keyboard view. [_keyboard_layout_view.setKeyboard()] and

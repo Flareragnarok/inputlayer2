@@ -71,6 +71,13 @@ public final class ModuleStore
   /** Add [m], replacing a module of the same type and name. */
   public void save(Module m)
   {
+    save(m, false);
+  }
+
+  /** Like [save], and make [m] the active module of its type if [activate],
+      in a single preference change. */
+  public void save(Module m, boolean activate)
+  {
     JSONObject all = load();
     try
     {
@@ -83,7 +90,11 @@ public final class ModuleStore
       of_type.put(m.name, m.json);
     }
     catch (JSONException _e) { return; }
-    _prefs.edit().putString(KEY_MODULES, all.toString()).apply();
+    SharedPreferences.Editor e = _prefs.edit();
+    e.putString(KEY_MODULES, all.toString());
+    if (activate)
+      e.putString(active_key(m.type), m.name);
+    e.apply();
   }
 
   public void delete(String type, String name)

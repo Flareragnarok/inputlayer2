@@ -353,6 +353,12 @@ public final class KeyboardData
 
     /** Copy the row with the keys changed. The list [keys] is not copied and
         should be immutable. */
+    /** Studio: the same row, [f] times as high. */
+    public Row scale_height(float f)
+    {
+      return (f == 1f) ? this : new Row(keys, height * f, shift);
+    }
+
     public Row with_keys(List<Key> keys)
     {
       return new Row(keys, height, shift);
