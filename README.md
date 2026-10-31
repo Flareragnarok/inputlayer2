@@ -1,3 +1,23 @@
+# Input Layer
+
+A fork of [Unexpected Keyboard](https://github.com/Julow/Unexpected-Keyboard)
+(GPL-3.0, by Jules Aguillon and contributors) with:
+
+- a Studio screen (Settings → Studio) for modules: small JSON files of
+  settings, never code, that can be imported and exported
+- resizable suggestion bar and key rows, saved as `changeheight` modules
+- pinned snippets and custom colours (in progress)
+- in-app updates from this repository's GitHub releases
+
+Builds: every push to the `studio` branch publishes a release `build-N`.
+Install the APK from
+[the latest release](https://github.com/Flareragnarok/input-layer/releases/latest)
+once; after that, Settings → Studio → Check for updates installs new builds.
+
+The upstream README follows.
+
+---
+
 # Unexpected Keyboard [<img src="https://hosted.weblate.org/widget/unexpected-keyboard/svg-badge.svg" alt="État de la traduction" />](https://hosted.weblate.org/engage/unexpected-keyboard/)
 
 ---

@@ -43,8 +43,8 @@ public class UpdaterTest
     assertEquals(-1, Updater.build_of_tag("build-x"));
     assertEquals(-1, Updater.build_of_tag("v2.1.0"));
     assertEquals(-1, Updater.build_of_tag(null));
-    assertTrue(Updater.is_valid_repo("owner/keyboard-colours"));
-    assertFalse(Updater.is_valid_repo("keyboard-colours"));
+    assertTrue(Updater.is_valid_repo("owner/input-layer"));
+    assertFalse(Updater.is_valid_repo("input-layer"));
     assertFalse(Updater.is_valid_repo("owner/repo/../x"));
     assertFalse(Updater.is_valid_repo("https://github.com/owner/repo"));
   }

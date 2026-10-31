@@ -25,12 +25,12 @@ android {
   compileSdkVersion = "android-36"
 
   defaultConfig {
-    applicationId = "juloo.keyboard2.studio"
+    applicationId = "io.github.flareragnarok.inputlayer"
     minSdk = 21
     targetSdk { version = release(36) }
     // Upstream 2.1.0 is versionCode 56.
     versionCode = 56 * 10000 + studioBuild
-    versionName = "2.1.0-studio.$studioBuild"
+    versionName = "2.1.0-layer.$studioBuild"
     resValue("integer", "studio_build", "$studioBuild")
     resValue("string", "studio_update_repo", studioUpdateRepo)
   }
@@ -85,7 +85,7 @@ android {
         "proguard-rules.pro")
       isShrinkResources = true
       isDebuggable = false
-      resValue("string", "app_name", "Unexpected Keyboard Studio")
+      resValue("string", "app_name", "Input Layer")
       signingConfig = signingConfigs["release"]
     }
 
@@ -94,7 +94,7 @@ android {
       isShrinkResources = false
       isDebuggable = true
       applicationIdSuffix = ".debug"
-      resValue("string", "app_name", "Unexpected Keyboard Studio (Debug)")
+      resValue("string", "app_name", "Input Layer (Debug)")
       resValue("bool", "debug_logs", "true")
       signingConfig = signingConfigs["debug"]
     }

@@ -1,4 +1,4 @@
-name: Studio release
+name: Input Layer release
 
 # Every push to the studio branch builds a debug APK and publishes it as the
 # GitHub release "build-N" (N = run number), which the in-app updater
@@ -63,11 +63,11 @@ jobs:
         GH_TOKEN: ${{ github.token }}
       run: |
         tag="build-${STUDIO_BUILD}"
-        apk="unexpected-keyboard-studio-${tag}.apk"
+        apk="input-layer-${tag}.apk"
         cp build/outputs/apk/debug/*.apk "$apk"
         # Notes: the commits since the previous Studio release.
         prev=$(git tag --list 'build-*' --sort=-v:refname | head -n1)
         range=${prev:+$prev..}HEAD
         { echo "Changes:"; git log --no-merges --format='- %s' "$range" | head -n 50; } > notes.md
         gh release create "$tag" "$apk" --target "$GITHUB_SHA" \
-          --title "Studio build ${STUDIO_BUILD}" --notes-file notes.md
+          --title "Input Layer build ${STUDIO_BUILD}" --notes-file notes.md

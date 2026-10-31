@@ -194,7 +194,7 @@ public final class Updater
   static HttpURLConnection open(String url) throws IOException
   {
     HttpURLConnection con = (HttpURLConnection)new URL(url).openConnection();
-    con.setRequestProperty("User-Agent", "Unexpected-Keyboard-Studio");
+    con.setRequestProperty("User-Agent", "Input-Layer");
     con.setConnectTimeout(15000);
     con.setReadTimeout(30000);
     return con;
