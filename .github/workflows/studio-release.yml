@@ -56,12 +56,29 @@ jobs:
       uses: gradle/actions/setup-gradle@v4
 
     - name: Test and build
-      run: ./gradlew test assembleDebug
+      run: |
+        set -o pipefail
+        ./gradlew test assembleDebug 2>&1 | tee gradle.log
       env:
         DEBUG_KEYSTORE: "debug.keystore"
         DEBUG_KEYSTORE_PASSWORD: debug0
         DEBUG_KEY_ALIAS: debug
         DEBUG_KEY_PASSWORD: debug0
+
+    # The job log isn't always reachable from the build VM; annotations are
+    # (check-runs API), so failures are summarised there.
+    - name: Summarise failure
+      if: failure()
+      run: |
+        for f in build/test-results/*/*.xml; do
+          [ -f "$f" ] || continue
+          grep -o '<testcase name="[^"]*" classname="[^"]*"[^>]*>[[:space:]]*<failure message="[^"]*"' "$f" \
+            | sed -E 's/.*name="([^"]*)" classname="([^"]*)".*message="([^"]*)"/::error title=Test failed::\2.\1: \3/' | head -n 5
+        done
+        if [ -f gradle.log ]; then
+          grep -E 'What went wrong|FAILED|error:|Could not|Exception' gradle.log | head -n 8 \
+            | sed 's/^/::error title=Gradle::/'
+        fi
 
     - name: Publish release
       env:
