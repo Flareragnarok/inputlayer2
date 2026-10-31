@@ -30,6 +30,14 @@ public class ComfortKeyTest
   }
 
   @Test
+  public void brighter()
+  {
+    assertEquals(0xff434343, ComfortKey.brighter(0xff333333, 0.08f));
+    assertEquals(0xffffffff, ComfortKey.brighter(0xffffffff, 0.08f));
+    assertEquals(0x80000000 | 0x141414, ComfortKey.brighter(0x80000000, 0.08f));
+  }
+
+  @Test
   public void nearest_set_direction()
   {
     // Only the bottom corners are set: a swipe down-left-ish lands on "sw".

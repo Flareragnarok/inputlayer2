@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.inputmethodservice.InputMethodService;
 import android.os.Build.VERSION;
 import android.os.Handler;
@@ -177,6 +178,7 @@ public class Keyboard2 extends InputMethodService
       }
       public void open_studio() { start_activity(StudioActivity.class); }
       public void open_dictionaries() { launch_dictionaries_activity(); }
+      public void highlight(int target) { highlight_container(target); }
     }, Config.globalPrefs());
   }
 
@@ -195,6 +197,29 @@ public class Keyboard2 extends InputMethodService
         _keyeventhandler.key_up(kv, Pointers.Modifiers.EMPTY);
       }
     });
+  }
+
+  /** Studio: outline the container the comfort bar's height key resizes. */
+  private void highlight_container(int target)
+  {
+    if (VERSION.SDK_INT < 23)
+      return;
+    View[] views = {
+      _comfort_bar,
+      _keyboard_container_view.findViewById(R.id.candidates_frame),
+      _keyboard_layout_view };
+    for (int i = 0; i < views.length; i++)
+    {
+      Drawable fg = null;
+      if (i == target)
+      {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(0x223399ff);
+        d.setStroke((int)(2 * getResources().getDisplayMetrics().density), 0xcc3399ff);
+        fg = d;
+      }
+      views[i].setForeground(fg);
+    }
   }
 
   InputMethodManager get_imm()
@@ -305,6 +330,7 @@ public class Keyboard2 extends InputMethodService
     _currentSpecialLayout = refresh_special_layout();
     _keyboard_layout_view.setKeyboard(current_layout());
     _keyeventhandler.started(_config);
+    _comfort_bar.reset_target();
     setInputView(_keyboard_container_view);
     Logs.debug_startup_input_view(info, _config);
   }

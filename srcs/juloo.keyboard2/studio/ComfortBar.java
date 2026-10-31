@@ -27,9 +27,22 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     void comfort_key(KeyValue kv);
     void open_studio();
     void open_dictionaries();
+    /** Highlight container [target] (one of [TARGETS]), or none if [-1]. */
+    void highlight(int target);
   }
 
   static final int HEIGHT_STEP = 2;
+
+  /** Containers the height key resizes, in the order it selects them. Only
+      whole containers, never the elements inside them. */
+  public static final int TARGET_COMFORT_BAR = 0;
+  public static final int TARGET_SUGGESTIONS = 1;
+  public static final int TARGET_KEYBOARD = 2;
+  static final String[] TARGET_LABELS = { "bar", "sugg", "keys" };
+
+  /** Container selected by the height key, [-1] for none (height up/down
+      then resize the keyboard). */
+  int _target = -1;
   Listener _listener;
   SharedPreferences _prefs;
   Config _config;
@@ -88,7 +101,13 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
 
   public void perform(String action)
   {
-    if (action.equals("dictionary"))
+    if (action.equals("select_container"))
+    {
+      _target = (_target + 2) % (TARGET_LABELS.length + 1) - 1;
+      _listener.highlight(_target);
+      refresh(_config); // Update the key's label.
+    }
+    else if (action.equals("dictionary"))
     {
       // Without installed dictionaries there is no language to switch to;
       // offer to download them.
@@ -118,6 +137,9 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
   {
     switch (action)
     {
+      case "select_container":
+        return new ComfortKey.Label(
+            (_target < 0) ? "↕" : "↕ " + TARGET_LABELS[_target], false);
       case "height_up": return new ComfortKey.Label("+", false);
       case "height_down": return new ComfortKey.Label("−", false);
       case "studio": return new ComfortKey.Label("⚙", false);
@@ -206,7 +228,18 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     return (s.length() <= 5) ? s : s.substring(0, 4) + "…";
   }
 
-  /** Change the keyboard height for the current orientation, stored in the
+  /** Clear the container selection, e.g. when the keyboard is shown again. */
+  public void reset_target()
+  {
+    if (_target < 0)
+      return;
+    _target = -1;
+    _listener.highlight(-1);
+    if (_config != null)
+      refresh(_config);
+  }
+
+  /** Resize the selected container (the keyboard if none), stored in the
       active [changeheight] module or in a new one named "quick". */
   void change_height(int delta)
   {
@@ -214,17 +247,27 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     Module m = store.active("changeheight");
     if (m == null)
       m = store.get("changeheight", "quick");
-    int next = Math.max(StudioConfig.KEYBOARD_PERCENT_MIN,
-        Math.min(StudioConfig.KEYBOARD_PERCENT_MAX,
-          _config.keyboard_height_percent + delta));
     try
     {
       JSONObject j = (m == null) ? new JSONObject() : new JSONObject(m.json.toString());
-      JSONObject kp = j.optJSONObject("keyboard_percent");
-      if (kp == null)
-        kp = new JSONObject();
-      kp.put(_config.orientation_landscape ? "landscape" : "portrait", next);
-      j.put("keyboard_percent", kp);
+      switch (_target)
+      {
+        case TARGET_COMFORT_BAR:
+          j.put("comfort_bar_dp", clamp(_config.studio.comfort_bar_dp + delta, 12, 96));
+          break;
+        case TARGET_SUGGESTIONS:
+          j.put("bar_dp", clamp(_config.studio.bar_dp + delta, 12, 96));
+          break;
+        default:
+          JSONObject kp = j.optJSONObject("keyboard_percent");
+          if (kp == null)
+            kp = new JSONObject();
+          kp.put(_config.orientation_landscape ? "landscape" : "portrait",
+              (int)clamp(_config.keyboard_height_percent + delta,
+                StudioConfig.KEYBOARD_PERCENT_MIN, StudioConfig.KEYBOARD_PERCENT_MAX));
+          j.put("keyboard_percent", kp);
+          break;
+      }
       Module nm = (m == null) ? Module.create("changeheight", "quick", j) : new Module(j);
       store.save(nm, true);
     }
@@ -232,6 +275,11 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     {
       Logs.exn("Comfort bar height", e);
     }
+  }
+
+  static float clamp(float v, float min, float max)
+  {
+    return Math.max(min, Math.min(max, v));
   }
 
   /** Next saved module of [type], then none, then the first again. */

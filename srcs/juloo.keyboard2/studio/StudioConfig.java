@@ -22,7 +22,7 @@ public final class StudioConfig
       ComfortKeySpec.of("c", "copy", "nw", "cut", "ne", "paste", "sw", "select_all"),
       ComfortKeySpec.of("c", "undo", "e", "redo"),
       ComfortKeySpec.of("w", "left", "e", "right", "n", "up", "s", "down"),
-      ComfortKeySpec.of("c", "switch:changeheight", "n", "height_up", "s", "height_down"),
+      ComfortKeySpec.of("c", "select_container", "n", "height_up", "s", "height_down"),
       ComfortKeySpec.of("c", "dictionary", "sw", "layout", "se", "keyboard_picker"));
 
   /** [-1] when not set. */

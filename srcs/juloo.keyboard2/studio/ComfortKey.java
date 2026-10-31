@@ -43,6 +43,8 @@ final class ComfortKey extends View implements Runnable
   final Label[] _labels = new Label[ComfortKeySpec.DIRECTIONS.length];
   final Paint _paint = new Paint(Paint.ANTI_ALIAS_FLAG);
   final Paint _bg = new Paint(Paint.ANTI_ALIAS_FLAG);
+  int _key_color;
+  int _key_pressed_color;
   final RectF _rect = new RectF();
   final float _radius;
   final Handler _handler = new Handler();
@@ -67,10 +69,13 @@ final class ComfortKey extends View implements Runnable
     _label_color = 0xff888888;
     if (ctx.getTheme().resolveAttribute(R.attr.colorLabel, tv, true))
       _label_color = tv.data;
-    _bg.setColor(0x20808080);
-    if (ctx.getTheme().resolveAttribute(R.attr.suggestions_background, tv, true))
-      _bg.setColor(tv.data);
-    _radius = 6 * getResources().getDisplayMetrics().density;
+    // Like the keyboard's keys, a shade brighter.
+    _key_color = brighter(attr_color(ctx, R.attr.colorKey, 0xff333333), 0.08f);
+    _key_pressed_color = attr_color(ctx, R.attr.colorKeyActivated, 0xff1b1b1b);
+    float radius = 5 * getResources().getDisplayMetrics().density;
+    if (ctx.getTheme().resolveAttribute(R.attr.keyBorderRadius, tv, true))
+      radius = tv.getDimension(getResources().getDisplayMetrics());
+    _radius = radius;
     _paint.setTextAlign(Paint.Align.CENTER);
   }
 
@@ -79,6 +84,7 @@ final class ComfortKey extends View implements Runnable
   {
     float w = getWidth(), h = getHeight();
     _rect.set(0, 0, w, h);
+    _bg.setColor(isPressed() ? _key_pressed_color : _key_color);
     canvas.drawRoundRect(_rect, _radius, _radius, _bg);
     float cx = w / 2, cy = h / 2;
     for (int i = 0; i < _labels.length; i++)
@@ -97,6 +103,22 @@ final class ComfortKey extends View implements Runnable
       y -= (_paint.descent() + _paint.ascent()) / 2;
       canvas.drawText(l.text, x, y, _paint);
     }
+  }
+
+  static int attr_color(Context ctx, int attr, int def)
+  {
+    TypedValue tv = new TypedValue();
+    return ctx.getTheme().resolveAttribute(attr, tv, true) ? tv.data : def;
+  }
+
+  /** [c] moved a fraction [f] toward white. */
+  static int brighter(int c, float f)
+  {
+    int r = (c >> 16) & 0xff, g = (c >> 8) & 0xff, b = c & 0xff;
+    r += (int)((255 - r) * f);
+    g += (int)((255 - g) * f);
+    b += (int)((255 - b) * f);
+    return (c & 0xff000000) | (r << 16) | (g << 8) | b;
   }
 
   @Override

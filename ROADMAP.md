@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-10-31 (after build 7).
+Last updated: 2026-10-31 (build 9).
 
 ## Done
 
@@ -18,7 +18,8 @@ Last updated: 2026-10-31 (after build 7).
 | 5 | Updates: dropdown of newer builds, newest preselected. Past builds can be restored (republished on GitHub as a new build number). |
 | 6 | Suggestion bar 28dp by default instead of a full key row. |
 | 7 | Bigger clipboard corner icon; suggestions start after it. |
-| next | The language key is a normal comfort bar key instead of pinned to the right end. |
+| 8 | The language key is a normal comfort bar key instead of pinned to the right end. ROADMAP.md. |
+| 9 | Comfort bar keys look like the keyboard's keys, smaller and a shade brighter. The height key selects a whole container (comfort bar, suggestions, keyboard) and highlights it; swiping up/down resizes it. |
 
 Infrastructure:
 
@@ -42,9 +43,10 @@ Infrastructure:
 
 ## Later
 
-- **Resize mode.** Drag a handle on each part (comfort bar, suggestion bar,
-  each key row, whole keyboard, bottom margin), try it live, save it as a
-  named `changeheight` module.
+- **Resize mode.** Drag the edge of a highlighted container (comfort bar,
+  suggestion bar, keyboard) instead of tapping up/down, and save the result
+  as a named `changeheight` module. Containers only, never single keys or
+  rows (decided 2026-10-31).
 - **Snippets module.** Your own snippets (commands, ASCII art), inserted with
   one tap; multi-line supported.
 - **Theme module.** Custom colours, picked in the app.
@@ -56,10 +58,6 @@ Infrastructure:
 
 ## Undecided
 
-- "Select what component gets selected": choosing the comfort bar's keys in
-  the app, or selecting a part of the keyboard to resize, or something else?
-- Comfort bar keys: currently almost invisible on the keyboard background and
-  wider than tall. Keep, or make them visible and square?
 - Corner icons disappear when suggestions are turned off. Move them to the
   comfort bar in that case?
 - Comfort bar in the split layout (tablets, landscape): untested.
@@ -88,8 +86,8 @@ Every module is a JSON file with `module` (its type), `name` and `version`.
   "rows": [0.8, 1.0, 1.0, 1.0, 0.9] }
 ```
 
-`rows` are height factors, top to bottom. `comfort_bar_dp: 0` hides the
-comfort bar.
+`rows` are height factors, top to bottom (file only; the height key never
+resizes single rows). `comfort_bar_dp: 0` hides the comfort bar.
 
 ```json
 { "module": "comfortbar", "name": "mine", "version": 1,
@@ -100,5 +98,6 @@ comfort bar.
 
 `c` is the tap; `n ne e se s sw w nw` are the swipe directions. Actions:
 `left right up down select_all copy cut paste undo redo clipboard
-dictionary layout keyboard_picker height_up height_down studio` and
+dictionary layout keyboard_picker select_container height_up height_down
+studio` and
 `switch:<type>` (cycle saved modules of a type).
