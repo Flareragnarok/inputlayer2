@@ -32,6 +32,9 @@ public final class StudioConfig
   /** [NaN] when not set. */
   public float margin_bottom_dp = Float.NaN;
   public float comfort_bar_dp = DEFAULT_COMFORT_BAR_DP;
+  public static final float DEFAULT_EDIT_STRIP_DP = 28f;
+  /** The edit strip under the space bar, [0] hides it. */
+  public float edit_strip_dp = DEFAULT_EDIT_STRIP_DP;
   /** Height factor for each row, top to bottom. [null] when not set. */
   public float[] rows = null;
   public List<ComfortKeySpec> keys = DEFAULT_KEYS;
@@ -65,6 +68,9 @@ public final class StudioConfig
     float cb = clamp_dp(j.optDouble("comfort_bar_dp", Double.NaN), 0, 96);
     if (!Float.isNaN(cb))
       comfort_bar_dp = (cb < 12) ? 0 : cb;
+    float es = clamp_dp(j.optDouble("edit_strip_dp", Double.NaN), 0, 96);
+    if (!Float.isNaN(es))
+      edit_strip_dp = (es < 12) ? 0 : es;
     JSONArray rs = j.optJSONArray("rows");
     if (rs != null && rs.length() > 0)
     {

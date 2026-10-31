@@ -50,6 +50,15 @@ public class Keyboard2View extends View
   private int _insets_right = 0;
   private int _insets_bottom = 0;
 
+  /** Studio: a view below the keyboard (the edit strip) that takes the
+      bottom system inset (navigation bar) when it is shown. */
+  public interface BottomInsetTaker
+  {
+    boolean takes_bottom_inset();
+    void set_bottom_inset(int px);
+  }
+  public BottomInsetTaker studio_bottom = null;
+
   private Theme _theme;
   private Theme.Computed _tc;
 
@@ -268,7 +277,8 @@ public class Keyboard2View extends View
     int width = dm.widthPixels;
     _marginLeft = Math.max(_config.horizontal_margin, _insets_left);
     _marginRight = Math.max(_config.horizontal_margin, _insets_right);
-    _marginBottom = _config.margin_bottom + _insets_bottom;
+    boolean inset_below = studio_bottom != null && studio_bottom.takes_bottom_inset();
+    _marginBottom = _config.margin_bottom + (inset_below ? 0 : _insets_bottom);
     _keyWidth = (width - _marginLeft - _marginRight) / _keyboard.keysWidth;
     _tc = new Theme.Computed(_theme, _config, _keyWidth, _keyboard);
     // Compute the size of labels based on the width or the height of keys. The
@@ -321,6 +331,8 @@ public class Keyboard2View extends View
     _insets_left = insets.left;
     _insets_right = insets.right;
     _insets_bottom = insets.bottom;
+    if (studio_bottom != null)
+      studio_bottom.set_bottom_inset(insets.bottom);
     return WindowInsets.CONSUMED;
   }
 

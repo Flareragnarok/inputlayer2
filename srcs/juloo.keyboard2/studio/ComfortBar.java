@@ -38,7 +38,8 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
   public static final int TARGET_COMFORT_BAR = 0;
   public static final int TARGET_SUGGESTIONS = 1;
   public static final int TARGET_KEYBOARD = 2;
-  static final String[] TARGET_LABELS = { "bar", "sugg", "keys" };
+  public static final int TARGET_EDIT_STRIP = 3;
+  static final String[] TARGET_LABELS = { "bar", "sugg", "keys", "edit" };
 
   /** Container selected by the height key, [-1] for none (height up/down
       then resize the keyboard). */
@@ -258,6 +259,9 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
           break;
         case TARGET_SUGGESTIONS:
           j.put("bar_dp", clamp(_config.studio.bar_dp + delta, 12, 96));
+          break;
+        case TARGET_EDIT_STRIP:
+          j.put("edit_strip_dp", clamp(_config.studio.edit_strip_dp + delta, 12, 96));
           break;
         default:
           JSONObject kp = j.optJSONObject("keyboard_percent");

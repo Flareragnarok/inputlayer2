@@ -35,6 +35,7 @@ import juloo.keyboard2.dict.SupportedDictionaries;
 import juloo.keyboard2.prefs.LayoutsPreference;
 import juloo.keyboard2.studio.ClipKeeper;
 import juloo.keyboard2.studio.ComfortBar;
+import juloo.keyboard2.studio.EditStrip;
 import juloo.keyboard2.studio.MemoryPane;
 import juloo.keyboard2.studio.StudioActivity;
 import juloo.keyboard2.suggestions.CandidatesView;
@@ -49,6 +50,9 @@ public class Keyboard2 extends InputMethodService
   private CandidatesView _candidates_view;
   private ComfortBar _comfort_bar;
   private ClipKeeper _clip_keeper;
+  private EditStrip _edit_strip;
+  /** Studio: selection as last reported by the editor, for the edit strip. */
+  private int _studio_sel_start = 0, _studio_sel_end = 0;
   private Suggestions _suggestions;
   private KeyEventHandler _keyeventhandler;
   /** If not 'null', the layout to use instead of [_config.current_layout]. */
@@ -174,6 +178,17 @@ public class Keyboard2 extends InputMethodService
     _candidates_view = (CandidatesView)_keyboard_container_view.findViewById(R.id.candidates_view);
     _comfort_bar = (ComfortBar)_keyboard_container_view.findViewById(R.id.comfort_bar);
     setup_corner_icon(R.id.corner_clipboard, "switch_clipboard");
+    _edit_strip = (EditStrip)_keyboard_container_view.findViewById(R.id.edit_strip);
+    _edit_strip.setup(new EditStrip.Listener() {
+      public InputConnection input() { return getCurrentInputConnection(); }
+      public String app()
+      {
+        EditorInfo info = getCurrentInputEditorInfo();
+        return (info == null) ? null : info.packageName;
+      }
+      public int sel_start() { return _studio_sel_start; }
+      public int sel_end() { return _studio_sel_end; }
+    }, Config.globalPrefs());
     _keyboard_container_view.findViewById(R.id.corner_memory)
       .setOnClickListener(new View.OnClickListener() {
         public void onClick(View _v) { open_memory_pane(true); }
@@ -188,6 +203,7 @@ public class Keyboard2 extends InputMethodService
       public void open_dictionaries() { launch_dictionaries_activity(); }
       public void highlight(int target) { highlight_container(target); }
     }, Config.globalPrefs());
+    _keyboard_layout_view.studio_bottom = _edit_strip;
   }
 
   /** Studio: a see-through shortcut on the suggestion bar, showing the icon
@@ -225,7 +241,8 @@ public class Keyboard2 extends InputMethodService
     View[] views = {
       _comfort_bar,
       _keyboard_container_view.findViewById(R.id.candidates_frame),
-      _keyboard_layout_view };
+      _keyboard_layout_view,
+      _edit_strip };
     for (int i = 0; i < views.length; i++)
     {
       Drawable fg = null;
@@ -299,6 +316,7 @@ public class Keyboard2 extends InputMethodService
     _keyboard_container_view.findViewById(R.id.candidates_frame)
       .setVisibility(should_show ? View.VISIBLE : View.GONE);
     _comfort_bar.refresh(_config);
+    _edit_strip.refresh(_config);
   }
 
   /** Might re-create the keyboard view. [_keyboard_layout_view.setKeyboard()] and
@@ -350,6 +368,8 @@ public class Keyboard2 extends InputMethodService
     _keyeventhandler.started(_config);
     _comfort_bar.reset_target();
     _clip_keeper.editor_started(info);
+    _studio_sel_start = info.initialSelStart;
+    _studio_sel_end = info.initialSelEnd;
     setInputView(_keyboard_container_view);
     Logs.debug_startup_input_view(info, _config);
   }
@@ -442,6 +462,8 @@ public class Keyboard2 extends InputMethodService
   public void onUpdateSelection(int oldSelStart, int oldSelEnd, int newSelStart, int newSelEnd, int candidatesStart, int candidatesEnd)
   {
     super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd, candidatesStart, candidatesEnd);
+    _studio_sel_start = newSelStart;
+    _studio_sel_end = newSelEnd;
     _keyeventhandler.selection_updated(oldSelStart, newSelStart, newSelEnd);
     if ((oldSelStart == oldSelEnd) != (newSelStart == newSelEnd))
       _keyboard_layout_view.set_selection_state(newSelStart != newSelEnd);

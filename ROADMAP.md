@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-10-31 (build 13).
+Last updated: 2026-10-31 (build 14).
 
 ## Done
 
@@ -24,6 +24,7 @@ Last updated: 2026-10-31 (build 13).
 | 11 | Clipboard / Memory pane with tabs, replacing upstream's clipboard pane. Clipboard: history on the left third, pins on the right two thirds (existing pins kept), one tap to turn history on. Memory: items by category (Links, Symbols, Snippets, Notes and your own, managed in Studio). Long-press menus: pin, save to Memory (likely category first), copy to clipboard, move, delete. |
 | 12 | Memory keeps what is copied: every copied text is saved automatically under its content type (Text, Links, Snippets, Symbols; Images and Files come next), and stays after restarts. Skipped: copies from password fields and copies marked sensitive (Android 13+). Off switch in Studio. Clipboard tab filters by content type. The clipboard itself works as before. Source app is not used: Android doesn't tell which app a copy came from (decided 2026-10-31). |
 | 13 | Memory's history: a ⟲ History button at the right end of Memory's categories shows what was copied, one record per phone restart. Delete one item, one record or all history (tap twice to confirm). Saved items (saved or moved by you) are never deleted with the history. Clipboard tab: Clear button for its short-term history. |
+| 14 | Edit strip under the space bar. Left: scope (Word, Sentence, Line, Paragraph, All) and selector (select the unit at the cursor, previous/next, grow/shrink by one, deselect). Right: Aa Appearance (case; unicode bold, italic, mono, script, fraktur, double-struck, small caps, circled, fullwidth, strike, underline, zalgo, converting between them) and ¶ Format (the app's markup: Markdown, Discord, Reddit, WhatsApp, Telegram, HTML, BBCode, none for Threads/Instagram/X; chosen per app, wraps and unwraps). The ↕ key can resize it. |
 
 Infrastructure:
 
@@ -41,7 +42,9 @@ Infrastructure:
    them; adding files from the phone's storage to Memory.
 2. **Adding Memory categories from the pane** (today: in Studio, since the
    keyboard can't easily type into its own dialogs).
-3. **Language and suggestions, rethought** (see Undecided).
+3. **Saved fonts.** Your own unicode letter sets as a `font` module, listed
+   in Appearance.
+4. **Language and suggestions, rethought** (see Undecided).
 
 ## Later
 
@@ -92,7 +95,7 @@ Every module is a JSON file with `module` (its type), `name` and `version`.
   "rows": [0.8, 1.0, 1.0, 1.0, 0.9] }
 ```
 
-`rows` are height factors, top to bottom (file only; the height key never
+`edit_strip_dp` sets the edit strip (0 hides it). `rows` are height factors, top to bottom (file only; the height key never
 resizes single rows). `comfort_bar_dp: 0` hides the comfort bar.
 
 ```json
