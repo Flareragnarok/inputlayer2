@@ -44,6 +44,10 @@ public class MemoryPane extends LinearLayout
   boolean _memory_tab = false;
   /** Memory category shown, [null] for all. */
   String _category = null;
+  /** Memory shows the history records instead of a category. */
+  boolean _history = false;
+  /** Delete button waiting for its confirming second tap. */
+  String _confirming = null;
   /** Content type shown in the Clipboard tab, [null] for all. */
   String _clip_type = null;
   TextView _tab_clipboard;
@@ -82,12 +86,16 @@ public class MemoryPane extends LinearLayout
   /** Show the Memory tab if [memory], the Clipboard tab otherwise. */
   public void show(boolean memory)
   {
+    // A pending delete confirmation doesn't carry over to the other tab.
+    if (memory != _memory_tab)
+      _confirming = null;
     _memory_tab = memory;
     _tab_clipboard.setBackgroundColor(memory ? _item_color : _selected_color);
     _tab_memory.setBackgroundColor(memory ? _selected_color : _item_color);
     ClipboardHistoryService s = ClipboardHistoryService.get_service(getContext());
     if (s != null)
       s.set_on_clipboard_history_change(memory ? null : this);
+
     _content.removeAllViews();
     _content.addView(memory ? memory_view() : clipboard_view());
   }
@@ -143,6 +151,16 @@ public class MemoryPane extends LinearLayout
     }
     else
     {
+      if (!h.isEmpty())
+        history.addView(confirm_button("clipboard", R.string.studio_clear,
+              new Runnable() {
+                public void run()
+                {
+                  ClipboardHistoryService s = ClipboardHistoryService.get_service(getContext());
+                  if (s != null)
+                    s.clear_history();
+                }
+              }));
       // Newest first.
       for (int i = h.size() - 1; i >= 0; i--)
         if (shown(h.get(i)))
@@ -257,6 +275,9 @@ public class MemoryPane extends LinearLayout
     }
     if (_category != null && !store.categories().contains(_category))
       _category = null;
+    // Categories scroll, the history button stays at the right end.
+    LinearLayout top = new LinearLayout(getContext());
+    top.setOrientation(HORIZONTAL);
     LinearLayout chips = new LinearLayout(getContext());
     chips.setOrientation(HORIZONTAL);
     chips.addView(category_chip(null, getContext().getString(R.string.studio_all)), chip_params());
@@ -265,44 +286,125 @@ public class MemoryPane extends LinearLayout
     HorizontalScrollView hs = new HorizontalScrollView(getContext());
     hs.setHorizontalScrollBarEnabled(false);
     hs.addView(chips);
-    v.addView(hs, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(32)));
+    top.addView(hs, new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+    TextView history = chip("⟲ " + getContext().getString(R.string.studio_history));
+    history.setBackgroundColor(_history ? _selected_color : _item_color);
+    history.setOnClickListener(new View.OnClickListener() {
+      public void onClick(View _v) { _history = !_history; _confirming = null; show(true); }
+    });
+    top.addView(history, chip_params());
+    v.addView(top, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(32)));
     LinearLayout items = new LinearLayout(getContext());
     items.setOrientation(VERTICAL);
-    List<MemoryStore.Item> is = store.items(_category);
-    for (MemoryStore.Item it : is)
-      items.addView(memory_item(store, it));
-    if (is.isEmpty())
-      items.addView(hint(R.string.studio_memory_empty));
+    if (_history)
+      fill_history(store, items);
+    else
+    {
+      List<MemoryStore.Item> is = store.items(_category);
+      for (MemoryStore.Item it : is)
+        items.addView(memory_item(store, it));
+      if (is.isEmpty())
+        items.addView(hint(R.string.studio_memory_empty));
+    }
     v.addView(scroll(items), new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
     return v;
+  }
+
+  /** One record per phone restart, newest first, each deletable, and a
+      button deleting all of them. Deleting asks for a second tap. */
+  void fill_history(final MemoryStore store, LinearLayout items)
+  {
+    List<MemoryStore.Session> ss = store.sessions();
+    if (ss.isEmpty())
+    {
+      items.addView(hint(R.string.studio_history_none));
+      return;
+    }
+    items.addView(confirm_button("all", R.string.studio_delete_all_history,
+          new Runnable() { public void run() { store.delete_history(); } }));
+    java.text.DateFormat fmt = java.text.DateFormat.getDateTimeInstance(
+        java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT);
+    for (final MemoryStore.Session s : ss)
+    {
+      LinearLayout head = new LinearLayout(getContext());
+      head.setOrientation(HORIZONTAL);
+      head.setGravity(Gravity.CENTER_VERTICAL);
+      TextView title = hint(0);
+      title.setText(getContext().getString(R.string.studio_since_restart,
+            fmt.format(new java.util.Date(s.started)), s.items.size()));
+      title.setAlpha(0.8f);
+      head.addView(title, new LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+      head.addView(confirm_button(s.key, R.string.studio_delete_record,
+            new Runnable() { public void run() { store.delete_session(s.key); } }),
+          new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(30)));
+      items.addView(head);
+      for (MemoryStore.Item it : s.items)
+        items.addView(memory_item(store, it));
+    }
+  }
+
+  /** A delete button: the first tap asks to tap again, the second deletes. */
+  TextView confirm_button(final String id, int label, final Runnable action)
+  {
+    final boolean armed = id.equals(_confirming);
+    TextView t = chip(getContext().getString(armed ? R.string.studio_tap_again : label));
+    t.setBackgroundColor(armed ? 0xffaa3333 : _item_color);
+    t.setOnClickListener(new View.OnClickListener() {
+      public void onClick(View _v)
+      {
+        if (armed)
+        {
+          action.run();
+          _confirming = null;
+        }
+        else
+          _confirming = id;
+        show(_memory_tab);
+      }
+    });
+    t.setPadding(dp(10), dp(4), dp(10), dp(4));
+    return t;
   }
 
   View category_chip(final String category, String label)
   {
     TextView t = chip(label);
-    boolean selected = (category == null) ? _category == null : category.equals(_category);
+    boolean selected = !_history
+      && ((category == null) ? _category == null : category.equals(_category));
     t.setBackgroundColor(selected ? _selected_color : _item_color);
     t.setOnClickListener(new View.OnClickListener() {
-      public void onClick(View v) { _category = category; show(true); }
+      public void onClick(View v) { _category = category; _history = false; show(true); }
     });
     return t;
   }
 
   View memory_item(final MemoryStore store, final MemoryStore.Item it)
   {
-    String label = (_category == null) ? it.text + "   · " + it.category : it.text;
+    String label = (_category == null || _history) ? it.text + "   · " + it.category : it.text;
     TextView t = (TextView)item(it.text, new MenuBuilder() {
       public void build(Menu m)
       {
         add(m, R.string.studio_copy_to_clipboard, new Runnable() {
           public void run() { copy_to_clipboard(it.text); }
         });
-        SubMenu sub = m.addSubMenu(R.string.studio_move_to);
-        for (final String c : store.categories())
-          if (!c.equals(it.category))
+        if (it.is_history())
+        {
+          // Saving keeps it when the history is deleted.
+          SubMenu sub = m.addSubMenu(R.string.studio_save_to_memory);
+          for (final String c : store.categories())
             add(sub, c, new Runnable() {
-              public void run() { store.move(it, c); show(true); }
+              public void run() { store.add(it.text, c); show(true); }
             });
+        }
+        else
+        {
+          SubMenu sub = m.addSubMenu(R.string.studio_move_to);
+          for (final String c : store.categories())
+            if (!c.equals(it.category))
+              add(sub, c, new Runnable() {
+                public void run() { store.move(it, c); show(true); }
+              });
+        }
         add(m, R.string.studio_delete, new Runnable() {
           public void run() { store.remove(it); show(true); }
         });
@@ -444,7 +546,8 @@ public class MemoryPane extends LinearLayout
   TextView hint(int res)
   {
     TextView t = new TextView(getContext());
-    t.setText(res);
+    if (res != 0)
+      t.setText(res);
     t.setTextColor(_label_color);
     t.setAlpha(0.6f);
     t.setPadding(dp(8), dp(6), dp(8), dp(6));

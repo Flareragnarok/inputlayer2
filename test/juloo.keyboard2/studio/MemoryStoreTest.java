@@ -60,9 +60,51 @@ public class MemoryStoreTest
     s.remove_category(MemoryStore.LINKS); // Default categories stay
     assertEquals(MemoryStore.DEFAULT_CATEGORIES, s.categories());
     assertEquals(2, s.items(MemoryStore.TEXT).size()); // git status moved to Text
-    assertTrue(s.contains("git status"));
-    assertFalse(s.contains("git log"));
+    assertTrue(s.is_saved("git status"));
+    assertFalse(s.is_saved("git log"));
     assertEquals(MemoryStore.DEFAULT_CATEGORIES.size(), new MemoryStore(f).categories().size());
+  }
+
+  @Test
+  public void history_by_restart()
+  throws Exception
+  {
+    File f = tmp();
+    MemoryStore s = new MemoryStore(f);
+    s.add_history("first boot", MemoryStore.TEXT, "boot-1", 1000);
+    s.add_history("https://a.org", MemoryStore.LINKS, "boot-1", 1000);
+    s.add_history("first boot", MemoryStore.TEXT, "boot-1", 1000); // Moves up
+    s.add_history("second boot", MemoryStore.TEXT, "boot-2", 2000);
+    s.add_history("first boot", MemoryStore.TEXT, "boot-2", 2000); // Copied again
+    s.add("saved", MemoryStore.TEXT);
+    List<MemoryStore.Session> ss = s.sessions();
+    assertEquals(2, ss.size());
+    assertEquals("boot-2", ss.get(0).key);       // Newest restart first
+    assertEquals(2000, ss.get(0).started);
+    assertEquals(2, ss.get(0).items.size());
+    assertEquals(2, ss.get(1).items.size());
+    assertEquals("first boot", ss.get(1).items.get(0).text);
+    // Categories list a text once.
+    assertEquals(3, s.items(MemoryStore.TEXT).size());
+    // Saving a history item keeps it when the history is deleted.
+    s.add("https://a.org", MemoryStore.LINKS);
+    assertEquals(1, s.items(MemoryStore.LINKS).size());
+    assertFalse(s.items(MemoryStore.LINKS).get(0).is_history());
+    s.delete_session("boot-1");
+    assertEquals(1, s.sessions().size());
+    assertTrue(s.is_saved("https://a.org"));
+    // Survives reloading.
+    MemoryStore r = new MemoryStore(f);
+    assertEquals(1, r.sessions().size());
+    assertEquals(2000, r.sessions().get(0).started);
+    r.delete_history();
+    assertTrue(r.sessions().isEmpty());
+    assertEquals(2, r.items(null).size()); // The two saved items
+    // Moving a history item saves it.
+    r.add_history("moved", MemoryStore.TEXT, "boot-3", 3000);
+    r.move(r.sessions().get(0).items.get(0), MemoryStore.SNIPPETS);
+    assertTrue(r.is_saved("moved"));
+    assertTrue(r.sessions().isEmpty());
   }
 
   @Test

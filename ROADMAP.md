@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-10-31 (build 12).
+Last updated: 2026-10-31 (build 13).
 
 ## Done
 
@@ -23,6 +23,7 @@ Last updated: 2026-10-31 (build 12).
 | 10 | Suggestion bar only shows suggestions: the language name, language button and "install a dictionary" message are gone from it (the comfort bar's language key shows `⬇ EN` when that dictionary is missing). Memory icon in the bottom-right corner (the pane itself comes next). |
 | 11 | Clipboard / Memory pane with tabs, replacing upstream's clipboard pane. Clipboard: history on the left third, pins on the right two thirds (existing pins kept), one tap to turn history on. Memory: items by category (Links, Symbols, Snippets, Notes and your own, managed in Studio). Long-press menus: pin, save to Memory (likely category first), copy to clipboard, move, delete. |
 | 12 | Memory keeps what is copied: every copied text is saved automatically under its content type (Text, Links, Snippets, Symbols; Images and Files come next), and stays after restarts. Skipped: copies from password fields and copies marked sensitive (Android 13+). Off switch in Studio. Clipboard tab filters by content type. The clipboard itself works as before. Source app is not used: Android doesn't tell which app a copy came from (decided 2026-10-31). |
+| 13 | Memory's history: a ⟲ History button at the right end of Memory's categories shows what was copied, one record per phone restart. Delete one item, one record or all history (tap twice to confirm). Saved items (saved or moved by you) are never deleted with the history. Clipboard tab: Clear button for its short-term history. |
 
 Infrastructure:
 

@@ -7,15 +7,18 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build.VERSION;
 import android.os.PersistableBundle;
+import android.os.SystemClock;
+import android.provider.Settings;
 import android.text.InputType;
 import android.view.inputmethod.EditorInfo;
 import java.io.File;
 import juloo.keyboard2.Logs;
 
-/** Memory keeps what is copied: every new clipboard text is stored in Memory
-    under its content type (Links, Snippets, Symbols, Text), unless it comes
-    from a password field or the app marked it as sensitive. Can be turned
-    off in Studio. The clipboard history itself stays as upstream has it. */
+/** Memory keeps what is copied: every new clipboard text is recorded in
+    Memory's history, in the record of the current phone restart and under
+    its content type (Links, Snippets, Symbols, Text), unless it comes from a
+    password field or the app marked it as sensitive. Can be turned off in
+    Studio. The clipboard history itself stays as upstream has it. */
 public final class ClipKeeper implements ClipboardManager.OnPrimaryClipChangedListener
 {
   public static final String KEY_AUTOKEEP = "studio_memory_autokeep";
@@ -71,15 +74,28 @@ public final class ClipKeeper implements ClipboardManager.OnPrimaryClipChangedLi
       if (text.trim().isEmpty() || text.length() > MAX_TEXT_LENGTH)
         return;
       MemoryStore m = new MemoryStore(new File(_ctx.getFilesDir(), "memory.json"));
-      // Already kept, maybe moved to another category by the user.
-      if (!m.contains(text))
-        m.add(text, MemoryStore.guess_category(text));
+      long boot = System.currentTimeMillis() - SystemClock.elapsedRealtime();
+      m.add_history(text, MemoryStore.guess_category(text), session_key(boot), boot);
     }
     catch (Exception e)
     {
       // Locked phone (no storage yet) or clipboard not readable.
       Logs.exn("Studio clip keeper", e);
     }
+  }
+
+  /** One history record per phone restart: the boot count when Android has
+      it, the boot time to the minute otherwise. */
+  String session_key(long boot)
+  {
+    if (VERSION.SDK_INT >= 24)
+    {
+      int n = Settings.Global.getInt(_ctx.getContentResolver(),
+          Settings.Global.BOOT_COUNT, -1);
+      if (n >= 0)
+        return "boot-" + n;
+    }
+    return "boot-t" + (boot / 60000);
   }
 
   static boolean is_sensitive(ClipDescription d)
