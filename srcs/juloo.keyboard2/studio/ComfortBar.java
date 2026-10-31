@@ -16,8 +16,8 @@ import juloo.keyboard2.Theme;
 import org.json.JSONObject;
 
 /** The comfort bar, above the suggestion bar: a few tiny keys, centered and
-    spaced apart, chosen by the active [comfortbar] module, and the language
-    key at the right end. Each key has a tap action and swipe actions.
+    spaced apart, chosen by the active [comfortbar] module. Each key has a
+    tap action and swipe actions.
     Actions are built in; modules only choose and place them. */
 public class ComfortBar extends FrameLayout implements ComfortKey.Host
 {
@@ -30,11 +30,6 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
   }
 
   static final int HEIGHT_STEP = 2;
-  /** Tap: the suggestions' language, as upstream's button on the suggestion
-      bar did. Swipes: next keyboard layout, system keyboard picker. */
-  static final ComfortKeySpec LANGUAGE_KEY =
-    ComfortKeySpec.of("c", "dictionary", "sw", "layout", "se", "keyboard_picker");
-
   Listener _listener;
   SharedPreferences _prefs;
   Config _config;
@@ -72,14 +67,8 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     p.height = (int)(dp * density());
     setLayoutParams(p);
     _keys.removeAllViews();
-    // The language key stays at the right end, the others in the middle.
-    while (getChildCount() > 1)
-      removeViewAt(1);
     for (ComfortKeySpec s : config.studio.keys)
-      _keys.addView(make_key(s), key_params(true));
-    LayoutParams lp = key_params(false);
-    lp.gravity = Gravity.END | Gravity.CENTER_VERTICAL;
-    addView(make_key(LANGUAGE_KEY), lp);
+      _keys.addView(make_key(s), key_params());
   }
 
   View make_key(ComfortKeySpec s)
@@ -87,12 +76,11 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     return new ComfortKey(getContext(), s, this, Theme.getKeyFont(getContext()));
   }
 
-  LayoutParams key_params(boolean spaced)
+  LayoutParams key_params()
   {
     int h = (int)(_config.studio.comfort_bar_dp * density());
     LayoutParams p = new LayoutParams((int)(h * 1.7f), h - dp(4));
-    int gap = spaced ? dp(10) : dp(2);
-    p.setMargins(gap, dp(2), gap, dp(2));
+    p.setMargins(dp(10), dp(2), dp(10), dp(2));
     return p;
   }
 
@@ -133,6 +121,8 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       case "height_up": return new ComfortKey.Label("+", false);
       case "height_down": return new ComfortKey.Label("−", false);
       case "studio": return new ComfortKey.Label("⚙", false);
+      // Tap: the suggestions' language, like upstream's button on the
+      // suggestion bar.
       case "dictionary": return new ComfortKey.Label(language_label(), false);
       case "layout": return new ComfortKey.Label("🌐", false);
       case "keyboard_picker": return new ComfortKey.Label("⌨", false);

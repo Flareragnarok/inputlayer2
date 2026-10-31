@@ -24,6 +24,8 @@ made here. Parts keep their own licenses: `vendor/cdict` is MIT,
 `srcs/layouts` has its own license (`srcs/layouts/LICENSE`) and the compose
 data comes from xorg.
 
+See [ROADMAP.md](ROADMAP.md) for what is done and what comes next.
+
 The upstream README follows.
 
 ---
