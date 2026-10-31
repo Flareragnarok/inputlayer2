@@ -21,6 +21,7 @@ import android.view.inputmethod.InputMethodSubtype;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -170,6 +171,14 @@ public class Keyboard2 extends InputMethodService
     _candidates_view = (CandidatesView)_keyboard_container_view.findViewById(R.id.candidates_view);
     _comfort_bar = (ComfortBar)_keyboard_container_view.findViewById(R.id.comfort_bar);
     setup_corner_icon(R.id.corner_clipboard, "switch_clipboard");
+    _keyboard_container_view.findViewById(R.id.corner_memory)
+      .setOnClickListener(new View.OnClickListener() {
+        public void onClick(View _v)
+        {
+          Toast.makeText(Keyboard2.this, R.string.studio_memory_soon,
+              Toast.LENGTH_SHORT).show();
+        }
+      });
     _comfort_bar.setup(new ComfortBar.Listener() {
       public void comfort_key(KeyValue kv)
       {

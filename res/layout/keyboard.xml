@@ -2,16 +2,15 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:hardwareAccelerated="false" android:orientation="vertical" android:background="?attr/colorKeyboard">
   <juloo.keyboard2.studio.ComfortBar android:id="@+id/comfort_bar" android:layout_width="match_parent" android:layout_height="26dp"/>
   <FrameLayout android:id="@+id/candidates_frame" android:layout_width="match_parent" android:layout_height="wrap_content">
-  <juloo.keyboard2.suggestions.CandidatesView android:id="@+id/candidates_view" style="@style/candidates_view" android:paddingStart="@dimen/studio_corner_icon_width">
+  <juloo.keyboard2.suggestions.CandidatesView android:id="@+id/candidates_view" style="@style/candidates_view" android:paddingStart="@dimen/studio_corner_icon_width" android:paddingEnd="@dimen/studio_corner_icon_width">
     <TextView android:id="@+id/candidates_emoji" style="@style/candidates_emoji"/>
     <TextView android:id="@+id/candidates_left" style="@style/candidates_item"/>
     <TextView android:id="@+id/candidates_middle" style="@style/candidates_item"/>
     <TextView android:id="@+id/candidates_right" style="@style/candidates_item"/>
-    <TextView android:id="@+id/candidates_lang_name" style="@style/candidates_lang_name"/>
-    <Button android:id="@+id/dictionary_switch" style="@style/change_dictionary"/>
   </juloo.keyboard2.suggestions.CandidatesView>
   <!-- Studio: see-through shortcuts in the bottom corners of the suggestion bar -->
   <TextView android:id="@+id/corner_clipboard" style="@style/studio_corner_icon" android:layout_gravity="bottom|start"/>
+  <TextView android:id="@+id/corner_memory" style="@style/studio_corner_icon" android:layout_gravity="bottom|end" android:text="▤"/>
   </FrameLayout>
   <juloo.keyboard2.Keyboard2View android:id="@+id/keyboard_view" android:layout_width="match_parent" android:layout_height="wrap_content"/>
 </LinearLayout>

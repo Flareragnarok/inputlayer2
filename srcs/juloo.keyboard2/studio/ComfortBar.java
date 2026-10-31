@@ -109,8 +109,8 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     }
     else if (action.equals("dictionary"))
     {
-      // Without installed dictionaries there is no language to switch to;
-      // offer to download them.
+      // The switcher also offers downloading. Without any language to
+      // switch to, go to the download screen directly.
       if (_config.should_show_dictionary_switch)
         _listener.comfort_key(KeyValue.getKeyByName("change_dictionary"));
       else
@@ -218,9 +218,10 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
   String language_label()
   {
     String n = _config.current_dictionary_name;
-    if (n == null || n.isEmpty())
-      return "🌐";
-    return n.substring(0, Math.min(2, n.length())).toUpperCase();
+    String code = (n == null || n.isEmpty()) ? "🌐" :
+      n.substring(0, Math.min(2, n.length())).toUpperCase();
+    // No dictionary installed for it yet: tap downloads.
+    return (_config.current_dictionary == null) ? "⬇ " + code : code;
   }
 
   static String shorten(String s)

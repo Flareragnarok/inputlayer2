@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-10-31 (build 9).
+Last updated: 2026-10-31 (build 10).
 
 ## Done
 
@@ -20,6 +20,7 @@ Last updated: 2026-10-31 (build 9).
 | 7 | Bigger clipboard corner icon; suggestions start after it. |
 | 8 | The language key is a normal comfort bar key instead of pinned to the right end. ROADMAP.md. |
 | 9 | Comfort bar keys look like the keyboard's keys, smaller and a shade brighter. The height key selects a whole container (comfort bar, suggestions, keyboard) and highlights it; swiping up/down resizes it. |
+| 10 | Suggestion bar only shows suggestions: the language name, language button and "install a dictionary" message are gone from it (the comfort bar's language key shows `⬇ EN` when that dictionary is missing). Memory icon in the bottom-right corner (the pane itself comes next). |
 
 Infrastructure:
 
@@ -36,9 +37,8 @@ Infrastructure:
    files, in a scrollable column on the left third: tap to paste, pin to keep.
    Pinned items fill the right two thirds for quick access.
 2. **Memory pane.** Your own workspace: add items from your pins, from the
-   clipboard and from files on the phone's storage. Opened from a see-through
-   icon in the bottom-right corner of the suggestion bar, same size as the
-   clipboard icon.
+   clipboard and from files on the phone's storage. Opened from the
+   see-through icon in the bottom-right corner of the suggestion bar.
 3. **Switch between Clipboard and Memory** from inside either pane.
 
 ## Later
@@ -58,6 +58,10 @@ Infrastructure:
 
 ## Undecided
 
+- Language and suggestions, to rethink: should the suggestions' language
+  follow the keyboard layout, should the language key cycle languages
+  directly instead of opening a list, should the suggestion bar show more
+  than 3 words (scrollable)?
 - Corner icons disappear when suggestions are turned off. Move them to the
   comfort bar in that case?
 - Comfort bar in the split layout (tablets, landscape): untested.
