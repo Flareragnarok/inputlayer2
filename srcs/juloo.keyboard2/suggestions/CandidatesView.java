@@ -114,9 +114,8 @@ public class CandidatesView extends LinearLayout
   {
     // Make the candidates view about as high as a keyboard row.
     float row_height = config.keyboard_rows_height_pixels * (1 - config.key_vertical_margin);
-    // Studio: a [changeheight] module can set the bar height.
-    if (!Float.isNaN(config.studio.bar_dp))
-      row_height = config.studio.bar_dp * getResources().getDisplayMetrics().density;
+    // Studio: smaller by default, a [changeheight] module can set it.
+    row_height = config.studio.bar_dp * getResources().getDisplayMetrics().density;
     ViewGroup.MarginLayoutParams p =
       (ViewGroup.MarginLayoutParams)getLayoutParams();
     p.height = (int)row_height;

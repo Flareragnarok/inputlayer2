@@ -14,6 +14,8 @@ public final class StudioConfig
   public static final int KEYBOARD_PERCENT_MIN = 10;
   public static final int KEYBOARD_PERCENT_MAX = 100;
   public static final float DEFAULT_COMFORT_BAR_DP = 26f;
+  /** Upstream makes the suggestion bar a full key row high, too big. */
+  public static final float DEFAULT_BAR_DP = 28f;
 
   /** Keys shown when no [comfortbar] module is active. */
   public static final List<ComfortKeySpec> DEFAULT_KEYS = Arrays.asList(
@@ -25,8 +27,8 @@ public final class StudioConfig
   /** [-1] when not set. */
   public int keyboard_percent_portrait = -1;
   public int keyboard_percent_landscape = -1;
+  public float bar_dp = DEFAULT_BAR_DP;
   /** [NaN] when not set. */
-  public float bar_dp = Float.NaN;
   public float margin_bottom_dp = Float.NaN;
   public float comfort_bar_dp = DEFAULT_COMFORT_BAR_DP;
   /** Height factor for each row, top to bottom. [null] when not set. */
@@ -54,7 +56,9 @@ public final class StudioConfig
       keyboard_percent_portrait = clamp_percent(kp.optInt("portrait", -1));
       keyboard_percent_landscape = clamp_percent(kp.optInt("landscape", -1));
     }
-    bar_dp = clamp_dp(j.optDouble("bar_dp", Double.NaN), 12, 96);
+    float b = clamp_dp(j.optDouble("bar_dp", Double.NaN), 12, 96);
+    if (!Float.isNaN(b))
+      bar_dp = b;
     margin_bottom_dp = clamp_dp(j.optDouble("margin_bottom_dp", Double.NaN), 0, 64);
     // 0 hides the comfort bar.
     float cb = clamp_dp(j.optDouble("comfort_bar_dp", Double.NaN), 0, 96);

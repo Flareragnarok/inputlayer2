@@ -21,7 +21,7 @@ public class StudioConfigTest
   {
     StudioConfig c = StudioConfig.load(new FakePrefs());
     assertEquals(35, c.keyboard_percent(false, 35));
-    assertTrue(Float.isNaN(c.bar_dp));
+    assertEquals(StudioConfig.DEFAULT_BAR_DP, c.bar_dp, 0f);
     assertTrue(Float.isNaN(c.margin_bottom_dp));
     assertEquals(StudioConfig.DEFAULT_COMFORT_BAR_DP, c.comfort_bar_dp, 0f);
     assertEquals(1f, c.row_factor(0), 0f);
