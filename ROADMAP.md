@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 23).
+Last updated: 2026-11-01 (build 24).
 
 ## Done
 
@@ -34,6 +34,7 @@ Last updated: 2026-11-01 (build 23).
 | 21 | Nests switch with swipe right (left lists everything); swipe down goes back to the default nest, swipe up restores the text (View, Verse). Scope swiped down types in View's format until the scope's separator (space for Word). Space bar: down resets all nests, left saves them as a nest config, up switches configs (replaces upstream's layout switching and left cursor slider, decided 2026-10-31). |
 | 22 | Typing in format (Scope down) also applies Verse's look to every letter typed; View on plain types in Verse's look only. Sector: left/right move the cursor by a unit without selecting, up selects the unit at the cursor or deselects, down switches exclusive/inclusive selection (inclusive takes the trailing space, the delimiters, the line break). |
 | 23 | "plain" is an item of every Verse nest (but Case) and of View's list. Swipe down on View or Verse applies plain to the text and goes back to the default nest. Sector left/right with a selection moves the selection by a unit (staying inclusive or exclusive); without one, the cursor moves, skipping spaces when inclusive. |
+| 24 | Inclusive selection grows a (partial) selection out to whole units and their separators, keeping what it held. Typing in format shows on the Scope key (lit, "✎ typing", the format and look) with a message saying what ends it. |
 
 Infrastructure:
 
@@ -70,6 +71,10 @@ Infrastructure:
 
 ## Undecided
 
+- Kept selection: Android fields have one selection, which typing
+  replaces. Proposal: Sector pins a range of its own (shown on the key,
+  re-found when text before it changes) that View, Verse and cut act on
+  while the cursor types elsewhere.
 - Language and suggestions, to rethink: should the suggestions' language
   follow the keyboard layout, should the language key cycle languages
   directly instead of opening a list, should the suggestion bar show more

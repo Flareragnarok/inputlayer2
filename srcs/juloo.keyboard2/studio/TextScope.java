@@ -108,11 +108,13 @@ public abstract class TextScope
     return new int[]{ sel[0], before[1] };
   }
 
-  /** [r] with what surrounds a unit: the spaces after it (before it at the
-      end of a line), the line break for lines and paragraphs. Delimited
-      scopes add their delimiters instead. */
+  /** [r] grown out to whole units, keeping what it held, with what
+      surrounds them: the spaces after (before, at the end of a line), the
+      line break for lines and paragraphs. Delimited scopes grow to their
+      delimiters instead. */
   public int[] inclusive(String text, int[] r)
   {
+    r = whole_units(text, r);
     int s = r[0], e = r[1];
     while (e < text.length() && (text.charAt(e) == ' ' || text.charAt(e) == '\t'))
       e++;
@@ -121,6 +123,19 @@ public abstract class TextScope
     if (e == r[1])
       while (s > 0 && (text.charAt(s - 1) == ' ' || text.charAt(s - 1) == '\t'))
         s--;
+    return new int[]{ s, e };
+  }
+
+  /** [r] grown to the units its ends are inside of. */
+  int[] whole_units(String text, int[] r)
+  {
+    int s = r[0], e = r[1];
+    int[] a = unit_containing(text, s);
+    if (a != null)
+      s = Math.min(s, a[0]);
+    int[] b = (e > s) ? unit_containing(text, e - 1) : null;
+    if (b != null)
+      e = Math.max(e, b[1]);
     return new int[]{ s, e };
   }
 
@@ -202,6 +217,7 @@ public abstract class TextScope
     @Override
     public int[] inclusive(String text, int[] r)
     {
+      r = whole_units(text, r);
       if (r[0] >= _open.length() && text.startsWith(_open, r[0] - _open.length())
           && text.startsWith(_close, r[1]))
         return new int[]{ r[0] - _open.length(), r[1] + _close.length() };

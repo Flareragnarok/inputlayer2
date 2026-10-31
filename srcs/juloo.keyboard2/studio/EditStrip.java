@@ -168,7 +168,14 @@ public class EditStrip extends LinearLayout
     removeAllViews();
     addView(make_key(SELECTION_DIRECTION_KEY, 1.0f));
     _scope_key = make_key(SCOPE_KEY, 1.6f);
-    ((ComfortKey)_scope_key).set_lines(scope_nest_name(), _scope.label);
+    if (_typing)
+    {
+      // Typing in format: say so where it was started.
+      ((ComfortKey)_scope_key).set_lines("✎ typing", typing_summary());
+      ((ComfortKey)_scope_key)._highlight = true;
+    }
+    else
+      ((ComfortKey)_scope_key).set_lines(scope_nest_name(), _scope.label);
     addView(_scope_key);
     addView(make_key(CUSTOM_SELECTION_KEY, 1.3f));
     View sector = make_key(SELECTOR_KEY, 1.5f);
@@ -577,6 +584,30 @@ public class EditStrip extends LinearLayout
     _typing_start = pos + open.length();
     _typing_style = style;
     rebuild();
+    toast("Typing in " + typing_summary() + " until " + separator_name());
+  }
+
+  /** E.g. "Bold · 𝐛𝐨𝐥𝐝". */
+  String typing_summary()
+  {
+    String f = (_typing_close.isEmpty() && view_format() == null) ? null : _view_item;
+    String v = (_typing_style == null) ? null
+      : (_typing_case ? case_label(_typing_style) : UnicodeStyles.label(_typing_style));
+    if (f != null && v != null)
+      return f + " · " + v;
+    return (f != null) ? f : (v != null ? v : "");
+  }
+
+  /** What ends typing in format, for the scope. */
+  String separator_name()
+  {
+    if (_scope == TextScope.ALL)
+      return "moving the cursor away";
+    if (_scope == TextScope.LINE || _scope == TextScope.PARAGRAPH)
+      return "a new line";
+    if (_scope == TextScope.SENTENCE)
+      return ". ! ? or a new line";
+    return "a space";
   }
 
   void stop_typing()

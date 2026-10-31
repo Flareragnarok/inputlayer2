@@ -54,6 +54,8 @@ final class ComfortKey extends View implements Runnable
   /** Two lines shown instead of the tap and up/down labels: a nest on top
       and its current item at the bottom. [null] for a normal key. */
   String _top = null, _bottom = null;
+  /** Drawn as pressed, to show a mode is on. */
+  boolean _highlight = false;
 
   float _down_x, _down_y;
   /** Direction under the finger, [-1] when it is an unset direction. */
@@ -88,7 +90,7 @@ final class ComfortKey extends View implements Runnable
   {
     float w = getWidth(), h = getHeight();
     _rect.set(0, 0, w, h);
-    _bg.setColor(isPressed() ? _key_pressed_color : _key_color);
+    _bg.setColor((isPressed() || _highlight) ? _key_pressed_color : _key_color);
     canvas.drawRoundRect(_rect, _radius, _radius, _bg);
     float cx = w / 2, cy = h / 2;
     if (_top != null)

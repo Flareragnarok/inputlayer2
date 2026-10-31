@@ -56,6 +56,10 @@ public class EditToolsTest
     assertEquals("hi there", sub(t, hi));
     assertEquals("\"hi there\"", sub(t, q.inclusive(t, hi)));
     assertEquals("hi there", sub(t, q.exclusive(t, q.inclusive(t, hi))));
+    // A partial selection grows out to whole units, keeping what it held.
+    assertEquals("say ", sub(t, w.inclusive(t, new int[]{ 1, 2 })));
+    assertEquals("hi there", sub(t, w.inclusive(t, new int[]{ 6, 10 })));  // "i th" -> both words
+    assertEquals("\"hi there\"", sub(t, q.inclusive(t, new int[]{ 7, 9 })));
     int[] line = TextScope.LINE.unit_at(t, 2);
     assertEquals("say \"hi there\" now\n", sub(t, TextScope.LINE.inclusive(t, line)));
   }
