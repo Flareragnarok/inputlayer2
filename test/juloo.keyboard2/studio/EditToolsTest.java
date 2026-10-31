@@ -65,6 +65,17 @@ public class EditToolsTest
   }
 
   @Test
+  public void pinned_text_found_again()
+  {
+    String t = "pin me, then pin me again";
+    assertArrayEquals(new int[]{ 0, 6 }, EditStrip.find_nearest(t, "pin me", 0));
+    // Text typed before it moved it: the closest occurrence wins.
+    assertArrayEquals(new int[]{ 13, 19 }, EditStrip.find_nearest(t, "pin me", 11));
+    assertArrayEquals(new int[]{ 0, 6 }, EditStrip.find_nearest(t, "pin me", 3));
+    assertNull(EditStrip.find_nearest(t, "gone", 5));
+  }
+
+  @Test
   public void styled_words()
   {
     String t = "a " + UnicodeStyles.apply("bold", "bold") + " z";

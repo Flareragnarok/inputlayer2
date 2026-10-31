@@ -58,6 +58,8 @@ public class EditStrip extends LinearLayout
     int sel_start();
     int sel_end();
     void open_studio();
+    /** The pinned selection changed, [null] when unpinned. */
+    void pinned(String text);
   }
 
   static final String KEY_SYNTAX_PREFIX = "studio_format_";
@@ -76,7 +78,7 @@ public class EditStrip extends LinearLayout
       switches between exclusive and inclusive selection. */
   static final ComfortKeySpec SELECTOR_KEY =
     ComfortKeySpec.of("c", "select", "w", "cursor_prev", "e", "cursor_next",
-        "n", "select_toggle", "s", "inclusive_toggle");
+        "n", "select_toggle", "s", "inclusive_toggle", "nw", "pin");
   static final ComfortKeySpec CUSTOM_SELECTION_KEY = ComfortKeySpec.of("c", "custom_selection");
   static final ComfortKeySpec SELECTION_DIRECTION_KEY = ComfortKeySpec.of("c", "selection_direction");
   static final ComfortKeySpec CYCLE_DIRECTION_KEY = ComfortKeySpec.of("c", "cycle_direction");
@@ -104,6 +106,14 @@ public class EditStrip extends LinearLayout
   boolean _forward = true;
   /** Cycling direction (↑↓): up or down, for View and Verse. */
   boolean _up = true;
+  /** Pinned selection (Sector up-left): its text and absolute start, kept
+      while the cursor types elsewhere. View, Verse and cut act on it.
+      [null] when nothing is pinned. */
+  String _pin_text = null;
+  int _pin_start = 0;
+  /** The current View/Verse edit acts on the pinned text. */
+  boolean _target_is_pin = false;
+
   /** Selections include what surrounds a unit (trailing space,
       delimiters). Switched by swiping down on Sector. */
   boolean _inclusive = false;
@@ -179,7 +189,8 @@ public class EditStrip extends LinearLayout
     addView(_scope_key);
     addView(make_key(CUSTOM_SELECTION_KEY, 1.3f));
     View sector = make_key(SELECTOR_KEY, 1.5f);
-    ((ComfortKey)sector).set_lines(_inclusive ? "incl" : "excl", "Sector");
+    ((ComfortKey)sector).set_lines((_inclusive ? "incl" : "excl") + (_pin_text != null ? " 📌" : ""),
+        "Sector");
     addView(sector);
     _format_key = make_key(FORMAT_KEY, 1.6f);
     ((ComfortKey)_format_key).set_lines(syntax().name,
@@ -243,7 +254,8 @@ public class EditStrip extends LinearLayout
 
   /* Keyboard2View.BottomInsetTaker */
 
-  public boolean takes_bottom_inset() { return getVisibility() == VISIBLE; }
+  /** Decided by the keyboard, which knows the containers' order. */
+  public boolean takes_bottom_inset() { return false; }
 
   public void set_bottom_inset(int px)
   {
@@ -369,6 +381,12 @@ public class EditStrip extends LinearLayout
         r = has_selection(f) ? new int[]{ f.sel_end, f.sel_end }
           : adjust(f.text, _scope.unit_at(f.text, f.sel_start));
         break;
+      case "pin":
+        if (has_selection(f))
+          set_pin(f.text.substring(f.sel_start, f.sel_end), f.base + f.sel_start);
+        else
+          set_pin(null, 0);
+        return;
       case "inclusive_toggle":
         _inclusive = !_inclusive;
         if (has_selection(f))
@@ -391,6 +409,7 @@ public class EditStrip extends LinearLayout
       case "cursor_next": return new ComfortKey.Label("▸", false);
       case "select_toggle": return new ComfortKey.Label("[ ]", false);
       case "inclusive_toggle": return new ComfortKey.Label("⊂", false);
+      case "pin": return new ComfortKey.Label(_pin_text == null ? "📌" : "✕", false);
       case "custom_selection": return new ComfortKey.Label("Spec", false);
       case "selection_direction": return new ComfortKey.Label(_forward ? "→" : "←", false);
       case "cycle_direction": return new ComfortKey.Label(_up ? "↑" : "↓", false);
@@ -955,8 +974,21 @@ public class EditStrip extends LinearLayout
     return (r == null || !_inclusive) ? r : _scope.inclusive(text, r);
   }
 
+  /** The pinned text, the selection, or the scope's unit at the cursor. */
   int[] target(Field f)
   {
+    _target_is_pin = false;
+    if (_pin_text != null)
+    {
+      int[] p = locate_pin(f);
+      if (p != null)
+      {
+        _target_is_pin = true;
+        return p;
+      }
+      set_pin(null, 0);
+      toast("The pinned text is gone");
+    }
     if (has_selection(f))
       return new int[]{ f.sel_start, f.sel_end };
     return _scope.unit_at(f.text, f.sel_start);
@@ -968,8 +1000,96 @@ public class EditStrip extends LinearLayout
     ic.beginBatchEdit();
     ic.setSelection(f.base + start, f.base + end);
     ic.commitText(text, 1);
-    ic.setSelection(f.base + sel_start, f.base + sel_end);
+    if (_target_is_pin)
+    {
+      // The pin follows the result; the cursor stays where it was typing.
+      set_pin(text.substring(sel_start - start, sel_end - start), f.base + sel_start);
+      int c = f.sel_start, delta = text.length() - (end - start);
+      if (c >= end)
+        c += delta;
+      else if (c > start)
+        c = start + text.length();
+      ic.setSelection(f.base + c, f.base + c);
+    }
+    else
+      ic.setSelection(f.base + sel_start, f.base + sel_end);
     ic.endBatchEdit();
+  }
+
+  /* Pinned selection */
+
+  void set_pin(String text, int abs_start)
+  {
+    _pin_text = (text == null || text.isEmpty()) ? null : text;
+    _pin_start = abs_start;
+    _listener.pinned(_pin_text);
+    rebuild();
+  }
+
+  /** The pinned text's range in [f], found again if the text before it
+      changed: the occurrence closest to where it was. [null] if gone. */
+  int[] locate_pin(Field f)
+  {
+    int[] r = find_nearest(f.text, _pin_text, _pin_start - f.base);
+    if (r != null)
+      _pin_start = f.base + r[0];
+    return r;
+  }
+
+  /** Range of [p] in [text], at [rel] if it is there, else the occurrence
+      closest to [rel]. [null] if [p] isn't in [text]. */
+  static int[] find_nearest(String text, String p, int rel)
+  {
+    if (rel >= 0 && text.startsWith(p, rel))
+      return new int[]{ rel, rel + p.length() };
+    int best = -1;
+    for (int i = text.indexOf(p); i >= 0; i = text.indexOf(p, i + 1))
+      if (best < 0 || Math.abs(i - rel) < Math.abs(best - rel))
+        best = i;
+    return (best < 0) ? null : new int[]{ best, best + p.length() };
+  }
+
+  /** Select the pinned text in the field (the selection bar's tap). */
+  public void select_pinned()
+  {
+    Field f = read();
+    if (f == null || _pin_text == null)
+      return;
+    int[] r = locate_pin(f);
+    if (r != null)
+      f.ic.setSelection(f.base + r[0], f.base + r[1]);
+  }
+
+  public void unpin() { set_pin(null, 0); }
+
+  /** Cut the pinned text to the clipboard, keeping the cursor. Returns
+      [false] when nothing is pinned. */
+  public boolean cut_pinned()
+  {
+    if (_pin_text == null)
+      return false;
+    Field f = read();
+    int[] r = (f == null) ? null : locate_pin(f);
+    if (r == null)
+    {
+      set_pin(null, 0);
+      return false;
+    }
+    android.content.ClipboardManager cm = (android.content.ClipboardManager)
+      getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+    cm.setPrimaryClip(android.content.ClipData.newPlainText("Input Layer", _pin_text));
+    int c = f.sel_start, len = r[1] - r[0];
+    if (c >= r[1])
+      c -= len;
+    else if (c > r[0])
+      c = r[0];
+    f.ic.beginBatchEdit();
+    f.ic.setSelection(f.base + r[0], f.base + r[1]);
+    f.ic.commitText("", 1);
+    f.ic.setSelection(f.base + c, f.base + c);
+    f.ic.endBatchEdit();
+    set_pin(null, 0);
+    return true;
   }
 
   /* Reading the field */

@@ -37,6 +37,7 @@ import juloo.keyboard2.studio.ClipKeeper;
 import juloo.keyboard2.studio.ComfortBar;
 import juloo.keyboard2.studio.EditStrip;
 import juloo.keyboard2.studio.MemoryPane;
+import juloo.keyboard2.studio.SelectionBar;
 import juloo.keyboard2.studio.StudioActivity;
 import juloo.keyboard2.suggestions.CandidatesView;
 import juloo.keyboard2.suggestions.Suggestions;
@@ -51,6 +52,9 @@ public class Keyboard2 extends InputMethodService
   private ComfortBar _comfort_bar;
   private ClipKeeper _clip_keeper;
   private EditStrip _edit_strip;
+  private SelectionBar _selection_bar;
+  /** Bottom system inset (navigation bar) on Android 15+. */
+  private int _studio_bottom_inset = 0;
   /** Studio: selection as last reported by the editor, for the edit strip. */
   private int _studio_sel_start = 0, _studio_sel_end = 0;
   private Suggestions _suggestions;
@@ -189,7 +193,17 @@ public class Keyboard2 extends InputMethodService
       public int sel_start() { return _studio_sel_start; }
       public int sel_end() { return _studio_sel_end; }
       public void open_studio() { start_activity(StudioActivity.class); }
+      public void pinned(String text)
+      {
+        _selection_bar.set_pinned(text);
+        apply_bottom_inset();
+      }
     }, Config.globalPrefs());
+    _selection_bar = (SelectionBar)_keyboard_container_view.findViewById(R.id.selection_bar);
+    _selection_bar.setup(new SelectionBar.Listener() {
+      public void select_pinned() { _edit_strip.select_pinned(); }
+      public void unpin() { _edit_strip.unpin(); }
+    });
     _keyboard_container_view.findViewById(R.id.corner_memory)
       .setOnClickListener(new View.OnClickListener() {
         public void onClick(View _v) { open_memory_pane(true); }
@@ -204,7 +218,70 @@ public class Keyboard2 extends InputMethodService
       public void open_dictionaries() { launch_dictionaries_activity(); }
       public void highlight(int target) { highlight_container(target); }
     }, Config.globalPrefs());
-    _keyboard_layout_view.studio_bottom = _edit_strip;
+    _keyboard_layout_view.studio_bottom = new Keyboard2View.BottomInsetTaker() {
+      public boolean takes_bottom_inset() { return bottom_container() != _keyboard_layout_view; }
+      public void set_bottom_inset(int px)
+      {
+        _studio_bottom_inset = px;
+        apply_bottom_inset();
+      }
+    };
+  }
+
+  /** Studio: the containers, by their name in [StudioConfig.order]. */
+  private View container(String name)
+  {
+    switch (name)
+    {
+      case "comfort": return _comfort_bar;
+      case "selection": return _selection_bar;
+      case "suggestions": return _keyboard_container_view.findViewById(R.id.candidates_frame);
+      case "keyboard": return _keyboard_layout_view;
+      default: return _edit_strip;
+    }
+  }
+
+  /** Studio: stack the containers in the order the height key gave them. */
+  private void apply_container_order()
+  {
+    ViewGroup c = _keyboard_container_view;
+    boolean same = true;
+    int i = 0;
+    for (String n : _config.studio.order)
+      if (c.getChildAt(i++) != container(n))
+        same = false;
+    if (same)
+    {
+      apply_bottom_inset(); // Visibilities may have changed.
+      return;
+    }
+    for (String n : _config.studio.order)
+    {
+      View v = container(n);
+      c.removeView(v);
+      c.addView(v);
+    }
+    apply_bottom_inset();
+  }
+
+  /** Studio: the lowest visible container, which gets the navigation bar's
+      space below it. */
+  private View bottom_container()
+  {
+    ViewGroup c = _keyboard_container_view;
+    for (int i = c.getChildCount() - 1; i >= 0; i--)
+      if (c.getChildAt(i).getVisibility() == View.VISIBLE)
+        return c.getChildAt(i);
+    return _keyboard_layout_view;
+  }
+
+  private void apply_bottom_inset()
+  {
+    View bottom = bottom_container();
+    boolean strip = (bottom == _edit_strip);
+    _edit_strip.set_bottom_inset(strip ? _studio_bottom_inset : 0);
+    int pad = (bottom == _keyboard_layout_view || strip) ? 0 : _studio_bottom_inset;
+    _keyboard_container_view.setPadding(0, 0, 0, pad);
   }
 
   /** Studio: a see-through shortcut on the suggestion bar, showing the icon
@@ -239,11 +316,14 @@ public class Keyboard2 extends InputMethodService
   {
     if (VERSION.SDK_INT < 23)
       return;
+    // The selection bar shows while it is being placed, even if empty.
+    _selection_bar.set_placing(target == ComfortBar.TARGET_SELECTION_BAR);
     View[] views = {
       _comfort_bar,
       _keyboard_container_view.findViewById(R.id.candidates_frame),
       _keyboard_layout_view,
-      _edit_strip };
+      _edit_strip,
+      _selection_bar };
     for (int i = 0; i < views.length; i++)
     {
       Drawable fg = null;
@@ -318,6 +398,8 @@ public class Keyboard2 extends InputMethodService
       .setVisibility(should_show ? View.VISIBLE : View.GONE);
     _comfort_bar.refresh(_config);
     _edit_strip.refresh(_config);
+    _selection_bar.refresh(_config);
+    apply_container_order();
   }
 
   /** Might re-create the keyboard view. [_keyboard_layout_view.setKeyboard()] and
@@ -631,6 +713,15 @@ public class Keyboard2 extends InputMethodService
 
         case STUDIO_NESTS_SAVE:
           _edit_strip.save_nest_config();
+          break;
+
+        case STUDIO_CUT:
+          if (!_edit_strip.cut_pinned())
+          {
+            InputConnection ic = getCurrentInputConnection();
+            if (ic != null)
+              ic.performContextMenuAction(android.R.id.cut);
+          }
           break;
       }
     }

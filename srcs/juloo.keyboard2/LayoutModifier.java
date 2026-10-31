@@ -119,7 +119,8 @@ public final class LayoutModifier
   static KeyboardData backspace_cut(KeyboardData kw)
   {
     final KeyValue backspace = KeyValue.getKeyByName("backspace");
-    final KeyValue cut = KeyValue.getKeyByName("cut");
+    // Cuts the pinned selection when there is one.
+    final KeyValue cut = KeyValue.getKeyByName("studio_cut");
     return kw.mapKeys(new KeyboardData.MapKey() {
       public KeyboardData.Key apply(KeyboardData.Key k)
       {

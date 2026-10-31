@@ -39,7 +39,10 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
   public static final int TARGET_SUGGESTIONS = 1;
   public static final int TARGET_KEYBOARD = 2;
   public static final int TARGET_EDIT_STRIP = 3;
-  static final String[] TARGET_LABELS = { "bar", "sugg", "keys", "edit" };
+  public static final int TARGET_SELECTION_BAR = 4;
+  static final String[] TARGET_LABELS = { "bar", "sugg", "keys", "edit", "sel" };
+  /** Names of the targets in [StudioConfig.order]. */
+  static final String[] TARGET_NAMES = { "comfort", "suggestions", "keyboard", "edit", "selection" };
 
   /** Container selected by the height key, [-1] for none (height up/down
       then resize the keyboard). */
@@ -117,6 +120,8 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       else
         _listener.open_dictionaries();
     }
+    else if (action.equals("move_up") || action.equals("move_down"))
+      move(action.equals("move_up") ? -1 : 1);
     else if (action.equals("height_up"))
       change_height(HEIGHT_STEP);
     else if (action.equals("height_down"))
@@ -141,6 +146,8 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       case "select_container":
         return new ComfortKey.Label(
             (_target < 0) ? "↕" : "↕ " + TARGET_LABELS[_target], false);
+      case "move_up": return new ComfortKey.Label("⇡", false);
+      case "move_down": return new ComfortKey.Label("⇣", false);
       case "height_up": return new ComfortKey.Label("+", false);
       case "height_down": return new ComfortKey.Label("−", false);
       case "studio": return new ComfortKey.Label("⚙", false);
@@ -263,6 +270,9 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
         case TARGET_EDIT_STRIP:
           j.put("edit_strip_dp", clamp(_config.studio.edit_strip_dp + delta, 12, 96));
           break;
+        case TARGET_SELECTION_BAR:
+          j.put("selection_bar_dp", clamp(_config.studio.selection_bar_dp + delta, 12, 96));
+          break;
         default:
           JSONObject kp = j.optJSONObject("keyboard_percent");
           if (kp == null)
@@ -279,6 +289,36 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     catch (Exception e)
     {
       Logs.exn("Comfort bar height", e);
+    }
+  }
+
+  /** Move the selected container up ([-1]) or down one place in the stack,
+      saved in the active [changeheight] module (or "quick"). */
+  void move(int dir)
+  {
+    if (_target < 0)
+      return;
+    List<String> order = new java.util.ArrayList<String>(_config.studio.order);
+    int i = order.indexOf(TARGET_NAMES[_target]);
+    int j = i + dir;
+    if (i < 0 || j < 0 || j >= order.size())
+      return;
+    order.set(i, order.get(j));
+    order.set(j, TARGET_NAMES[_target]);
+    ModuleStore store = new ModuleStore(_prefs);
+    Module m = store.active("changeheight");
+    if (m == null)
+      m = store.get("changeheight", "quick");
+    try
+    {
+      JSONObject o = (m == null) ? new JSONObject() : new JSONObject(m.json.toString());
+      o.put("order", new org.json.JSONArray(order));
+      Module nm = (m == null) ? Module.create("changeheight", "quick", o) : new Module(o);
+      store.save(nm, true);
+    }
+    catch (Exception e)
+    {
+      Logs.exn("Comfort bar move", e);
     }
   }
 

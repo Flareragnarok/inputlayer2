@@ -22,7 +22,8 @@ public final class StudioConfig
       ComfortKeySpec.of("c", "copy", "nw", "cut", "ne", "paste", "sw", "select_all"),
       ComfortKeySpec.of("c", "undo", "e", "redo"),
       ComfortKeySpec.of("w", "left", "e", "right", "n", "up", "s", "down"),
-      ComfortKeySpec.of("c", "select_container", "n", "height_up", "s", "height_down"),
+      ComfortKeySpec.of("c", "select_container", "n", "height_up", "s", "height_down",
+          "w", "move_up", "e", "move_down"),
       ComfortKeySpec.of("c", "dictionary", "sw", "layout", "se", "keyboard_picker"));
 
   /** [-1] when not set. */
@@ -33,6 +34,13 @@ public final class StudioConfig
   public float margin_bottom_dp = Float.NaN;
   public float comfort_bar_dp = DEFAULT_COMFORT_BAR_DP;
   public static final float DEFAULT_EDIT_STRIP_DP = 28f;
+  public static final float DEFAULT_SELECTION_BAR_DP = 26f;
+  /** The selection bar, [0] hides it. */
+  public float selection_bar_dp = DEFAULT_SELECTION_BAR_DP;
+  /** Containers top to bottom; the height key moves them. */
+  public static final List<String> DEFAULT_ORDER =
+    Arrays.asList("comfort", "selection", "suggestions", "keyboard", "edit");
+  public List<String> order = DEFAULT_ORDER;
   /** The edit strip under the space bar, [0] hides it. */
   public float edit_strip_dp = DEFAULT_EDIT_STRIP_DP;
   /** Height factor for each row, top to bottom. [null] when not set. */
@@ -71,6 +79,12 @@ public final class StudioConfig
     float es = clamp_dp(j.optDouble("edit_strip_dp", Double.NaN), 0, 96);
     if (!Float.isNaN(es))
       edit_strip_dp = (es < 12) ? 0 : es;
+    float sb = clamp_dp(j.optDouble("selection_bar_dp", Double.NaN), 0, 96);
+    if (!Float.isNaN(sb))
+      selection_bar_dp = (sb < 12) ? 0 : sb;
+    JSONArray os = j.optJSONArray("order");
+    if (os != null)
+      order = read_order(os);
     JSONArray rs = j.optJSONArray("rows");
     if (rs != null && rs.length() > 0)
     {
@@ -115,6 +129,23 @@ public final class StudioConfig
     else
       return;
     keys = l;
+  }
+
+  /** The containers named in [a], in its order, then the missing ones in
+      their default order. Unknown names are ignored. */
+  static List<String> read_order(JSONArray a)
+  {
+    List<String> l = new ArrayList<String>();
+    for (int i = 0; i < a.length(); i++)
+    {
+      String n = a.optString(i, "");
+      if (DEFAULT_ORDER.contains(n) && !l.contains(n))
+        l.add(n);
+    }
+    for (String n : DEFAULT_ORDER)
+      if (!l.contains(n))
+        l.add(n);
+    return l;
   }
 
   /** [current] if the active module doesn't set it. */

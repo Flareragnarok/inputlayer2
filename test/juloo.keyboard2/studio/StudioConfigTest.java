@@ -59,6 +59,15 @@ public class StudioConfigTest
   }
 
   @Test
+  public void container_order()
+  throws Exception
+  {
+    assertEquals(StudioConfig.DEFAULT_ORDER, StudioConfig.load(new FakePrefs()).order);
+    StudioConfig c = with("changeheight", "\"order\":[\"keyboard\",\"comfort\",\"bogus\",\"keyboard\"]");
+    assertEquals(java.util.Arrays.asList("keyboard", "comfort", "selection", "suggestions", "edit"), c.order);
+  }
+
+  @Test
   public void comfortbar_keys()
   throws Exception
   {
