@@ -198,6 +198,11 @@ public class Keyboard2 extends InputMethodService
         _selection_bar.set_pinned(text);
         apply_bottom_inset();
       }
+      public void preview(String text)
+      {
+        _selection_bar.set_preview(text);
+        apply_bottom_inset();
+      }
     }, Config.globalPrefs());
     _selection_bar = (SelectionBar)_keyboard_container_view.findViewById(R.id.selection_bar);
     _selection_bar.setup(new SelectionBar.Listener() {

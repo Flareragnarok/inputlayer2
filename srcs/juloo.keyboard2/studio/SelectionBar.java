@@ -11,10 +11,10 @@ import android.widget.TextView;
 import juloo.keyboard2.Config;
 import juloo.keyboard2.R;
 
-/** The selection bar: shows the selection pinned with Sector (swipe up-left)
-    while typing elsewhere. Tap the text to select it in the field again, ✕
-    to unpin. Only shown while something is pinned (or while the height key
-    has it selected, to place it). */
+/** The selection bar: while typing in format (Scope swiped up) it shows
+    what the typing produces, the format and look applied, as it goes to the
+    cursor. Only shown then (or while the height key places it). It can
+    also show a pinned selection: tap selects it again, ✕ drops it. */
 public class SelectionBar extends LinearLayout
 {
   public interface Listener
@@ -26,6 +26,8 @@ public class SelectionBar extends LinearLayout
   Listener _listener;
   TextView _text;
   String _pinned = null;
+  /** Typing in format's result, shown instead of the pinned text. */
+  String _preview = null;
   /** Shown even when empty, while the height key places it. */
   boolean _placing = false;
   float _dp = StudioConfig.DEFAULT_SELECTION_BAR_DP;
@@ -71,6 +73,13 @@ public class SelectionBar extends LinearLayout
     update();
   }
 
+  /** [text] being typed in format, [null] when done. */
+  public void set_preview(String text)
+  {
+    _preview = text;
+    update();
+  }
+
   public void set_placing(boolean p)
   {
     _placing = p;
@@ -79,15 +88,19 @@ public class SelectionBar extends LinearLayout
 
   void update()
   {
-    boolean show = _dp > 0 && (_pinned != null || _placing);
+    boolean show = _dp > 0 && (_pinned != null || _preview != null || _placing);
     setVisibility(show ? VISIBLE : GONE);
     if (!show)
       return;
     ViewGroup.LayoutParams p = getLayoutParams();
     p.height = (int)(_dp * getResources().getDisplayMetrics().density);
     setLayoutParams(p);
-    _text.setText((_pinned == null) ? "📌 Selection bar: Sector ↖ pins a selection"
-        : "📌 " + _pinned.replace('\n', ' '));
+    if (_preview != null)
+      _text.setText("✎ " + _preview.replace('\n', ' '));
+    else if (_pinned != null)
+      _text.setText("📌 " + _pinned.replace('\n', ' '));
+    else
+      _text.setText("Selection bar: shows what typing in format (Scope ↑) makes");
   }
 
   int dp(int v)

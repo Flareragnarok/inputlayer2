@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 27).
+Last updated: 2026-11-01 (build 28).
 
 ## Done
 
@@ -38,6 +38,7 @@ Last updated: 2026-11-01 (build 27).
 | 25 | Updater reads all releases (up to 300, by pages of 100) and sorts them by build number: GitHub lists them by tag as text (build-9 before build-24), so the newest could fall off a single page. CI writes build failures as annotations. |
 | 26 | Pinned selection: Sector ↖ pins the selection; a selection bar (above the suggestions by default) shows it, tap selects it again, ✕ unpins. View, Verse and backspace ↓ (cut) act on the pinned text while the cursor types elsewhere; it is found again when text before it changes. The height key also moves the selected container: ← up, → down in the stack (comfort bar, selection bar, suggestions, keyboard, edit strip), saved as `order` in the changeheight module. The lowest container keeps clear of the navigation bar. |
 | 27 | The height key also selects each keyboard row (after the containers: row 1 at the top to the last row), outlined in the keyboard; up/down change that row's height factor by 0.1, independently of the others. Growing a row makes the keyboard taller. |
+| 28 | Pinning dropped (unintuitive). Typing in format moved to Scope ↑ and is previewed in the selection bar (✎ and the formatted text) while it goes to the cursor; ✕ stops it. Scope ↓ goes back to Text/Word. Sector shows the selection type (excl/incl) at the bottom. |
 
 Infrastructure:
 

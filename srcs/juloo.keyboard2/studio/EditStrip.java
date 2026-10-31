@@ -26,17 +26,19 @@ import juloo.keyboard2.Theme;
     - ←→: selection direction, forward or backward, for Sector and Scope.
     - Scope, View, Verse are nested: the nest shows on top, its current item
       at the bottom; tap cycles the items, swipe right the nests, swipe left
-      lists everything, swipe down goes back to the default nest (Scope's
-      down types in View's format until the scope's separator, e.g. a space
-      for Word). View and Verse: swipe up restores the text.
+      lists everything, swipe down goes back to the default nest. Scope's up
+      types in View's format and Verse's look until the scope's separator
+      (e.g. a space for Word), previewed in the selection bar. View and
+      Verse: swipe up restores the text.
     - The space bar's swipes keep nest configs: down resets every nest, left
       saves them as a config, up switches to the next saved config.
     - Scope: nests Text (Word, Sentence, Line, Paragraph, All) and Custom
       (custom selections).
     - Spec: opens Studio to define selections.
     - Sector (the selector): tap selects the scope's unit at the cursor,
-      then jumps to the next (or previous) one; swipe up adds a unit, down
-      removes one, on the side the ←→ arrow points to; right deselects.
+      then jumps to the next (or previous) one in the ←→ direction; left
+      and right move the cursor (or the selection) by a unit; up selects
+      or deselects; down switches exclusive/inclusive, shown at the bottom.
     - View (format): nests are the syntaxes (the app's first, remembered
       per app), items their formats and custom formats.
     - Vert: opens Studio to define formats and fonts.
@@ -60,6 +62,9 @@ public class EditStrip extends LinearLayout
     void open_studio();
     /** The pinned selection changed, [null] when unpinned. */
     void pinned(String text);
+    /** What typing in format produces, shown in the selection bar; [null]
+        when not typing in format. */
+    void preview(String text);
   }
 
   static final String KEY_SYNTAX_PREFIX = "studio_format_";
@@ -71,14 +76,15 @@ public class EditStrip extends LinearLayout
       nests, swipe left lists everything, swipe down goes back to the
       default nest. Scope's down instead starts typing in View's format. */
   static final ComfortKeySpec SCOPE_KEY =
-    ComfortKeySpec.of("c", "scope", "e", "scope_nest", "w", "scope_menu", "s", "scope_type");
+    ComfortKeySpec.of("c", "scope", "e", "scope_nest", "w", "scope_menu",
+        "s", "scope_default", "n", "scope_type");
   /** Designed around taps: tap jumps to the next unit in the ←→
       direction; left and right move the cursor by a unit without
       selecting; up selects the unit at the cursor or deselects; down
       switches between exclusive and inclusive selection. */
   static final ComfortKeySpec SELECTOR_KEY =
     ComfortKeySpec.of("c", "select", "w", "cursor_prev", "e", "cursor_next",
-        "n", "select_toggle", "s", "inclusive_toggle", "nw", "pin");
+        "n", "select_toggle", "s", "inclusive_toggle");
   static final ComfortKeySpec CUSTOM_SELECTION_KEY = ComfortKeySpec.of("c", "custom_selection");
   static final ComfortKeySpec SELECTION_DIRECTION_KEY = ComfortKeySpec.of("c", "selection_direction");
   static final ComfortKeySpec CYCLE_DIRECTION_KEY = ComfortKeySpec.of("c", "cycle_direction");
@@ -127,12 +133,14 @@ public class EditStrip extends LinearLayout
   String _view_item = null;
   /** View's syntax when the app is unknown and the user picked one. */
   String _syntax_override = null;
-  /** Typing in View's format and Verse's look (Scope swiped down). */
+  /** Typing in View's format and Verse's look (Scope swiped up). */
   boolean _typing = false;
   /** Closing marker the cursor sits before, "" for none. */
   String _typing_close = "";
   /** Absolute start of the typed text, after the opening marker. */
   int _typing_start = 0;
+  /** Opening marker, for the selection bar's preview. */
+  String _typing_open = "";
   /** Verse's item applied to the typed text, [null] for none. */
   String _typing_style = null;
   boolean _typing_case = false;
@@ -189,8 +197,8 @@ public class EditStrip extends LinearLayout
     addView(_scope_key);
     addView(make_key(CUSTOM_SELECTION_KEY, 1.3f));
     View sector = make_key(SELECTOR_KEY, 1.5f);
-    ((ComfortKey)sector).set_lines((_inclusive ? "incl" : "excl") + (_pin_text != null ? " 📌" : ""),
-        "Sector");
+    // The selection type sits at the bottom, by the down swipe switching it.
+    ((ComfortKey)sector).set_lines("Sector", _inclusive ? "incl" : "excl");
     addView(sector);
     _format_key = make_key(FORMAT_KEY, 1.6f);
     ((ComfortKey)_format_key).set_lines(syntax().name,
@@ -286,6 +294,11 @@ public class EditStrip extends LinearLayout
         return;
       case "scope_type":
         start_typing();
+        return;
+      case "scope_default":
+        _scope_nest = 0;
+        _scope = TextScope.WORD;
+        rebuild();
         return;
       case "appearance_default":
         // Plain letters, and the default nest.
@@ -409,7 +422,7 @@ public class EditStrip extends LinearLayout
       case "cursor_next": return new ComfortKey.Label("▸", false);
       case "select_toggle": return new ComfortKey.Label("[ ]", false);
       case "inclusive_toggle": return new ComfortKey.Label("⊂", false);
-      case "pin": return new ComfortKey.Label(_pin_text == null ? "📌" : "✕", false);
+      case "scope_default": return new ComfortKey.Label("⌂", false);
       case "custom_selection": return new ComfortKey.Label("Spec", false);
       case "selection_direction": return new ComfortKey.Label(_forward ? "→" : "←", false);
       case "cycle_direction": return new ComfortKey.Label(_up ? "↑" : "↓", false);
@@ -556,7 +569,7 @@ public class EditStrip extends LinearLayout
         + verse_nest()[0]);
   }
 
-  /* Typing in View's format and Verse's look (Scope swiped down) */
+  /* Typing in View's format and Verse's look (Scope swiped up) */
 
   /** The format View last applied, [null] when it shows plain. */
   String[] view_format()
@@ -602,6 +615,8 @@ public class EditStrip extends LinearLayout
     _typing_close = close;
     _typing_start = pos + open.length();
     _typing_style = style;
+    _typing_open = open;
+    _listener.preview(open + close);
     rebuild();
     toast("Typing in " + typing_summary() + " until " + separator_name());
   }
@@ -632,6 +647,7 @@ public class EditStrip extends LinearLayout
   void stop_typing()
   {
     _typing = false;
+    _listener.preview(null);
     rebuild();
   }
 
@@ -675,9 +691,12 @@ public class EditStrip extends LinearLayout
       ic.setSelection(_typing_start, start + close.length());
       ic.commitText(conv + close + last, 1);
       ic.endBatchEdit();
+      _listener.preview(null);
       rebuild();
+      return;
     }
-    else if (!conv.equals(body))
+    _listener.preview(_typing_open + conv + close);
+    if (!conv.equals(body))
     {
       ic.beginBatchEdit();
       ic.setSelection(_typing_start, start);
@@ -1060,7 +1079,14 @@ public class EditStrip extends LinearLayout
       f.ic.setSelection(f.base + r[0], f.base + r[1]);
   }
 
-  public void unpin() { set_pin(null, 0); }
+  /** The selection bar's ✕: stops typing in format, drops a pin. */
+  public void unpin()
+  {
+    if (_typing)
+      stop_typing();
+    if (_pin_text != null)
+      set_pin(null, 0);
+  }
 
   /** Cut the pinned text to the clipboard, keeping the cursor. Returns
       [false] when nothing is pinned. */
