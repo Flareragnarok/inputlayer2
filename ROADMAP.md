@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 24).
+Last updated: 2026-11-01 (build 25).
 
 ## Done
 
@@ -35,6 +35,7 @@ Last updated: 2026-11-01 (build 24).
 | 22 | Typing in format (Scope down) also applies Verse's look to every letter typed; View on plain types in Verse's look only. Sector: left/right move the cursor by a unit without selecting, up selects the unit at the cursor or deselects, down switches exclusive/inclusive selection (inclusive takes the trailing space, the delimiters, the line break). |
 | 23 | "plain" is an item of every Verse nest (but Case) and of View's list. Swipe down on View or Verse applies plain to the text and goes back to the default nest. Sector left/right with a selection moves the selection by a unit (staying inclusive or exclusive); without one, the cursor moves, skipping spaces when inclusive. |
 | 24 | Inclusive selection grows a (partial) selection out to whole units and their separators, keeping what it held. Typing in format shows on the Scope key (lit, "✎ typing", the format and look) with a message saying what ends it. |
+| 25 | Updater reads all releases (up to 300, by pages of 100) and sorts them by build number: GitHub lists them by tag as text (build-9 before build-24), so the newest could fall off a single page. CI writes build failures as annotations. |
 
 Infrastructure:
 

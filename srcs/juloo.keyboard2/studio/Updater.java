@@ -106,25 +106,44 @@ public final class Updater
     return out;
   }
 
+  /** Pages of releases read, of [PAGE_SIZE] each. GitHub lists releases
+      by tag as text ("build-9" before "build-24"), not by date, so the
+      newest build can be anywhere: read them all, up to this many. */
+  static final int MAX_PAGES = 3;
+  static final int PAGE_SIZE = 100;
+
   /** Network access, don't call on the main thread. */
   public static List<Release> fetch_releases(String repo) throws Exception
   {
-    HttpURLConnection con = open(
-        "https://api.github.com/repos/" + repo + "/releases?per_page=20");
-    con.setRequestProperty("Accept", "application/vnd.github+json");
-    try
+    List<Release> all = new ArrayList<Release>();
+    for (int page = 1; page <= MAX_PAGES; page++)
     {
-      int code = con.getResponseCode();
-      if (code == 404)
-        throw new IOException("Repository " + repo + " not found or not public");
-      if (code != 200)
-        throw new IOException("GitHub answered " + code);
-      return parse_releases(Utils.read_all_utf8(con.getInputStream()));
+      HttpURLConnection con = open("https://api.github.com/repos/" + repo
+          + "/releases?per_page=" + PAGE_SIZE + "&page=" + page);
+      con.setRequestProperty("Accept", "application/vnd.github+json");
+      String body;
+      try
+      {
+        int code = con.getResponseCode();
+        if (code == 404)
+          throw new IOException("Repository " + repo + " not found or not public");
+        if (code != 200)
+          throw new IOException("GitHub answered " + code);
+        body = Utils.read_all_utf8(con.getInputStream());
+      }
+      finally
+      {
+        con.disconnect();
+      }
+      all.addAll(parse_releases(body));
+      if (new JSONArray(body).length() < PAGE_SIZE)
+        break;
     }
-    finally
-    {
-      con.disconnect();
-    }
+    // Newest build first, across pages.
+    Collections.sort(all, new Comparator<Release>() {
+      public int compare(Release a, Release b) { return b.build - a.build; }
+    });
+    return all;
   }
 
   /** Download the APK of [r] into the cache and check that it is an update of
