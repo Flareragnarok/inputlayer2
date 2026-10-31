@@ -11,7 +11,7 @@ A fork of [Unexpected Keyboard](https://github.com/Julow/Unexpected-Keyboard)
 
 Builds: every push to the `studio` branch publishes a release `build-N`.
 Install the APK from
-[the latest release](https://github.com/Flareragnarok/input-layer/releases/latest)
+[the latest release](https://github.com/Flareragnarok/inputlayer2/releases/latest)
 once; after that, Settings → Studio → Check for updates installs new builds.
 
 ## License
