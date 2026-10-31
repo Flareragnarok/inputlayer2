@@ -51,6 +51,10 @@ final class ComfortKey extends View implements Runnable
   final Typeface _key_font;
   int _label_color;
 
+  /** Two lines shown instead of the tap and up/down labels: a nest on top
+      and its current item at the bottom. [null] for a normal key. */
+  String _top = null, _bottom = null;
+
   float _down_x, _down_y;
   /** Direction under the finger, [-1] when it is an unset direction. */
   int _dir = 0;
@@ -87,10 +91,18 @@ final class ComfortKey extends View implements Runnable
     _bg.setColor(isPressed() ? _key_pressed_color : _key_color);
     canvas.drawRoundRect(_rect, _radius, _radius, _bg);
     float cx = w / 2, cy = h / 2;
+    if (_top != null)
+    {
+      draw_line(canvas, _top, cx, h * 0.27f, h * 0.3f, w * 0.9f, 170);
+      draw_line(canvas, _bottom, cx, h * 0.68f, h * 0.42f, w * 0.9f, 240);
+    }
     for (int i = 0; i < _labels.length; i++)
     {
       Label l = _labels[i];
       if (l == null)
+        continue;
+      // The two lines take the middle column.
+      if (_top != null && (i == 0 || i == 1 || i == 5))
         continue;
       boolean center = (i == 0);
       _paint.setTypeface(l.key_font ? _key_font : Typeface.DEFAULT);
@@ -108,6 +120,26 @@ final class ComfortKey extends View implements Runnable
       y -= (_paint.descent() + _paint.ascent()) / 2;
       canvas.drawText(l.text, x, y, _paint);
     }
+  }
+
+  void set_lines(String top, String bottom)
+  {
+    _top = top;
+    _bottom = (bottom == null) ? "" : bottom;
+    invalidate();
+  }
+
+  void draw_line(Canvas canvas, String text, float x, float y, float size,
+      float max_w, int alpha)
+  {
+    _paint.setTypeface(Typeface.DEFAULT);
+    _paint.setTextSize(size);
+    float tw = _paint.measureText(text);
+    if (tw > max_w)
+      _paint.setTextSize(size * max_w / tw);
+    _paint.setColor(_label_color);
+    _paint.setAlpha(alpha);
+    canvas.drawText(text, x, y - (_paint.descent() + _paint.ascent()) / 2, _paint);
   }
 
   static int attr_color(Context ctx, int attr, int def)

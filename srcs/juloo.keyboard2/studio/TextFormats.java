@@ -104,10 +104,14 @@ public final class TextFormats
     public final String text;
     /** Selection after the edit, in the new text's coordinates. */
     public final int sel_start, sel_end;
+    /** Format applied by [cycle], [null] for plain text. */
+    public final String name;
 
-    Edit(int s, int e, String t, int ss, int se)
+    Edit(int s, int e, String t, int ss, int se) { this(s, e, t, ss, se, null); }
+
+    Edit(int s, int e, String t, int ss, int se, String n)
     {
-      start = s; end = e; text = t; sel_start = ss; sel_end = se;
+      start = s; end = e; text = t; sel_start = ss; sel_end = se; name = n;
     }
   }
 
@@ -217,7 +221,7 @@ public final class TextFormats
     String o = formats.get(j)[1], c = formats.get(j)[2];
     String t = o + body + c;
     return new Edit(outer[0], outer[1], t, outer[0] + o.length(),
-        outer[0] + o.length() + body.length());
+        outer[0] + o.length() + body.length(), formats.get(j)[0]);
   }
 
   /** Remove the format wrapping [text][sel], [null] if it has none. */

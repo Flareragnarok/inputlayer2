@@ -22,20 +22,21 @@ import juloo.keyboard2.Theme;
 
 /** The edit strip, under the space bar, eight keys:
     - ←→: selection direction, forward or backward, for Sector and Scope.
-    - Scope: cycles Word, Sentence, Line, Paragraph, All, then custom
-      selections; the current one shows in the top-left corner, swiping
-      there lists them.
+    - Scope, View, Verse are nested: the nest shows on top, its current item
+      at the bottom; tap cycles the items, swipe left the nests, swipe right
+      lists everything.
+    - Scope: nests Text (Word, Sentence, Line, Paragraph, All) and Custom
+      (custom selections).
     - Spec: opens Studio to define selections.
     - Sector (the selector): tap selects the scope's unit at the cursor,
       then jumps to the next (or previous) one; swipe up adds a unit, down
       removes one, on the side the ←→ arrow points to; right deselects.
-    - View (format): cycles the app's markup formats, then custom formats;
-      swipe left or right opens the list and the syntax choice, down removes
+    - View (format): nests are the syntaxes (the app's first, remembered
+      per app), items their formats and custom formats; swipe down removes
       the format.
     - Vert: opens Studio to define formats and fonts.
-    - Verse (appearance): cycles unicode styles, then saved fonts; swipe up
-      cycles the case, left or right opens the list, down restores plain
-      letters.
+    - Verse (appearance): nests Case, Serif, Sans, Type, Shapes, Marks,
+      Fonts; swipe down restores plain letters.
     - ↑↓: cycling direction, up or down, for View and Verse.
     View and Verse act on the selection, or on the scope's unit at the
     cursor, and select the result so that the next tap cycles on. */
@@ -58,9 +59,11 @@ public class EditStrip extends LinearLayout
   /** Text read around the cursor when the editor doesn't give it all. */
   static final int CONTEXT_CHARS = 4000;
 
-  /** Always says "Scope"; the current scope shows in the top-left corner,
-      swiping there lists them. */
-  static final ComfortKeySpec SCOPE_KEY = ComfortKeySpec.of("c", "scope", "nw", "scope_menu");
+  /** Nested keys (Scope, View, Verse): the nest shows on top and its
+      current item at the bottom. Tap cycles the items, swipe left the
+      nests, swipe right lists everything. */
+  static final ComfortKeySpec SCOPE_KEY =
+    ComfortKeySpec.of("c", "scope", "w", "scope_nest", "e", "scope_menu");
   /** Designed around taps: tap jumps to the next unit, up adds one, down
       removes one, all in the ←→ direction. */
   static final ComfortKeySpec SELECTOR_KEY =
@@ -70,10 +73,10 @@ public class EditStrip extends LinearLayout
   static final ComfortKeySpec SELECTION_DIRECTION_KEY = ComfortKeySpec.of("c", "selection_direction");
   static final ComfortKeySpec CYCLE_DIRECTION_KEY = ComfortKeySpec.of("c", "cycle_direction");
   static final ComfortKeySpec APPEARANCE_KEY =
-    ComfortKeySpec.of("c", "appearance", "n", "case", "w", "appearance_menu",
+    ComfortKeySpec.of("c", "appearance", "w", "appearance_nest",
         "e", "appearance_menu", "s", "appearance_restore");
   static final ComfortKeySpec FORMAT_KEY =
-    ComfortKeySpec.of("c", "format", "w", "format_menu", "e", "format_menu",
+    ComfortKeySpec.of("c", "format", "w", "format_nest", "e", "format_menu",
         "s", "format_restore");
   static final ComfortKeySpec CUSTOM_FORMAT_KEY = ComfortKeySpec.of("c", "custom_format");
 
@@ -89,7 +92,16 @@ public class EditStrip extends LinearLayout
   boolean _forward = true;
   /** Cycling direction (↑↓): up or down, for View and Verse. */
   boolean _up = true;
-  int _case = -1;
+  /** Scope's nest: 0 for the built-in scopes, 1 for custom selections. */
+  int _scope_nest = 0;
+  /** Verse's nest, index into [UnicodeStyles.nests()], and the item last
+      applied in it ([-1]: none yet). */
+  int _verse_nest = 1;
+  int _verse_item = -1;
+  /** Format View last applied, [null] for none or plain. */
+  String _view_item = null;
+  /** View's syntax when the app is unknown and the user picked one. */
+  String _syntax_override = null;
   View _scope_key;
   View _appearance_key;
   View _format_key;
@@ -132,11 +144,17 @@ public class EditStrip extends LinearLayout
     removeAllViews();
     addView(make_key(SELECTION_DIRECTION_KEY, 1.0f));
     _scope_key = make_key(SCOPE_KEY, 1.6f);
+    ((ComfortKey)_scope_key).set_lines(scope_nest_name(), _scope.label);
     addView(_scope_key);
     addView(make_key(CUSTOM_SELECTION_KEY, 1.3f));
     addView(make_key(SELECTOR_KEY, 1.5f));
-    _format_key = make_key(FORMAT_KEY, 1.3f);
-    _appearance_key = make_key(APPEARANCE_KEY, 1.4f);
+    _format_key = make_key(FORMAT_KEY, 1.6f);
+    ((ComfortKey)_format_key).set_lines(syntax().name,
+        (_view_item == null) ? "plain" : _view_item);
+    _appearance_key = make_key(APPEARANCE_KEY, 1.6f);
+    String[] vn = verse_nest();
+    ((ComfortKey)_appearance_key).set_lines(vn[0],
+        verse_item_label(vn, Math.max(0, _verse_item)));
     // View formats, Vert defines formats and fonts, Verse changes the look.
     addView(_format_key);
     addView(make_key(CUSTOM_FORMAT_KEY, 1.3f));
@@ -209,11 +227,24 @@ public class EditStrip extends LinearLayout
     switch (action)
     {
       case "scope":
-        _scope = TextScope.cycle(_scopes, _scope, _forward);
+        _scope = TextScope.cycle(scope_nest_items(), _scope, _forward);
+        rebuild();
+        return;
+      case "scope_nest":
+        _scope_nest = (_scope_nest + 1) % scope_nest_count();
+        _scope = scope_nest_items().get(0);
         rebuild();
         return;
       case "scope_menu":
         scope_menu();
+        return;
+      case "appearance_nest":
+        _verse_nest = (_verse_nest + 1) % UnicodeStyles.nests().size();
+        _verse_item = -1;
+        rebuild();
+        return;
+      case "format_nest":
+        next_syntax();
         return;
       case "selection_direction":
         _forward = !_forward;
@@ -228,7 +259,6 @@ public class EditStrip extends LinearLayout
         _listener.open_studio();
         return;
       case "appearance": cycle_appearance(); return;
-      case "case": cycle_case(); return;
       case "appearance_menu": appearance_menu(); return;
       case "appearance_restore": restore_appearance(); return;
       case "format": cycle_format(); return;
@@ -270,7 +300,7 @@ public class EditStrip extends LinearLayout
     switch (action)
     {
       case "scope": return new ComfortKey.Label("Scope", false);
-      case "scope_menu": return new ComfortKey.Label(_scope.label, false);
+      case "scope_menu": return new ComfortKey.Label("☰", false);
       case "deselect": return new ComfortKey.Label("×", false);
       case "select": return new ComfortKey.Label("Sector", false);
       case "select_extend": return new ComfortKey.Label("+", false);
@@ -279,8 +309,9 @@ public class EditStrip extends LinearLayout
       case "selection_direction": return new ComfortKey.Label(_forward ? "→" : "←", false);
       case "cycle_direction": return new ComfortKey.Label(_up ? "↑" : "↓", false);
       case "appearance": return new ComfortKey.Label("Verse", false);
-      case "case": return new ComfortKey.Label("aA", false);
       case "appearance_menu": return new ComfortKey.Label("☰", false);
+      case "appearance_nest": case "format_nest": case "scope_nest":
+        return new ComfortKey.Label("‹", false);
       case "appearance_restore": return new ComfortKey.Label("⟲", false);
       case "format_restore": return new ComfortKey.Label("⟲", false);
       case "format": return new ComfortKey.Label("View", false);
@@ -299,40 +330,87 @@ public class EditStrip extends LinearLayout
 
   public long repeat_interval() { return _config.longPressInterval; }
 
+  /* Scope */
+
+  /** Built-in scopes, then custom selections when there are some. */
+  int scope_nest_count()
+  {
+    return (_scopes.size() > TextScope.BUILTIN.size()) ? 2 : 1;
+  }
+
+  String scope_nest_name()
+  {
+    return (_scope_nest == 0) ? "Text" : "Custom";
+  }
+
+  List<TextScope> scope_nest_items()
+  {
+    if (_scope_nest >= scope_nest_count())
+      _scope_nest = 0;
+    if (_scope_nest == 0)
+      return TextScope.BUILTIN;
+    return _scopes.subList(TextScope.BUILTIN.size(), _scopes.size());
+  }
+
   void scope_menu()
   {
     PopupMenu p = new PopupMenu(getContext(), _scope_key);
     for (final TextScope s : _scopes)
       add(p.getMenu(), (s == _scope ? "● " : "") + s.label, new Runnable() {
-        public void run() { _scope = s; rebuild(); }
+        public void run()
+        {
+          _scope = s;
+          _scope_nest = TextScope.BUILTIN.contains(s) ? 0 : 1;
+          rebuild();
+        }
       });
     p.show();
   }
 
-  /* Appearance */
+  /* Appearance (Verse) */
 
+  String[] verse_nest()
+  {
+    List<String[]> ns = UnicodeStyles.nests();
+    if (_verse_nest >= ns.size())
+      _verse_nest = 1;
+    return ns.get(_verse_nest);
+  }
+
+  static String verse_item_label(String[] nest, int i)
+  {
+    String item = nest[1 + Math.min(i, nest.length - 2)];
+    return nest[0].equals("Case") ? case_label(item) : UnicodeStyles.label(item);
+  }
+
+  /** Next item of the nest: after the target's current style in this nest,
+      the first one (last one going down) otherwise. Case items cycle on
+      their own, a text's case not being a style. */
   void cycle_appearance()
   {
-    final boolean forward = _up;
+    final String[] nest = verse_nest();
+    final int n = nest.length - 1;
+    final boolean is_case = nest[0].equals("Case");
     transform_target(new Transform() {
       public String apply(String s)
       {
-        return UnicodeStyles.apply(s, UnicodeStyles.cycle(s, forward));
+        int k = -1;
+        if (is_case)
+          k = _verse_item;
+        else
+        {
+          String st = UnicodeStyles.style_of(s);
+          for (int i = 1; i < nest.length; i++)
+            if (nest[i].equals(st))
+              k = i - 1;
+        }
+        int next = (k < 0) ? (_up ? 0 : n - 1) : (k + (_up ? 1 : n - 1)) % n;
+        _verse_item = next;
+        String item = nest[1 + next];
+        return is_case ? UnicodeStyles.change_case(s, item) : UnicodeStyles.apply(s, item);
       }
     });
-  }
-
-  void cycle_case()
-  {
-    int n = UnicodeStyles.CASES.length;
-    if (_case < 0)
-      _case = _up ? 0 : n - 1;
-    else
-      _case = (_case + (_up ? 1 : n - 1)) % n;
-    final String c = UnicodeStyles.CASES[_case];
-    transform_target(new Transform() {
-      public String apply(String s) { return UnicodeStyles.change_case(s, c); }
-    });
+    rebuild();
   }
 
   /** Back to plain letters; the case stays as it is. */
@@ -380,7 +458,23 @@ public class EditStrip extends LinearLayout
   {
     String app = _listener.app();
     return TextFormats.for_app(app,
-        (app == null) ? null : _prefs.getString(KEY_SYNTAX_PREFIX + app, null));
+        (app == null) ? _syntax_override : _prefs.getString(KEY_SYNTAX_PREFIX + app, null));
+  }
+
+  /** View's nests are the syntaxes; the one picked is remembered for the
+      app. */
+  void next_syntax()
+  {
+    List<String> names = TextFormats.syntax_names();
+    int i = names.indexOf(syntax().name);
+    String next = names.get((i + 1) % names.size());
+    String app = _listener.app();
+    if (app != null)
+      _prefs.edit().putString(KEY_SYNTAX_PREFIX + app, next).apply();
+    else
+      _syntax_override = next;
+    _view_item = null;
+    rebuild();
   }
 
   List<String[]> formats()
@@ -405,6 +499,8 @@ public class EditStrip extends LinearLayout
       r = new int[]{ f.sel_start, f.sel_start };
     TextFormats.Edit e = TextFormats.cycle(f.text, r, fs, _up);
     replace(f, e.start, e.end, e.text, e.sel_start, e.sel_end);
+    _view_item = e.name;
+    rebuild();
   }
 
   void restore_format()
@@ -418,6 +514,8 @@ public class EditStrip extends LinearLayout
     TextFormats.Edit e = TextFormats.unwrap(f.text, r, formats());
     if (e != null)
       replace(f, e.start, e.end, e.text, e.sel_start, e.sel_end);
+    _view_item = null;
+    rebuild();
   }
 
   void format_menu()
@@ -433,6 +531,10 @@ public class EditStrip extends LinearLayout
         {
           if (app != null)
             _prefs.edit().putString(KEY_SYNTAX_PREFIX + app, name).apply();
+          else
+            _syntax_override = name;
+          _view_item = null;
+          rebuild();
           format_menu();
         }
       });
@@ -442,7 +544,12 @@ public class EditStrip extends LinearLayout
       });
     for (final String[] fm : TextFormats.cycle_list(syntax, _custom_formats))
       add(m, fm[0], new Runnable() {
-        public void run() { format_target(new String[]{ fm[1], fm[2] }); }
+        public void run()
+        {
+          format_target(new String[]{ fm[1], fm[2] });
+          _view_item = fm[0];
+          rebuild();
+        }
       });
     p.show();
   }

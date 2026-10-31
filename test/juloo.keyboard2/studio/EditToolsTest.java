@@ -172,6 +172,29 @@ public class EditToolsTest
   }
 
   @Test
+  public void verse_nests()
+  {
+    java.util.List<String> styles = java.util.Arrays.asList(UnicodeStyles.STYLES);
+    java.util.Set<String> seen = new java.util.HashSet<String>();
+    for (String[] n : UnicodeStyles.nests())
+      for (int i = 1; i < n.length; i++)
+      {
+        if (n[0].equals("Case"))
+          assertTrue(n[i], java.util.Arrays.asList(UnicodeStyles.CASES).contains(n[i]));
+        else
+          assertTrue(n[i], styles.contains(n[i]));
+        seen.add(n[i]);
+      }
+    // Every style but plain is in a nest.
+    for (String st : UnicodeStyles.STYLES)
+      if (!st.equals(UnicodeStyles.PLAIN))
+        assertTrue(st, seen.contains(st));
+    assertEquals("Bold", TextFormats.cycle("hi", new int[]{ 0, 2 },
+          TextFormats.cycle_list(TextFormats.syntax("Markdown"),
+            new java.util.ArrayList<String[]>()), true).name);
+  }
+
+  @Test
   public void cases()
   {
     assertEquals("HELLO WORLD", UnicodeStyles.change_case("hello world", "upper"));

@@ -174,6 +174,28 @@ public final class UnicodeStyles
     _fonts_from = from;
   }
 
+  /** Verse's nests: { name, items... }. "Case" holds [CASES]; "Fonts" the
+      saved fonts, only when there are some. */
+  public static List<String[]> nests()
+  {
+    List<String[]> l = new ArrayList<String[]>();
+    l.add(new String[]{ "Case", "upper", "lower", "title", "toggle" });
+    l.add(new String[]{ "Serif", "bold", "italic", "bold_italic" });
+    l.add(new String[]{ "Sans", "sans", "sans_bold", "sans_italic", "sans_bold_italic" });
+    l.add(new String[]{ "Type", "mono", "script", "bold_script", "fraktur", "bold_fraktur", "double" });
+    l.add(new String[]{ "Shapes", "small_caps", "circled", "fullwidth" });
+    l.add(new String[]{ "Marks", "strike", "underline", "zalgo" });
+    if (!_fonts.isEmpty())
+    {
+      String[] f = new String[_fonts.size() + 1];
+      f[0] = "Fonts";
+      for (int i = 0; i < _fonts.size(); i++)
+        f[i + 1] = _fonts.get(i).name;
+      l.add(f);
+    }
+    return l;
+  }
+
   /** Built-in styles then saved fonts, in cycle order. */
   public static List<String> styles()
   {
