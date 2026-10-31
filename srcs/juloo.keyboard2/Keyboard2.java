@@ -198,6 +198,7 @@ public class Keyboard2 extends InputMethodService
         _selection_bar.set_pinned(text);
         apply_bottom_inset();
       }
+      public void relayout() { _keyboard_layout_view.setKeyboard(current_layout()); }
       public void preview(String text)
       {
         _selection_bar.set_preview(text);

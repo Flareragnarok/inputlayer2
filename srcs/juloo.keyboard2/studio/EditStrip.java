@@ -65,6 +65,8 @@ public class EditStrip extends LinearLayout
     /** What typing in format produces, shown in the selection bar; [null]
         when not typing in format. */
     void preview(String text);
+    /** The layout must be built again (a key's label changed). */
+    void relayout();
   }
 
   static final String KEY_SYNTAX_PREFIX = "studio_format_";
@@ -117,6 +119,8 @@ public class EditStrip extends LinearLayout
   List<String[]> _custom_formats = new ArrayList<String[]>();
   /** Selection direction (←→): forward or backward, for Sector and Scope. */
   boolean _forward = true;
+  /** The same, for the layout: the arrow key's tap label. */
+  public static boolean selection_forward = true;
   /** Cycling direction (↑↓): up or down, for View and Verse. */
   boolean _up = true;
   /** Pinned selection (Sector up-left): its text and absolute start, kept
@@ -351,7 +355,10 @@ public class EditStrip extends LinearLayout
         return;
       case "selection_direction":
         _forward = !_forward;
+        selection_forward = _forward;
         rebuild();
+        // The arrow key's tap shows the direction.
+        _listener.relayout();
         return;
       case "cycle_direction":
         _up = !_up;
@@ -1326,15 +1333,15 @@ public class EditStrip extends LinearLayout
     return new int[]{ Math.min(sel[0], n[0]), Math.max(sel[1], n[1]) };
   }
 
-  /** Deselect mode: [sel] without its last unit (its first one if not
-      [forward]); with one unit left, nothing selected, the cursor where the
-      selection started (ended, going back). */
+  /** Deselect mode: [sel] without the unit at the end opposite to the
+      arrow's tip, so that the unit at the tip goes last; then nothing
+      selected, the cursor at the tip. */
   int[] deselect_step(String text, int[] sel, boolean forward)
   {
-    int[] r = _scope.shrink(text, sel, forward);
+    int[] r = _scope.shrink(text, sel, !forward);
     if (r[0] != sel[0] || r[1] != sel[1])
       return r;
-    int c = forward ? sel[0] : sel[1];
+    int c = forward ? sel[1] : sel[0];
     return new int[]{ c, c };
   }
 

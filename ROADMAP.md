@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 36).
+Last updated: 2026-11-01 (build 37).
 
 ## Done
 
@@ -47,6 +47,7 @@ Last updated: 2026-11-01 (build 36).
 | 34 | Scope lights up while typing in format (not Spec). In typing in format: Spec tap applies the current Spec to the typed text, → picks one, ↓ saves what was recorded since Scope ↓ started it. |
 | 35 | Third Sector mode: Sector ↓ cycles excl → incl → desel. In desel, tap (in the arrow's direction) and ←/→ remove the unit at that end of the selection, until nothing is selected. |
 | 36 | The arrow key next to the space bar: tap is Sector's step in the ←→ direction (its tap was an off-by-default Compose placeholder). Sector's tap cycles excl/incl/desel. Shift: swipe up Caps Lock, swipe right Compose. Verse's tOGGLE cASE gives exactly that (it flipped every letter, like UPPER on lowercase). |
+| 37 | desel removes units from the end opposite to the arrow's tip, so the tip's unit goes last (it went first). The arrow key's tap shows ⇢ or ⇠ with Sector's direction. |
 
 Infrastructure:
 

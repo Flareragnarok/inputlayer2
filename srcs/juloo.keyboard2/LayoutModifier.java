@@ -125,14 +125,20 @@ public final class LayoutModifier
     final KeyValue shift = KeyValue.getKeyByName("shift");
     final KeyValue capslock = KeyValue.getKeyByName("capslock");
     final KeyValue compose = KeyValue.getKeyByName("compose");
-    final KeyValue step = KeyValue.getKeyByName("studio_sector_step");
+    // Its label shows Sector's direction.
+    final KeyValue step = KeyValue.getKeyByName(
+        juloo.keyboard2.studio.EditStrip.selection_forward ? "studio_sector_step"
+        : "studio_sector_step_back");
+    final KeyValue step_other = KeyValue.getKeyByName(
+        juloo.keyboard2.studio.EditStrip.selection_forward ? "studio_sector_step_back"
+        : "studio_sector_step");
     return kw.mapKeys(new KeyboardData.MapKey() {
       public KeyboardData.Key apply(KeyboardData.Key k)
       {
         if (k.keys.length <= 8)
           return k;
         if (up.equals(k.keys[7]) && down.equals(k.keys[8])
-            && (k.keys[0] == null || k.keys[0].equals(compose)))
+            && (k.keys[0] == null || k.keys[0].equals(compose) || k.keys[0].equals(step_other)))
           return k.withKeyValue(0, step);
         if (k.keys[0] != null && k.keys[0].equals(shift))
         {
