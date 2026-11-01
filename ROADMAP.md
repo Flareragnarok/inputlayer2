@@ -1,5 +1,8 @@
 # Input Layer roadmap
 
+The build-by-build log. The [README](README.md) is the overview: how
+everything works now, history, ideas and open questions.
+
 Input Layer is a fork of Unexpected Keyboard 2.1.0. This file tracks what is
 done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
