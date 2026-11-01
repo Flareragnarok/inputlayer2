@@ -15,22 +15,26 @@ public final class StudioConfig
   /** Upstream makes the suggestion bar a full key row high, too big. */
   public static final float DEFAULT_BAR_DP = 28f;
 
-  /** Keys shown when no [comfortbar] module is active. */
+  /** Keys shown when no [comfortbar] module is active, left to right
+      (owner's names, build 73): layout key, suggestions key, cursor key
+      (center), language key, edit key. */
   public static final List<ComfortKeySpec> DEFAULT_KEYS = Arrays.asList(
-      // Left end, the layout key: edit mode, ↓ key repeat on/off, ↗ split
+      // Layout key: edit mode, ↑ copy, ↓ key repeat on/off, ↗ split
       // backspace on/off. Cut is backspace ↓, select all ⌦ ←.
       ComfortKeySpec.of("c", "layout_mode", "n", "copy", "s", "toggle_repeat",
           "ne", "split_backspace"),
-      ComfortKeySpec.of("w", "left", "e", "right", "n", "up", "s", "down"),
-      // ↖ undoes the last height change (like Back), ↙ all since shown.
-      ComfortKeySpec.of("c", "select_container", "n", "height_up", "s", "height_down",
-          "w", "move_up", "e", "move_down", "nw", "height_undo", "sw", "height_revert"),
+      // Suggestions key: the suggestions' language.
       ComfortKeySpec.of("c", "dictionary"),
-      // Right end: the layout shown; tap next, ← previous, ↑ list.
-      // Right end, the language key: tap next language, ← previous, ↑ list;
-      // ↓ saves the key arrangement as a layout, → picks a saved one.
+      // Cursor key.
+      ComfortKeySpec.of("w", "left", "e", "right", "n", "up", "s", "down"),
+      // Language key: tap next language, ← previous, ↑ list; ↓ saves the key
+      // arrangement as a layout, → picks a saved one.
       ComfortKeySpec.of("c", "layout", "w", "layout_prev", "n", "layout_menu",
-          "s", "layouts_save", "e", "layouts_pick"));
+          "s", "layouts_save", "e", "layouts_pick"),
+      // Edit key (right end): picks a part, ↑ ↓ resize it, ← → move it;
+      // ↖ undoes the last change (like Back), ↙ all since shown.
+      ComfortKeySpec.of("c", "select_container", "n", "height_up", "s", "height_down",
+          "w", "move_up", "e", "move_down", "nw", "height_undo", "sw", "height_revert"));
 
   /** [-1] when not set. */
   public int keyboard_percent_portrait = -1;

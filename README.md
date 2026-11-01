@@ -11,6 +11,24 @@ Layer does, how it is built, its history, the ideas still open and the
 questions not yet settled. [ROADMAP.md](ROADMAP.md) has the build-by-build
 log.
 
+## Names
+
+The owner's terms (build 73); code, docs and chats use these.
+
+| Term | What it is |
+|---|---|
+| **Comfort bar** | the bar of tiny keys at the top. Left to right: layout key, suggestions key, cursor key, language key, edit key |
+| **Layout key** ⇄ | customizes the layout: tap edit mode, ↑ copy, ↓ key repeat on/off, ↗ backspace split on/off |
+| **Suggestions key** | the suggestions' language |
+| **Cursor key** | in the center: ← → ↑ ↓ move the cursor |
+| **Language key** | DE / FR / RU…: tap next language, ← previous, ↑ list, ↓ save the key arrangement as a layout, → pick a saved layout |
+| **Edit key** ↕ | right end: picks a part (or a row), ↑ ↓ resize it, ← → move it, ↖ undo, ↙ undo all |
+| **Parts** | the stacked areas the edit key works on: comfort bar, selection bar, suggestion bar, keyboard, edit strip |
+| **Edit mode** | the layout key's tap: tapping a key opens the key editor |
+| **Key editor** | Studio's screen for one key: tap, 8 swipes, width, split, swap. Also opened by holding a key |
+| **Saved layout** | a key arrangement, saved with language key ↓, picked with language key → |
+| **Tap / swipe / hold** | short press · toward one of ↑ ↗ → ↘ ↓ ↙ ← ↖ · long press |
+
 Contents: [Install](#install-and-update) ·
 [Layout](#the-layout) · [Keys](#gestures-on-the-keyboards-keys) ·
 [Comfort bar](#comfort-bar) · [Edit strip](#edit-strip) ·
@@ -36,12 +54,12 @@ Keyboard.
 
 ## The layout
 
-Top to bottom by default (each part can be resized and moved, see the
-comfort bar's ↕ key):
+Top to bottom by default (each part can be resized and moved with the
+edit key ↕):
 
 | Part | What it is |
 |---|---|
-| **Comfort bar** (26dp) | tiny keys, left to right: the **layout key** ⇄, cursor, height ↕, the **suggestions key** (language of the suggestions), the **language key** (DE / FR / RU…) |
+| **Comfort bar** (26dp) | tiny keys, left to right: **layout key** ⇄, **suggestions key**, **cursor key**, **language key**, **edit key** ↕ (see Names) |
 | **Selection bar** | only shown when it has something: the preview of typing in format |
 | **Suggestion bar** (28dp) | words only; see-through **Clipboard** icon bottom-left, **Memory** icon bottom-right; the Clipboard / Memory pane opens in its place, with its own bar on top |
 | **Keyboard** | Input Layer's own layouts (AZERTY, QWERTY), or upstream's under Legacy |
@@ -89,10 +107,10 @@ tapping it in edit mode; the key isn't typed. Nothing repeats while held,
 unless key repeat is on (layout key ↓). Modifiers (Shift, Ctrl) still lock
 when held.
 
-**Resizing** with ↕: tap selects a part or a row, ↑ / ↓ resize it (hold to
+**Resizing** with the edit key ↕: tap selects a part or a row, ↑ / ↓ resize it (hold to
 repeat), ← / → move it. **Back** undoes the last change, one gesture at a
-time, and then leaves the selection; long Back or ↕ ↙ undoes everything since
-the keyboard was shown, ↕ ↖ one step. Sizes stay within sane ranges (rows
+time, and then leaves the selection; long Back or edit key ↙ undoes everything since
+the keyboard was shown, edit key ↖ one step. Sizes stay within sane ranges (rows
 0.5–2×), and stored sizes out of range are repaired when the keyboard
 starts, from their last sane value or the default (build 62; see ROADMAP's
 Bug log).
@@ -148,11 +166,11 @@ cursor); the forward delete on backspace ↗ is retired.
 
 | Key | Tap | Swipes |
 |---|---|---|
-| **Copy** | copy | ↖ cut · ↗ paste · ↙ select all |
-| **Cursor** | – | ← → ↑ ↓ move the cursor (repeat while held) |
-| **↕ Height** | picks a container to change: comfort bar → suggestions → keyboard → edit strip → selection bar → each keyboard row → off (outlined in blue) | ↑ ↓ make it taller / shorter · ← → move it up / down in the stack (containers, not rows) |
-| **Language** | the suggestions' language (`EN`; `⬇ EN` when its dictionary is missing, then it offers the download) | ↘ system keyboard picker |
-| **Layout** (right end) | the layout shown, as a language (`FR`, `DE`, `RU`, `EL`…); tap: the next one | ← previous · ↑ list to pick from · ↓ system keyboard picker |
+| **Layout key** ⇄ (left end) | edit mode on/off | ↑ copy · ↓ key repeat on/off · ↗ backspace split on/off |
+| **Suggestions key** | the suggestions' language (`EN`; `⬇ EN` when its dictionary is missing, then it offers the download) | – |
+| **Cursor key** (center) | – | ← → ↑ ↓ move the cursor |
+| **Language key** | the layout shown, as a language (`FR`, `DE`, `RU`, `EL`…); tap: the next one | ← previous · ↑ list to pick from · ↓ save the key arrangement · → pick a saved layout |
+| **Edit key** ↕ (right end) | picks a part to change: comfort bar → suggestions → keyboard → edit strip → selection bar → each keyboard row → off (outlined in blue) | ↑ ↓ taller / shorter · ← → move it up / down in the stack (parts, not rows) · ↖ undo · ↙ undo all |
 
 The keys can be chosen with a `comfortbar` module. Undo/redo left the
 comfort bar for Ctrl's corners (the editing actions it used did nothing in
