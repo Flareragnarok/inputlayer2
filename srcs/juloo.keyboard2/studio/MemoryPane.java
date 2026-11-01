@@ -37,6 +37,23 @@ import org.json.JSONArray;
 public class MemoryPane extends LinearLayout
   implements ClipboardHistoryService.OnClipboardHistoryChange
 {
+  /** The keyboard: closing the pane, editing an item with the keyboard. */
+  public interface Listener
+  {
+    void close();
+    /** Edit [text] with the keyboard; [done] gets the edited text. */
+    void edit(String text, Saver done);
+  }
+
+  public interface Saver { void save(String text); }
+
+  Listener _listener = null;
+
+  public void set_listener(Listener l) { _listener = l; }
+
+  /** Showing the Memory tab (else Clipboard). */
+  public boolean memory_tab() { return _memory_tab; }
+
   /** Same storage as upstream's pinned clipboards, so pins are kept. */
   static final String PINS_FILE = "pinned_clipboards";
   static final String PINS_PREF = "pinned";
@@ -78,6 +95,11 @@ public class MemoryPane extends LinearLayout
     });
     tabs.addView(_tab_clipboard, chip_params());
     tabs.addView(_tab_memory, chip_params());
+    TextView close = chip("✕");
+    close.setOnClickListener(new View.OnClickListener() {
+      public void onClick(View v) { if (_listener != null) _listener.close(); }
+    });
+    tabs.addView(close, chip_params());
     addView(tabs, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(36)));
     _content = new FrameLayout(ctx);
     addView(_content, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
@@ -211,6 +233,17 @@ public class MemoryPane extends LinearLayout
         add(m, R.string.studio_pin, new Runnable() {
           public void run() { add_pin(text); show(false); }
         });
+        // The edited text becomes the newest clipboard entry, instead of
+        // this one.
+        edit_menu(m, text, new Saver() {
+          public void save(String t)
+          {
+            ClipboardHistoryService s = ClipboardHistoryService.get_service(getContext());
+            if (s != null)
+              s.remove_history_entry(text);
+            copy_to_clipboard(t);
+          }
+        });
         save_to_memory_menu(m, text);
         add(m, R.string.studio_remove_from_history, new Runnable() {
           public void run()
@@ -229,6 +262,9 @@ public class MemoryPane extends LinearLayout
     return item(text, new MenuBuilder() {
       public void build(Menu m)
       {
+        edit_menu(m, text, new Saver() {
+          public void save(String t) { replace_pin(text, t); }
+        });
         save_to_memory_menu(m, text);
         add(m, R.string.studio_copy_to_clipboard, new Runnable() {
           public void run() { copy_to_clipboard(text); }
@@ -238,6 +274,38 @@ public class MemoryPane extends LinearLayout
         });
       }
     });
+  }
+
+  /** "Edit": the keyboard edits [text] in the selection bar; [saver]
+      stores the result, then the pane shows it. */
+  void edit_menu(Menu m, final String text, final Saver saver)
+  {
+    if (_listener == null)
+      return;
+    add(m, R.string.studio_edit, new Runnable() {
+      public void run()
+      {
+        _listener.edit(text, new Saver() {
+          public void save(String t)
+          {
+            if (!t.equals(text))
+              saver.save(t);
+            show(_memory_tab);
+          }
+        });
+      }
+    });
+  }
+
+  void replace_pin(String old, String text)
+  {
+    List<String> l = load_pins();
+    int i = l.indexOf(old);
+    if (i < 0)
+      l.add(0, text);
+    else
+      l.set(i, text);
+    save_pins(l);
   }
 
   /** "Save to Memory" submenu, the likely category first. */
@@ -384,6 +452,9 @@ public class MemoryPane extends LinearLayout
     TextView t = (TextView)item(it.text, new MenuBuilder() {
       public void build(Menu m)
       {
+        edit_menu(m, it.text, new Saver() {
+          public void save(String t) { memory().replace_text(it.text, it.category, t); }
+        });
         add(m, R.string.studio_copy_to_clipboard, new Runnable() {
           public void run() { copy_to_clipboard(it.text); }
         });

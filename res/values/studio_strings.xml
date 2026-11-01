@@ -11,6 +11,7 @@
   <string name="studio_history_empty">Nothing copied yet</string>
   <string name="studio_pins_empty">Long-press something in the history to pin it here</string>
   <string name="studio_pin">Pin</string>
+  <string name="studio_edit">Edit</string>
   <string name="studio_unpin">Unpin</string>
   <string name="studio_remove_from_history">Remove from history</string>
   <string name="studio_save_to_memory">Save to Memory</string>

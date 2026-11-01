@@ -64,6 +64,11 @@ public class Keyboard2 extends InputMethodService
   };
   private EditStrip _edit_strip;
   private SelectionBar _selection_bar;
+  /** Studio: the Clipboard / Memory pane is open, in the suggestions' place. */
+  private boolean _studio_memory_open = false;
+  /** Studio: the item being edited with the keyboard, [null] when none. */
+  private juloo.keyboard2.studio.ItemEditor _studio_edit = null;
+  private MemoryPane.Saver _studio_edit_saver = null;
   /** Bottom system inset (navigation bar) on Android 15+. */
   private int _studio_bottom_inset = 0;
   /** Studio: selection as last reported by the editor, for the edit strip. */
@@ -235,6 +240,26 @@ public class Keyboard2 extends InputMethodService
     _selection_bar.setup(new SelectionBar.Listener() {
       public void select_pinned() { _edit_strip.select_pinned(); }
       public void unpin() { _edit_strip.unpin(); }
+      public void edit_done(String text)
+      {
+        MemoryPane.Saver s = _studio_edit_saver;
+        _studio_edit = null;
+        _studio_edit_saver = null;
+        if (text != null && s != null)
+          s.save(text);
+        apply_bottom_inset();
+      }
+      public void edit_changed(int sel_start, int sel_end)
+      {
+        // As the app's field would: selection, typing in format, learning.
+        _studio_sel_start = sel_start;
+        _studio_sel_end = sel_end;
+        _edit_strip.selection_updated(sel_start, sel_end);
+      }
+    });
+    memory_pane().set_listener(new MemoryPane.Listener() {
+      public void close() { close_memory_pane(); }
+      public void edit(String text, MemoryPane.Saver done) { start_item_edit(text, done); }
     });
     _keyboard_container_view.findViewById(R.id.corner_memory)
       .setOnClickListener(new View.OnClickListener() {
@@ -431,10 +456,44 @@ public class Keyboard2 extends InputMethodService
       Opens on the Memory tab if [memory]. */
   private void open_memory_pane(boolean memory)
   {
-    if (_clipboard_pane == null)
-      _clipboard_pane = (ViewGroup)inflate_view(R.layout.studio_memory_pane);
-    ((MemoryPane)_clipboard_pane.findViewById(R.id.memory_pane)).show(memory);
-    setInputView(_clipboard_pane);
+    MemoryPane p = memory_pane();
+    // The icon of the tab already open closes it.
+    if (_studio_memory_open && p.memory_tab() == memory)
+    {
+      close_memory_pane();
+      return;
+    }
+    p.show(memory);
+    _studio_memory_open = true;
+    refresh_candidates_view();
+  }
+
+  private MemoryPane memory_pane()
+  {
+    return (MemoryPane)_keyboard_container_view.findViewById(R.id.memory_pane_inline);
+  }
+
+  private void close_memory_pane()
+  {
+    _studio_memory_open = false;
+    refresh_candidates_view();
+  }
+
+  /** Studio: while editing a Memory or clipboard item, the keyboard types
+      into it instead of the app. */
+  @Override
+  public InputConnection getCurrentInputConnection()
+  {
+    if (_studio_edit != null)
+      return _studio_edit;
+    return super.getCurrentInputConnection();
+  }
+
+  private void start_item_edit(String text, MemoryPane.Saver saver)
+  {
+    _studio_edit_saver = saver;
+    _studio_edit = _selection_bar.start_edit(text);
+    apply_bottom_inset();
   }
 
   /** Studio: outline the container the comfort bar's height key resizes. */
@@ -522,9 +581,16 @@ public class Keyboard2 extends InputMethodService
       _candidates_view.refresh_config(_config);
       _keyeventhandler.dictionary_changed();
     }
-    _candidates_view.setVisibility(should_show ? View.VISIBLE : View.GONE);
+    // Studio: the Clipboard / Memory pane takes the suggestions' place.
+    boolean pane = _studio_memory_open;
+    _candidates_view.setVisibility(should_show && !pane ? View.VISIBLE : View.GONE);
     _keyboard_container_view.findViewById(R.id.candidates_frame)
-      .setVisibility(should_show ? View.VISIBLE : View.GONE);
+      .setVisibility(should_show || pane ? View.VISIBLE : View.GONE);
+    _keyboard_container_view.findViewById(R.id.corner_clipboard)
+      .setVisibility(pane ? View.GONE : View.VISIBLE);
+    _keyboard_container_view.findViewById(R.id.corner_memory)
+      .setVisibility(pane ? View.GONE : View.VISIBLE);
+    memory_pane().setVisibility(pane ? View.VISIBLE : View.GONE);
     _comfort_bar.refresh(_config);
     _edit_strip.refresh(_config);
     _selection_bar.refresh(_config);
@@ -579,6 +645,10 @@ public class Keyboard2 extends InputMethodService
     _keyboard_layout_view.setKeyboard(current_layout());
     _keyeventhandler.started(_config);
     _comfort_bar.reset_target();
+    // A new field: no pane, no item being edited.
+    if (_studio_edit != null)
+      _selection_bar.end_edit(false);
+    _studio_memory_open = false;
     _clip_keeper.editor_started(info);
     studio_load_words();
     _studio_password_field = ClipKeeper.is_password_field(info);

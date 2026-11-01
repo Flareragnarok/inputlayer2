@@ -184,6 +184,21 @@ public final class MemoryStore
     return true;
   }
 
+  /** The item [text] of [category] edited into [new_text], keeping its
+      category, kind and place. */
+  public void replace_text(String text, String category, String new_text)
+  {
+    if (new_text == null || new_text.isEmpty())
+      return;
+    for (int i = 0; i < _items.size(); i++)
+    {
+      Item it = _items.get(i);
+      if (it.text.equals(text) && it.category.equals(category))
+        _items.set(i, new Item(new_text, it.category, it.added, it.session));
+    }
+    save();
+  }
+
   public void remove(Item it)
   {
     _items.remove(it);
