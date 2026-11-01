@@ -64,7 +64,8 @@ their letters. Upstream's layouts are listed after ours as
 - **Letters**: digits on the top row's ↗ swipes (A/Q 1 … P 0); accents on
   the vowels' other corners (E: ↖ é, ↙ è, ↘ ê, ↓ ë; A: à â æ; U: ù û ü;
   I: î ï; O: ô œ ö; Y: ÿ), C ↖ ç, N ↖ ñ.
-- **Bottom row**, no Ctrl / Fn / Compose: `?123` (↖ undo, ↗ redo) · `,`
+- **Bottom row** on every layout, upstream's included (it replaces
+  `res/xml/bottom_row.xml`), no Ctrl / Fn / Compose: `?123` (↖ undo, ↗ redo) · `,`
   (↑ emoji) · space · `.` (↑ `?`, ↗ `!`, ↓ `:`) · Sector's arrow key ·
   Enter.
 - **?123** opens the first symbols page, like Gboard's: digits;
@@ -97,7 +98,8 @@ cursor); the forward delete on backspace ↗ is retired.
 | **Copy** | copy | ↖ cut · ↗ paste · ↙ select all |
 | **Cursor** | – | ← → ↑ ↓ move the cursor (repeat while held) |
 | **↕ Height** | picks a container to change: comfort bar → suggestions → keyboard → edit strip → selection bar → each keyboard row → off (outlined in blue) | ↑ ↓ make it taller / shorter · ← → move it up / down in the stack (containers, not rows) |
-| **Language** | the suggestions' language (`EN`; `⬇ EN` when its dictionary is missing, then it offers the download) | ↙ next keyboard layout · ↘ system keyboard picker |
+| **Language** | the suggestions' language (`EN`; `⬇ EN` when its dictionary is missing, then it offers the download) | ↘ system keyboard picker |
+| **Layout** (right end) | the layout shown, as a language (`FR`, `DE`, `RU`, `EL`…); tap: the next one | ← previous · ↑ list to pick from · ↓ system keyboard picker |
 
 The keys can be chosen with a `comfortbar` module. Undo/redo left the
 comfort bar for Ctrl's corners (the editing actions it used did nothing in
@@ -303,6 +305,11 @@ typing, style, vibration, clipboard duration…; in the phone's language,
 as upstream translates them). Studio has Input Layer's own (English
 only):
 
+- **Languages**: the layouts the comfort bar's layout key switches
+  between: phone's language (automatic), Français (AZERTY), Deutsch
+  (QWERTZ), English (QWERTY), Русский (ЙЦУКЕН), Ελληνικά. Ticks write the
+  same list as Legacy settings → Layouts; layouts added there stay.
+  Japanese has no layout yet (kana and kanji need a converter).
 - **Updates**: installed build, newer builds dropdown + Install, past
   builds dropdown + Restore. **Beta builds**: every push comes out as a
   beta (a GitHub pre-release); with the switch off (default) only stable
@@ -435,6 +442,8 @@ is postponed.
   modules.
 - **Language**: auto-detecting the language among installed dictionaries,
   mixing two languages' suggestions (deferred).
+- **Japanese**: a kana layout (12-key flick or romaji → kana) and kanji
+  conversion; Mozc (BSD) is the open-source converter to look at.
 - Store texts in `fastlane/` still say "Unexpected Keyboard" (F-Droid only).
 - The original task's final report `DONE-keyboard.md` in the
   Studio-Briefing Drive folder is still to write.

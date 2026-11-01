@@ -282,6 +282,16 @@ public class Keyboard2 extends InputMethodService
       public void open_dictionaries() { launch_dictionaries_activity(); }
       public void highlight(int target) { highlight_container(target); }
       public int keyboard_rows() { return _keyboard_layout_view.studio_row_count(); }
+      public List<KeyboardData> layouts()
+      {
+        // "System" shows as the layout it picks.
+        List<KeyboardData> l = new ArrayList<KeyboardData>();
+        for (KeyboardData k : _config.layouts)
+          l.add((k == null) ? _localeTextLayout : k);
+        return l;
+      }
+      public int current_layout() { return _config.get_current_layout(); }
+      public void select_layout(int i) { setTextLayout(i); }
     }, Config.globalPrefs());
     _keyboard_layout_view.studio_bottom = new Keyboard2View.BottomInsetTaker() {
       public boolean takes_bottom_inset() { return bottom_container() != _keyboard_layout_view; }

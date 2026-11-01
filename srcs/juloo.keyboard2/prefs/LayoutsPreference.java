@@ -76,6 +76,13 @@ public class LayoutsPreference extends ListGroupPreference<LayoutsPreference.Lay
     return layouts;
   }
 
+  /** Studio: the saved list itself, to change it from Studio. */
+  public static List<Layout> load_layouts(SharedPreferences prefs)
+  {
+    List<Layout> l = load_from_preferences(KEY, prefs, DEFAULT, SERIALIZER);
+    return new ArrayList<Layout>((l == null) ? DEFAULT : l);
+  }
+
   /** Does not call [prefs.commit()]. */
   public static void save_to_preferences(SharedPreferences.Editor prefs, List<Layout> items)
   {

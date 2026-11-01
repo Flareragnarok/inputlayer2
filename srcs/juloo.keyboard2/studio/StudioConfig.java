@@ -23,7 +23,10 @@ public final class StudioConfig
       ComfortKeySpec.of("w", "left", "e", "right", "n", "up", "s", "down"),
       ComfortKeySpec.of("c", "select_container", "n", "height_up", "s", "height_down",
           "w", "move_up", "e", "move_down"),
-      ComfortKeySpec.of("c", "dictionary", "sw", "layout", "se", "keyboard_picker"));
+      ComfortKeySpec.of("c", "dictionary", "se", "keyboard_picker"),
+      // Right end: the layout shown; tap next, ← previous, ↑ list.
+      ComfortKeySpec.of("c", "layout", "w", "layout_prev", "n", "layout_menu",
+          "s", "keyboard_picker"));
 
   /** [-1] when not set. */
   public int keyboard_percent_portrait = -1;

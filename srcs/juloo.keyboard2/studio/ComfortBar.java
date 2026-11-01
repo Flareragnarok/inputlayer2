@@ -11,6 +11,7 @@ import android.widget.LinearLayout;
 import java.util.List;
 import juloo.keyboard2.Config;
 import juloo.keyboard2.KeyValue;
+import juloo.keyboard2.KeyboardData;
 import juloo.keyboard2.Logs;
 import juloo.keyboard2.Theme;
 import org.json.JSONObject;
@@ -32,6 +33,11 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     void highlight(int target);
     /** Rows of the keyboard shown. */
     int keyboard_rows();
+    /** The layouts switched between (Studio → Languages), and the one
+        shown. */
+    List<KeyboardData> layouts();
+    int current_layout();
+    void select_layout(int i);
   }
 
   static final int HEIGHT_STEP = 2;
@@ -139,6 +145,8 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       cycle_module(action.substring("switch:".length()));
     else if (action.equals("studio"))
       _listener.open_studio();
+    else if (action.equals("layout_menu"))
+      layout_menu();
     else
     {
       String name = key_name(action);
@@ -162,7 +170,10 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       // Tap: the suggestions' language, like upstream's button on the
       // suggestion bar.
       case "dictionary": return new ComfortKey.Label(language_label(), false);
-      case "layout": return new ComfortKey.Label("🌐", false);
+      // The layout shown, as a language code: tap switches to the next.
+      case "layout": return new ComfortKey.Label(current_layout_code(), false);
+      case "layout_prev": return new ComfortKey.Label("‹", false);
+      case "layout_menu": return new ComfortKey.Label("☰", false);
       case "keyboard_picker": return new ComfortKey.Label("⌨", false);
     }
     if (action.startsWith("switch:"))
@@ -203,6 +214,7 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       case "redo": return "studio_redo";
       case "select_all": return "selectAll";
       case "layout": return "switch_forward";
+      case "layout_prev": return "switch_backward";
       case "keyboard_picker": return "change_method";
       case "clipboard": return "switch_clipboard";
       default: return null;
@@ -389,5 +401,55 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
   int dp(int v)
   {
     return (int)(v * density());
+  }
+
+  /* Layouts */
+
+  String current_layout_code()
+  {
+    List<KeyboardData> ls = _listener.layouts();
+    int i = _listener.current_layout();
+    return (i >= 0 && i < ls.size()) ? layout_code(ls.get(i)) : "🌐";
+  }
+
+  /** A short name for a layout: the language it is for. */
+  static String layout_code(KeyboardData l)
+  {
+    if (l == null)
+      return "🌐";
+    String n = (l.name == null) ? "" : l.name;
+    if ("cyrillic".equals(l.script))
+      return "RU";
+    if ("greek".equals(l.script))
+      return "EL";
+    if (n.contains("AZERTY"))
+      return "FR";
+    if (n.contains("QWERTZ"))
+      return "DE";
+    if (n.contains("QWERTY"))
+      return "EN";
+    return n.isEmpty() ? "⌨" : n.substring(0, Math.min(2, n.length())).toUpperCase();
+  }
+
+  /** The layouts switched between, to pick one. */
+  void layout_menu()
+  {
+    android.widget.PopupMenu p = new android.widget.PopupMenu(getContext(), this);
+    List<KeyboardData> ls = _listener.layouts();
+    for (int i = 0; i < ls.size(); i++)
+    {
+      final int idx = i;
+      KeyboardData l = ls.get(i);
+      String label = layout_code(l) + "  " + ((l == null || l.name == null) ? "" : l.name);
+      p.getMenu().add(label).setOnMenuItemClickListener(
+          new android.view.MenuItem.OnMenuItemClickListener() {
+            public boolean onMenuItemClick(android.view.MenuItem it)
+            {
+              _listener.select_layout(idx);
+              return true;
+            }
+          });
+    }
+    p.show();
   }
 }

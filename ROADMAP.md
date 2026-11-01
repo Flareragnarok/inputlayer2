@@ -8,7 +8,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 60).
+Last updated: 2026-11-01 (build 61).
 
 ## Done
 
@@ -74,6 +74,7 @@ Last updated: 2026-11-01 (build 60).
 | 58 | **Input Layer QWERTZ** like Gboard's German keyboard (ü ö ä keys, S ↖ ß). Fix: build 57's "system" choice gave German (and every other Latin-script language) our QWERTY; now French → AZERTY, German → QWERTZ, English → QWERTY, and other languages keep their own layout. |
 | 59 | **Crash reports** in Studio: crashes and survived errors are kept on the phone (error, place, build; never typed text), the last 10, with Copy and Clear. |
 | 60 | **Beta and stable builds**: every push is published as a beta (GitHub pre-release). The updater offers only stable builds unless *Beta builds* is on; *Mark build N stable* opens the release on GitHub. Builds 56–59 were marked beta; 55 is the latest stable. |
+| 61 | **Layout key** at the right end of the comfort bar: shows the layout (FR, DE, RU, EL…), tap next, ← previous, ↑ list. **Studio → Languages** ticks the layouts to switch between (automatic, French AZERTY, German QWERTZ, English QWERTY, Russian, Greek). Every layout, upstream's included, gets Input Layer's bottom row (no Ctrl / Fn / Compose). |
 
 Infrastructure:
 

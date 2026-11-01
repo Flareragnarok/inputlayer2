@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Input Layer's bottom row, added to every layout that doesn't define its
+own (upstream's layouts, Russian, Greek...): the same as on Input Layer's
+layouts, without Ctrl / Fn / Compose. ?123 opens the symbols pages. -->
 <row height="0.95">
-  <key width="1.7" role="action" key0="ctrl" key1="loc switch_greekmath" key2="loc meta" key3="loc switch_clipboard" key4="switch_numeric"/>
-  <key width="1.1" role="action" key0="fn" key1="loc alt" key2="loc change_method" key3="switch_emoji" key4="config"/>
-  <key width="4.4" role="space_bar" key0="space" key7="switch_forward" key8="switch_backward" key5="cursor_left" key6="cursor_right"/>
-  <key width="1.1" role="action" key0="loc compose" key7="up" key6="right" key5="left" key8="down" key1="loc home" key2="loc page_up" key3="loc end" key4="loc page_down"/>
-  <key width="1.7" role="action" key0="enter" key1="loc voice_typing" key2="action"/>
+  <key width="1.5" role="action" key0="il_symbols" key1="studio_undo" key2="studio_redo"/>
+  <key key0="," key7="switch_emoji"/>
+  <key width="4" role="space_bar" key0="space" key6="cursor_right"/>
+  <key key0="." key7="\?" key2="!" key8=":"/>
+  <key role="action" key0="studio_sector_step" key5="left" key6="right" key7="up" key8="down"/>
+  <key width="1.5" role="action" key0="enter" key2="action"/>
 </row>

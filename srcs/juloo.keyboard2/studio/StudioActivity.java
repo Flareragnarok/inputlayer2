@@ -34,6 +34,7 @@ import org.json.JSONObject;
 import juloo.keyboard2.DirectBootAwarePreferences;
 import juloo.keyboard2.Logs;
 import juloo.keyboard2.R;
+import juloo.keyboard2.prefs.LayoutsPreference;
 import juloo.keyboard2.Utils;
 
 /** The Studio screen: installed build and updates, and the saved modules
@@ -201,6 +202,8 @@ public class StudioActivity extends Activity
         _prefs.edit().putBoolean(ClipKeeper.KEY_AUTOKEEP, checked).apply();
       }
     });
+    languages_section(root);
+
     root.addView(heading(R.string.studio_memory));
     root.addView(autokeep);
     root.addView(text(getString(R.string.studio_autokeep_desc)));
@@ -699,6 +702,88 @@ public class StudioActivity extends Activity
     _scroll.post(new Runnable() {
       public void run() { _scroll.scrollTo(0, _editor_top.getTop()); }
     });
+  }
+
+  /* Languages */
+
+  /** Layouts offered in Studio, in the order the comfort bar's layout key
+      cycles through them: { layout name ("system" for the phone's
+      language), label }. */
+  static final String[][] LANGUAGE_LAYOUTS = {
+    { "system", "Phone's language (automatic)" },
+    { "il_azerty", "Français · Input Layer AZERTY" },
+    { "il_qwertz", "Deutsch · Input Layer QWERTZ" },
+    { "il_qwerty", "English · Input Layer QWERTY" },
+    { "cyrl_jcuken_ru", "Русский · ЙЦУКЕН" },
+    { "grek_qwerty", "Ελληνικά · Greek" },
+  };
+
+  void languages_section(LinearLayout root)
+  {
+    root.addView(heading(R.string.studio_languages));
+    root.addView(text(getString(R.string.studio_languages_desc)));
+    final List<CheckBox> boxes = new ArrayList<CheckBox>();
+    List<LayoutsPreference.Layout> saved = LayoutsPreference.load_layouts(_prefs);
+    for (String[] l : LANGUAGE_LAYOUTS)
+    {
+      CheckBox b = new CheckBox(this);
+      b.setText(l[1]);
+      b.setChecked(index_of_layout(saved, l[0]) >= 0);
+      boxes.add(b);
+      root.addView(b);
+    }
+    CompoundButton.OnCheckedChangeListener save = new CompoundButton.OnCheckedChangeListener() {
+      public void onCheckedChanged(CompoundButton b, boolean checked)
+      {
+        save_languages(boxes);
+      }
+    };
+    for (CheckBox b : boxes)
+      b.setOnCheckedChangeListener(save);
+  }
+
+  /** The ticked layouts in the order of [LANGUAGE_LAYOUTS], then the
+      other layouts already in the list (added in Legacy settings). */
+  void save_languages(List<CheckBox> boxes)
+  {
+    List<LayoutsPreference.Layout> saved = LayoutsPreference.load_layouts(_prefs);
+    List<LayoutsPreference.Layout> l = new ArrayList<LayoutsPreference.Layout>();
+    for (int i = 0; i < LANGUAGE_LAYOUTS.length; i++)
+      if (boxes.get(i).isChecked())
+        l.add(LANGUAGE_LAYOUTS[i][0].equals("system") ? new LayoutsPreference.SystemLayout()
+            : new LayoutsPreference.NamedLayout(LANGUAGE_LAYOUTS[i][0]));
+    for (LayoutsPreference.Layout s : saved)
+      if (!is_offered(s))
+        l.add(s);
+    if (l.isEmpty())
+      l.add(new LayoutsPreference.SystemLayout());
+    SharedPreferences.Editor e = _prefs.edit();
+    LayoutsPreference.save_to_preferences(e, l);
+    e.apply();
+  }
+
+  static boolean is_offered(LayoutsPreference.Layout s)
+  {
+    for (String[] o : LANGUAGE_LAYOUTS)
+      if (same_layout(s, o[0]))
+        return true;
+    return false;
+  }
+
+  static int index_of_layout(List<LayoutsPreference.Layout> l, String name)
+  {
+    for (int i = 0; i < l.size(); i++)
+      if (same_layout(l.get(i), name))
+        return i;
+    return -1;
+  }
+
+  static boolean same_layout(LayoutsPreference.Layout l, String name)
+  {
+    if (name.equals("system"))
+      return l instanceof LayoutsPreference.SystemLayout;
+    return (l instanceof LayoutsPreference.NamedLayout)
+      && ((LayoutsPreference.NamedLayout)l).name.equals(name);
   }
 
   /* Crash reports */
