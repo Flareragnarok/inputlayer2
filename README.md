@@ -203,25 +203,28 @@ to switch.
 - **Clipboard**: content type filters on top; the history of copies on the
   left 30% (with Clear), pins on the right. History is off by default
   upstream: one tap turns it on.
-- **Memory**: the left 30% is kept free for now. On the right, the
-  categories scroll up and down, each one a row of entries scrolling
-  sideways: **Text, Links, Mails, Commands, Output, Logs, Code, Snippets,
-  Symbols, Images, Files** and your own (added in Studio), only those with
-  items. Everything you copy is kept automatically under its content type
-  (see *How copies are sorted*), except copies from password fields and
-  copies marked sensitive (Android 13+); a switch in Studio turns it off.
-- **Keep?** (top of Memory): copies of 1,000 characters or more (Studio →
-  Memory sets the size) aren't kept silently. They wait there: ✓ keeps
-  one in the history, ✕ drops it; the 20 newest wait.
-- **⟲ History** (bottom of Memory): what was copied, one record per phone
-  restart, each a row; delete one item, one record or all (tap twice).
-  Items you saved or moved yourself are never deleted with the history.
+- **Memory**: three columns. The left 30% is kept free for now. On the
+  right, the list of categories with items (count after each): **Text,
+  Links, Mails, Commands, Output, Logs, Code, Snippets, Symbols, Images,
+  Files** and your own (added in Studio), with **Keep?** first when big
+  copies wait and **⟲ History** last. Tap one: its items show in the
+  middle, one per line, alike ones together under a small label (`git`).
+  Everything you copy is kept automatically under its content type (see
+  *How copies are sorted*), except copies from password fields and copies
+  marked sensitive (Android 13+); a switch in Studio turns it off.
+- **Keep?**: copies of 1,000 characters or more (Studio → Memory sets the
+  size) aren't kept silently. They wait there: ✓ keeps one in the
+  history, ✕ drops it; the 20 newest wait.
+- **⟲ History**: what was copied, one record per phone restart, each under
+  its own title; delete one item, one record or all (tap twice). Items you
+  saved or moved yourself are never deleted with the history.
 - **Editing** (✎): the whole pane becomes the editor, the keyboard below
   typing into it instead of the app (keys, ⌫/⌦, arrows, copy/paste, the
   edit strip, Specs and Verts). The whole text scrolls and follows the
-  cursor; tap in it to place the cursor. ✓ saves (an edited clipboard
-  entry becomes the newest entry), ✕ cancels, and so does closing the
-  pane.
+  cursor (the moving end of a selection); tap in it to place the cursor.
+  The keyboard follows the item's cursor and selection meanwhile, not the
+  app's. ✓ saves (an edited clipboard entry becomes the newest entry), ✕
+  cancels, and so does closing the pane.
 
 ### How copies are sorted
 

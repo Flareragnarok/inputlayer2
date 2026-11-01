@@ -35,9 +35,9 @@ import org.json.JSONArray;
     copies, or the whole text of the item last tapped. Then one of two tabs:
     - Clipboard: the history of copied text on the left 30%, pinned items on
       the right; one line per item.
-    - Memory: categories on the right, one row of entries each, scrolling
-      sideways; big copies waiting for "Keep?" first, the history records
-      last. The left 30% is kept free.
+    - Memory: the list of categories on the right (big copies waiting for
+      "Keep?" first, the history records last); the one tapped shows its
+      items in the middle, one per line. The left 30% is kept free.
     Tap an item to type it, ✎ to edit it in the whole pane, long-press for
     more (delete first). */
 public class MemoryPane extends LinearLayout
@@ -348,7 +348,7 @@ public class MemoryPane extends LinearLayout
         copy_to_clipboard(t);
       }
     };
-    return entry(text, false, saver, new MenuBuilder() {
+    return entry(text, saver, new MenuBuilder() {
       public void build(Menu m)
       {
         add(m, R.string.studio_delete, new Runnable() {
@@ -372,7 +372,7 @@ public class MemoryPane extends LinearLayout
     Saver saver = new Saver() {
       public void save(String t) { replace_pin(text, t); }
     };
-    return entry(text, false, saver, new MenuBuilder() {
+    return entry(text, saver, new MenuBuilder() {
       public void build(Menu m)
       {
         add(m, R.string.studio_unpin, new Runnable() {
@@ -420,6 +420,12 @@ public class MemoryPane extends LinearLayout
 
   /* Memory tab */
 
+  /** Category shown in the Memory tab: one of the store's, [KEEP] or
+      [HISTORY]; [null] for the first one with items. */
+  String _category = null;
+  static final String KEEP = "\u0000keep";
+  static final String HISTORY = "\u0000history";
+
   View memory_view()
   {
     LinearLayout v = new LinearLayout(getContext());
@@ -430,73 +436,111 @@ public class MemoryPane extends LinearLayout
       v.addView(hint(R.string.studio_memory_locked));
       return v;
     }
-    // The left side is kept free for now.
-    v.addView(new View(getContext()), new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 30f));
-    LinearLayout sections = new LinearLayout(getContext());
-    sections.setOrientation(VERTICAL);
+    // What the list on the right offers: big copies waiting, the categories
+    // with items, the history records.
     List<MemoryStore.Item> pending = store.pending();
+    List<String> keys = new ArrayList<String>();
+    List<String> labels = new ArrayList<String>();
     if (!pending.isEmpty())
     {
-      sections.addView(section_head(getContext().getString(R.string.studio_keep_big,
-              pending.size()), null));
-      LinearLayout shelf = shelf(sections);
-      for (MemoryStore.Item it : pending)
-        shelf.addView(pending_entry(store, it));
+      keys.add(KEEP);
+      labels.add(getContext().getString(R.string.studio_keep_big, pending.size()));
     }
-    boolean any = false;
     for (String c : store.categories())
     {
-      List<MemoryStore.Item> is = store.items(c);
-      if (is.isEmpty())
-        continue;
-      any = true;
-      sections.addView(section_head(c + " · " + is.size(), null));
-      LinearLayout shelf = shelf(sections);
-      // Alike items are next to each other: a group of several starts with
-      // what they share ("git", "github.com").
-      for (int i = 0; i < is.size(); i++)
+      int n = store.items(c).size();
+      if (n > 0)
       {
-        String k = ContentType.look(is.get(i).text, c);
-        boolean starts = !k.isEmpty()
-          && (i == 0 || !k.equals(ContentType.look(is.get(i - 1).text, c)));
-        if (starts && i + 1 < is.size() && k.equals(ContentType.look(is.get(i + 1).text, c)))
-          shelf.addView(group_label(k));
-        shelf.addView(memory_item(store, is.get(i)));
+        keys.add(c);
+        labels.add(c + " · " + n);
       }
     }
-    if (!any && pending.isEmpty())
-      sections.addView(hint(R.string.studio_memory_empty));
-    fill_history(store, sections);
-    v.addView(scroll(sections), new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 70f));
+    List<MemoryStore.Session> sessions = store.sessions();
+    if (!sessions.isEmpty())
+    {
+      keys.add(HISTORY);
+      labels.add("⟲ " + getContext().getString(R.string.studio_history));
+    }
+    if (_category == null || !keys.contains(_category))
+      _category = keys.isEmpty() ? null : keys.get(0);
+    // The left side is kept free for now.
+    v.addView(new View(getContext()), new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 30f));
+    LinearLayout items = new LinearLayout(getContext());
+    items.setOrientation(VERTICAL);
+    if (_category == null)
+      items.addView(hint(R.string.studio_memory_empty));
+    else if (_category.equals(KEEP))
+    {
+      items.addView(column_head(getContext().getString(R.string.studio_keep_hint), null));
+      for (MemoryStore.Item it : pending)
+        items.addView(pending_entry(store, it));
+    }
+    else if (_category.equals(HISTORY))
+      fill_history(store, sessions, items);
+    else
+      fill_category(store, _category, items);
+    v.addView(scroll(items), new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 45f));
+    LinearLayout cats = new LinearLayout(getContext());
+    cats.setOrientation(VERTICAL);
+    for (int i = 0; i < keys.size(); i++)
+      cats.addView(category_entry(keys.get(i), labels.get(i)));
+    v.addView(scroll(cats), new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 25f));
     return v;
+  }
+
+  /** A category's items, one per line; alike items are next to each other
+      and a group of several starts with what they share ("git"). */
+  void fill_category(MemoryStore store, String c, LinearLayout items)
+  {
+    List<MemoryStore.Item> is = store.items(c);
+    for (int i = 0; i < is.size(); i++)
+    {
+      String k = ContentType.look(is.get(i).text, c);
+      boolean starts = !k.isEmpty()
+        && (i == 0 || !k.equals(ContentType.look(is.get(i - 1).text, c)));
+      if (starts && i + 1 < is.size() && k.equals(ContentType.look(is.get(i + 1).text, c)))
+        items.addView(group_label(k));
+      items.addView(memory_item(store, is.get(i)));
+    }
+  }
+
+  /** A category in the list on the right: tap shows its items. */
+  View category_entry(final String key, String label)
+  {
+    TextView t = bar_text(label);
+    t.setEllipsize(TextUtils.TruncateAt.END);
+    t.setBackgroundColor(key.equals(_category) ? _selected_color : _item_color);
+    t.setOnClickListener(new View.OnClickListener() {
+      public void onClick(View _v) { _category = key; _confirming = null; show(true); }
+    });
+    LayoutParams p = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(30));
+    p.setMargins(dp(3), dp(3), dp(3), 0);
+    t.setLayoutParams(p);
+    return t;
   }
 
   /** One record per phone restart, newest first, each deletable, and a
       button deleting all of them. Deleting asks for a second tap. */
-  void fill_history(final MemoryStore store, LinearLayout sections)
+  void fill_history(final MemoryStore store, List<MemoryStore.Session> ss,
+      LinearLayout items)
   {
-    List<MemoryStore.Session> ss = store.sessions();
-    if (ss.isEmpty())
-      return;
-    sections.addView(section_head("⟲ " + getContext().getString(R.string.studio_history),
-          confirm_button("all", R.string.studio_delete_all_history,
+    items.addView(column_head("", confirm_button("all", R.string.studio_delete_all_history,
             new Runnable() { public void run() { store.delete_history(); } })));
     java.text.DateFormat fmt = java.text.DateFormat.getDateTimeInstance(
         java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT);
     for (final MemoryStore.Session s : ss)
     {
-      sections.addView(section_head(getContext().getString(R.string.studio_since_restart,
+      items.addView(column_head(getContext().getString(R.string.studio_since_restart,
               fmt.format(new java.util.Date(s.started)), s.items.size()),
             confirm_button(s.key, R.string.studio_delete_record,
               new Runnable() { public void run() { store.delete_session(s.key); } })));
-      LinearLayout shelf = shelf(sections);
       for (MemoryStore.Item it : s.items)
-        shelf.addView(memory_item(store, it));
+        items.addView(memory_item(store, it));
     }
   }
 
-  /** A category's title, with a button at its end ([null] for none). */
-  View section_head(String title, View button)
+  /** A small title over items, with a button at its end ([null] for none). */
+  View column_head(String title, View button)
   {
     LinearLayout head = new LinearLayout(getContext());
     head.setOrientation(HORIZONTAL);
@@ -511,30 +555,14 @@ public class MemoryPane extends LinearLayout
     return head;
   }
 
-  /** What a group of alike entries shares, before them in a row. */
+  /** What a group of alike items shares, over them. */
   TextView group_label(String k)
   {
     TextView t = hint(0);
     t.setText(k);
     t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
-    t.setGravity(Gravity.CENTER_VERTICAL);
-    t.setPadding(dp(8), 0, dp(2), 0);
-    LayoutParams p = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(30));
-    p.setMargins(dp(4), dp(3), 0, 0);
-    t.setLayoutParams(p);
+    t.setPadding(dp(8), dp(4), dp(4), 0);
     return t;
-  }
-
-  /** A row of entries scrolling sideways, added to [parent]. */
-  LinearLayout shelf(LinearLayout parent)
-  {
-    LinearLayout l = new LinearLayout(getContext());
-    l.setOrientation(HORIZONTAL);
-    HorizontalScrollView hs = new HorizontalScrollView(getContext());
-    hs.setHorizontalScrollBarEnabled(false);
-    hs.addView(l);
-    parent.addView(hs);
-    return l;
   }
 
   /** A delete button: the first tap asks to tap again, the second deletes. */
@@ -565,7 +593,7 @@ public class MemoryPane extends LinearLayout
     Saver saver = new Saver() {
       public void save(String t) { memory().replace_text(it.text, it.category, t); }
     };
-    return entry(it.text, true, saver, new MenuBuilder() {
+    return entry(it.text, saver, new MenuBuilder() {
       public void build(Menu m)
       {
         add(m, R.string.studio_delete, new Runnable() {
@@ -600,7 +628,7 @@ public class MemoryPane extends LinearLayout
       it. */
   View pending_entry(final MemoryStore store, final MemoryStore.Item it)
   {
-    LinearLayout r = entry_row(it.text, true);
+    LinearLayout r = entry_row(it.text);
     TextView keep = small_button("✓");
     keep.setOnClickListener(new View.OnClickListener() {
       public void onClick(View v) { store.keep_pending(it); show(true); }
@@ -713,7 +741,8 @@ public class MemoryPane extends LinearLayout
     _edit_title.setText(getContext().getString(R.string.studio_editing,
           _editor.text().length()));
     _edit_text.setText(_editor.display(_highlight, true));
-    final int cursor = _editor.sel_end();
+    // The selection's moving end stays in view, whichever way it goes.
+    final int cursor = _editor.tip();
     _edit_text.post(new Runnable() {
       public void run()
       {
@@ -810,11 +839,10 @@ public class MemoryPane extends LinearLayout
   interface MenuBuilder { void build(Menu m); }
 
   /** An item on one line, its start then "…": tap types it, ✎ edits it
-      in the pane, long-press opens [menu] (delete first). [shelf]: an entry
-      of a sideways row, as wide as its text up to a limit. */
-  View entry(final String text, boolean shelf, final Saver saver, final MenuBuilder menu)
+      in the pane, long-press opens [menu] (delete first). */
+  View entry(final String text, final Saver saver, final MenuBuilder menu)
   {
-    final LinearLayout r = entry_row(text, shelf);
+    final LinearLayout r = entry_row(text);
     TextView pen = small_button("✎");
     pen.setAlpha(0.7f);
     pen.setOnClickListener(new View.OnClickListener() {
@@ -834,7 +862,7 @@ public class MemoryPane extends LinearLayout
   }
 
   /** The row of an entry, with its text; tapping it types [text]. */
-  LinearLayout entry_row(final String text, boolean shelf)
+  LinearLayout entry_row(final String text)
   {
     LinearLayout r = new LinearLayout(getContext());
     r.setOrientation(HORIZONTAL);
@@ -846,20 +874,11 @@ public class MemoryPane extends LinearLayout
     t.setEllipsize(TextUtils.TruncateAt.END);
     t.setGravity(Gravity.CENTER_VERTICAL);
     t.setPadding(dp(8), 0, dp(4), 0);
-    if (shelf)
-    {
-      t.setMaxWidth(dp(150));
-      r.addView(t, new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.MATCH_PARENT));
-    }
-    else
-      r.addView(t, new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+    r.addView(t, new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
     r.setOnClickListener(new View.OnClickListener() {
       public void onClick(View v) { type(text); }
     });
-    LayoutParams p = new LayoutParams(
-        shelf ? ViewGroup.LayoutParams.WRAP_CONTENT : ViewGroup.LayoutParams.MATCH_PARENT,
-        dp(30));
+    LayoutParams p = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(30));
     p.setMargins(dp(3), dp(3), dp(3), 0);
     r.setLayoutParams(p);
     return r;

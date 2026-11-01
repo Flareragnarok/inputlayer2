@@ -8,7 +8,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 51).
+Last updated: 2026-11-01 (build 52).
 
 ## Done
 
@@ -65,6 +65,7 @@ Last updated: 2026-11-01 (build 51).
 | 49 | The apply is split: **Backspace ←** (✦) applies Verse's look only (markers around the text stay), **Shift ←** (¶) applies View's format (replacing the one there; in apps without markup, the look). |
 | 50 | Clipboard and Memory reworked. A bar on top of the pane shows the last three copies (cut with …), or the whole text of the item last tapped. Every item is one line (first words, then …) with a ✎ to edit it; tap types, long-press opens the menu with Delete first. Clipboard: history on the left 30%, pins on the right. Memory: the left 30% free for now; on the right, categories scrolling up and down, each a row of entries scrolling sideways, then the history records. Copies of 1,000+ characters wait under "Keep?" (✓ keep, ✕ drop; size set in Studio). Editing takes the whole pane: the full text, scrolled to the cursor, a tap places the cursor. The selection bar no longer holds the editor. |
 | 51 | New content types **Commands, Output, Logs, Code** with fixed rules (README → How copies are sorted); Snippets keeps other multi-line text. In a category, alike items are next to each other (commands by program, links and mails by domain, logs by tag, code by language), a group of several labelled. The history is sorted again with the new rules; saved and moved items stay. |
+| 52 | Memory in three columns: the left 30% free, the categories listed on the right (Keep? first, ⟲ History last), the tapped one's items in the middle, one per line, groups labelled. Editing an item: the keyboard follows the item's cursor and selection instead of the app's (the app's selection updates no longer reach the edit strip and cursor keys meanwhile, the item's do), so Sector and the cursor keys land where expected; the view follows a selection's moving end. |
 
 Infrastructure:
 

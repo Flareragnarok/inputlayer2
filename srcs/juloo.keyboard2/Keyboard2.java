@@ -72,6 +72,8 @@ public class Keyboard2 extends InputMethodService
   private int _studio_bottom_inset = 0;
   /** Studio: selection as last reported by the editor, for the edit strip. */
   private int _studio_sel_start = 0, _studio_sel_end = 0;
+  /** The app's selection while an item is edited, given back after. */
+  private int _studio_app_sel_start = 0, _studio_app_sel_end = 0;
   private Suggestions _suggestions;
   private KeyEventHandler _keyeventhandler;
   /** If not 'null', the layout to use instead of [_config.current_layout]. */
@@ -246,14 +248,22 @@ public class Keyboard2 extends InputMethodService
     });
     memory_pane().set_listener(new MemoryPane.Listener() {
       public void close() { close_memory_pane(); }
-      public void edit_started(juloo.keyboard2.studio.ItemEditor e) { _studio_edit = e; }
-      public void edit_ended() { _studio_edit = null; }
+      public void edit_started(juloo.keyboard2.studio.ItemEditor e)
+      {
+        // The app's selection is set aside; the keyboard follows the item.
+        _studio_app_sel_start = _studio_sel_start;
+        _studio_app_sel_end = _studio_sel_end;
+        _studio_edit = e;
+        studio_selection_changed(e.sel_start(), e.sel_end());
+      }
+      public void edit_ended()
+      {
+        _studio_edit = null;
+        studio_selection_changed(_studio_app_sel_start, _studio_app_sel_end);
+      }
       public void edit_changed(int sel_start, int sel_end)
       {
-        // As the app's field would: selection, typing in format, learning.
-        _studio_sel_start = sel_start;
-        _studio_sel_end = sel_end;
-        _edit_strip.selection_updated(sel_start, sel_end);
+        studio_selection_changed(sel_start, sel_end);
       }
     });
     _keyboard_container_view.findViewById(R.id.corner_memory)
@@ -748,10 +758,31 @@ public class Keyboard2 extends InputMethodService
     _keyboard_layout_view.setKeyboard(current_layout());
   }
 
+  /** Studio: the selection of the item being edited changed, or the
+      keyboard goes back to the app's: told to everything that follows the
+      cursor, as Android's [onUpdateSelection] does for the app's field. */
+  private void studio_selection_changed(int sel_start, int sel_end)
+  {
+    int old_start = _studio_sel_start, old_end = _studio_sel_end;
+    _studio_sel_start = sel_start;
+    _studio_sel_end = sel_end;
+    _edit_strip.selection_updated(sel_start, sel_end);
+    _keyeventhandler.selection_updated(old_start, sel_start, sel_end);
+    if ((old_start == old_end) != (sel_start == sel_end))
+      _keyboard_layout_view.set_selection_state(sel_start != sel_end);
+  }
+
   @Override
   public void onUpdateSelection(int oldSelStart, int oldSelEnd, int newSelStart, int newSelEnd, int candidatesStart, int candidatesEnd)
   {
     super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd, candidatesStart, candidatesEnd);
+    // While an item is edited, the keyboard follows it, not the app.
+    if (_studio_edit != null)
+    {
+      _studio_app_sel_start = newSelStart;
+      _studio_app_sel_end = newSelEnd;
+      return;
+    }
     _studio_sel_start = newSelStart;
     _studio_sel_end = newSelEnd;
     _edit_strip.selection_updated(newSelStart, newSelEnd);

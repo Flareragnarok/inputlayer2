@@ -49,6 +49,10 @@ public final class ItemEditor extends BaseInputConnection
   public int sel_start() { return Math.min(Selection.getSelectionStart(_text), Selection.getSelectionEnd(_text)); }
   public int sel_end() { return Math.max(Selection.getSelectionStart(_text), Selection.getSelectionEnd(_text)); }
 
+  /** The moving end of the selection (the cursor when nothing is
+      selected). */
+  public int tip() { return Selection.getSelectionEnd(_text); }
+
   void changed() { _listener.changed(this); }
 
   @Override
