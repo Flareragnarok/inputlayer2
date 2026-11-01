@@ -239,4 +239,15 @@ public final class Updater
         l.add(r);
     return l;
   }
+
+  /** The newest beta newer than [installed] (and than every stable build), the
+      one hidden when betas are off. [null] if none. */
+  public static Release newer_beta(List<Release> rs, int installed)
+  {
+    Release best = null;
+    for (Release r : rs)
+      if (r.build > installed && (best == null || r.build > best.build))
+        best = r;
+    return (best != null && best.beta) ? best : null;
+  }
 }

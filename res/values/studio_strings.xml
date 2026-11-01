@@ -46,6 +46,7 @@
   <string name="studio_no_releases">No Studio builds published in this repository yet</string>
   <string name="studio_update_available">Build %1$d is available</string>
   <string name="studio_up_to_date">You have the newest build</string>
+  <string name="studio_beta_hidden">No newer stable build. Build %1$d is out as a beta: turn on Beta builds above to get it.</string>
   <string name="studio_install">Install (%1$d MB)</string>
   <string name="studio_past_builds">Past builds</string>
   <string name="studio_past_builds_desc">Android only installs newer builds. Restoring a past build republishes its exact code on GitHub as a new build number, which then shows up above as an update. Your settings and modules are kept.</string>

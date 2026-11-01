@@ -56,4 +56,21 @@ public class UpdaterTest
     assertFalse(Updater.is_valid_repo("owner/repo/../x"));
     assertFalse(Updater.is_valid_repo("https://github.com/owner/repo"));
   }
+
+  /** The owner's case (build 62): on 61 with betas off, 62 is a beta. Studio
+      said "newest build" instead of pointing at it. */
+  @Test
+  public void newer_beta()
+  throws Exception
+  {
+    List<Updater.Release> rs = Updater.parse_releases("[" + String.join(",",
+        release("build-62", false, true, "a.apk"),
+        release("build-61", false, false, "a.apk"),
+        release("build-60", false, true, "a.apk")) + "]");
+    assertEquals(62, Updater.newer_beta(rs, 61).build);
+    assertTrue(Updater.channel(rs, false).get(0).build == 61);
+    assertNull(Updater.newer_beta(rs, 62));
+    // The newest is stable, so it is offered anyway: no hint.
+    assertNull(Updater.newer_beta(rs.subList(1, 3), 59));
+  }
 }

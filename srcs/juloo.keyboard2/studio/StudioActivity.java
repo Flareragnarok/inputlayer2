@@ -140,6 +140,9 @@ public class StudioActivity extends Activity
       public void onCheckedChanged(CompoundButton b, boolean checked)
       {
         _prefs.edit().putBoolean(KEY_UPDATE_BETA, checked).apply();
+        // The list already read follows the switch at once.
+        if (_all_releases != null)
+          show_releases(_all_releases);
       }
     });
     root.addView(beta);
@@ -881,8 +884,12 @@ public class StudioActivity extends Activity
     }.start();
   }
 
+  /** Releases from the last check, [null] before one. */
+  List<Updater.Release> _all_releases = null;
+
   void show_releases(List<Updater.Release> all)
   {
+    _all_releases = all;
     _releases.removeAllViews();
     // The installed build is a beta: once it has proven itself, mark it
     // stable on GitHub.
@@ -899,7 +906,7 @@ public class StudioActivity extends Activity
                 }
               }));
     List<Updater.Release> rs = Updater.channel(all, _prefs.getBoolean(KEY_UPDATE_BETA, false));
-    if (rs.isEmpty())
+    if (rs.isEmpty() && Updater.newer_beta(all, _installed_build) == null)
     {
       _update_status.setText(R.string.studio_no_releases);
       return;
@@ -911,9 +918,15 @@ public class StudioActivity extends Activity
         newer.add(r);
       else if (r.build < _installed_build)
         older.add(r);
-    _update_status.setText(newer.isEmpty() ?
-        getString(R.string.studio_up_to_date) :
-        getString(R.string.studio_update_available, newer.get(0).build));
+    // Never say "newest" while a newer beta is hidden.
+    Updater.Release hidden = _prefs.getBoolean(KEY_UPDATE_BETA, false) ? null
+      : Updater.newer_beta(all, _installed_build);
+    if (!newer.isEmpty())
+      _update_status.setText(getString(R.string.studio_update_available, newer.get(0).build));
+    else if (hidden != null)
+      _update_status.setText(getString(R.string.studio_beta_hidden, hidden.build));
+    else
+      _update_status.setText(R.string.studio_up_to_date);
     if (!newer.isEmpty())
       show_newer(newer);
     if (!older.isEmpty())
