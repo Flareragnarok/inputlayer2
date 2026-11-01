@@ -41,10 +41,13 @@ public final class Updater
     public final String notes;
     public final String apk_url;
     public final long apk_size;
+    /** Published as a GitHub pre-release: a beta, not marked stable yet. */
+    public final boolean beta;
 
-    Release(int b, String t, String ti, String n, String url, long size)
+    Release(int b, String t, String ti, String n, String url, long size, boolean be)
     {
       build = b; tag = t; title = ti; notes = n; apk_url = url; apk_size = size;
+      beta = be;
     }
   }
 
@@ -78,7 +81,7 @@ public final class Updater
     for (int i = 0; i < rs.length(); i++)
     {
       JSONObject r = rs.getJSONObject(i);
-      if (r.optBoolean("draft") || r.optBoolean("prerelease"))
+      if (r.optBoolean("draft"))
         continue;
       String tag = r.optString("tag_name");
       int build = build_of_tag(tag);
@@ -95,7 +98,7 @@ public final class Updater
           String title = r.optString("name");
           out.add(new Release(build, tag, title.isEmpty() ? tag : title,
                 r.optString("body"), a.optString("browser_download_url"),
-                a.optLong("size")));
+                a.optLong("size"), r.optBoolean("prerelease")));
           break;
         }
       }
@@ -225,5 +228,15 @@ public final class Updater
     int n;
     while ((n = inp.read(buf)) > 0)
       out.write(buf, 0, n);
+  }
+
+  /** [rs] without the betas, unless [beta]. */
+  public static List<Release> channel(List<Release> rs, boolean beta)
+  {
+    List<Release> l = new ArrayList<Release>();
+    for (Release r : rs)
+      if (beta || !r.beta)
+        l.add(r);
+    return l;
   }
 }

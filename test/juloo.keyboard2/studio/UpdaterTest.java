@@ -23,14 +23,22 @@ public class UpdaterTest
     String json = "[" + String.join(",",
         release("build-7", false, false, "studio.apk"),
         release("build-9", true, false, "studio.apk"),   // draft
-        release("build-8", false, true, "studio.apk"),   // prerelease
+        release("build-8", false, true, "studio.apk"),   // prerelease: a beta
         release("2.1.0", false, false, "studio.apk"),    // not a Studio tag
         release("build-6", false, false, "notes.txt"),   // no APK
         release("build-12", false, false, "studio.apk")) + "]";
     List<Updater.Release> rs = Updater.parse_releases(json);
-    assertEquals(2, rs.size());
+    assertEquals(3, rs.size());
     assertEquals(12, rs.get(0).build);
-    assertEquals(7, rs.get(1).build);
+    assertEquals(8, rs.get(1).build);
+    assertTrue(rs.get(1).beta);
+    assertFalse(rs.get(0).beta);
+    assertEquals(7, rs.get(2).build);
+    // Stable only: the beta goes.
+    List<Updater.Release> stable = Updater.channel(rs, false);
+    assertEquals(2, stable.size());
+    assertEquals(7, stable.get(1).build);
+    assertEquals(3, Updater.channel(rs, true).size());
     assertEquals("notes build-12", rs.get(0).notes);
     assertEquals("https://example.invalid/studio.apk", rs.get(0).apk_url);
     assertEquals(4000000, rs.get(0).apk_size);

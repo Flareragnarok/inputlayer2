@@ -304,7 +304,10 @@ as upstream translates them). Studio has Input Layer's own (English
 only):
 
 - **Updates**: installed build, newer builds dropdown + Install, past
-  builds dropdown + Restore.
+  builds dropdown + Restore. **Beta builds**: every push comes out as a
+  beta (a GitHub pre-release); with the switch off (default) only stable
+  builds are offered. On a beta that works, *Mark build N stable* opens its
+  GitHub page: untick *pre-release*. Restores come out stable.
 - **Crash reports**: every crash, and every error the app survived (shown
   as a message instead), is kept on the phone with the error, where it
   happened and the build, never typed text; the last 10 stay. *Copy
@@ -355,7 +358,8 @@ switch:<type>`. `snippets` and `theme` are reserved, not used yet.
 ## Building and releasing
 
 - **On GitHub** (the remote build machine): `.github/workflows/studio-release.yml`
-  builds every push to `studio` and publishes `build-N` (N = highest
+  builds every push to `studio` and publishes `build-N` as a pre-release
+  (beta) (N = highest
   existing build + 1, so failed builds don't use a number); it refuses to
   publish without the `DEBUG_KEYSTORE` secret, as builds signed with
   another key can't update each other. On failure it writes the errors as

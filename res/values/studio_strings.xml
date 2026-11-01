@@ -110,4 +110,8 @@
   <string name="studio_crashes_copy">Copy reports</string>
   <string name="studio_crashes_clear">Clear</string>
   <string name="studio_crashes_copied">%1$d reports copied</string>
+  <string name="studio_update_beta">Beta builds</string>
+  <string name="studio_update_beta_desc">New builds come out as betas, not tested on a phone yet. Off: only builds marked stable are offered, so the keyboard you use every day stays on one that works.</string>
+  <string name="studio_mark_stable">Mark build %1$d stable</string>
+  <string name="studio_mark_stable_howto">On GitHub, untick "Set as a pre-release", then Update release</string>
 </resources>

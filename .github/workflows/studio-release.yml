@@ -92,5 +92,7 @@ jobs:
         prev=$(git describe --tags --match 'build-*' --abbrev=0 HEAD 2>/dev/null || true)
         range=${prev:+$prev..}HEAD
         { echo "Changes:"; git log --no-merges --format='- %s' "$range" | head -n 50; } > notes.md
-        gh release create "$tag" "$apk" --target "$GITHUB_SHA" \
+        # Every build is a beta (a pre-release) until the owner marks it
+        # stable from Studio; the updater offers betas only when asked.
+        gh release create "$tag" "$apk" --target "$GITHUB_SHA" --prerelease \
           --title "Input Layer build ${STUDIO_BUILD}" --notes-file notes.md

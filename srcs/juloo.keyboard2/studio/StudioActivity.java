@@ -41,6 +41,8 @@ import juloo.keyboard2.Utils;
 public class StudioActivity extends Activity
 {
   static final String KEY_UPDATE_REPO = "studio_update_repo";
+  /** The updater offers beta builds too (GitHub pre-releases). */
+  static final String KEY_UPDATE_BETA = "studio_update_beta";
   /** Open the Spec / Vert editor on this type ("spec", "vert") and name. */
   public static final String EXTRA_EDIT_TYPE = "studio_edit_type";
   public static final String EXTRA_EDIT_NAME = "studio_edit_name";
@@ -126,6 +128,17 @@ public class StudioActivity extends Activity
     _repo.setText(_prefs.getString(KEY_UPDATE_REPO,
           getString(R.string.studio_update_repo)));
     root.addView(_repo);
+    final CheckBox beta = new CheckBox(this);
+    beta.setText(R.string.studio_update_beta);
+    beta.setChecked(_prefs.getBoolean(KEY_UPDATE_BETA, false));
+    beta.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+      public void onCheckedChanged(CompoundButton b, boolean checked)
+      {
+        _prefs.edit().putBoolean(KEY_UPDATE_BETA, checked).apply();
+      }
+    });
+    root.addView(beta);
+    root.addView(text(getString(R.string.studio_update_beta_desc)));
     root.addView(button(R.string.studio_check_updates, new View.OnClickListener() {
       public void onClick(View v) { check_updates(); }
     }));
@@ -779,9 +792,24 @@ public class StudioActivity extends Activity
     }.start();
   }
 
-  void show_releases(List<Updater.Release> rs)
+  void show_releases(List<Updater.Release> all)
   {
     _releases.removeAllViews();
+    // The installed build is a beta: once it has proven itself, mark it
+    // stable on GitHub.
+    for (final Updater.Release r : all)
+      if (r.build == _installed_build && r.beta)
+        _releases.addView(button(getString(R.string.studio_mark_stable, r.build),
+              new View.OnClickListener() {
+                public void onClick(View v)
+                {
+                  toast(getString(R.string.studio_mark_stable_howto));
+                  startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(
+                          "https://github.com/" + _prefs.getString(KEY_UPDATE_REPO, "")
+                          + "/releases/edit/" + r.tag)));
+                }
+              }));
+    List<Updater.Release> rs = Updater.channel(all, _prefs.getBoolean(KEY_UPDATE_BETA, false));
     if (rs.isEmpty())
     {
       _update_status.setText(R.string.studio_no_releases);
@@ -867,7 +895,7 @@ public class StudioActivity extends Activity
   {
     List<String> labels = new ArrayList<String>();
     for (Updater.Release r : rs)
-      labels.add(r.title);
+      labels.add(r.beta ? r.title + " · beta" : r.title);
     Spinner sp = new Spinner(this);
     ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
         android.R.layout.simple_spinner_item, labels);
