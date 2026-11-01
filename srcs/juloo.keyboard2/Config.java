@@ -401,4 +401,18 @@ public final class Config
       return new LayoutsPreference.SystemLayout();
     return new LayoutsPreference.NamedLayout(name);
   }
+
+  /** Studio: the layout "system" picks for a language, Input Layer's own
+      for Latin-script ones: AZERTY where the language's layout is AZERTY,
+      QWERTY otherwise. Other scripts keep their layout. */
+  public static String own_layout(String locale_layout)
+  {
+    if (locale_layout == null)
+      return "il_qwerty";
+    if (locale_layout.startsWith("latn_azerty"))
+      return "il_azerty";
+    if (locale_layout.startsWith("latn_"))
+      return "il_qwerty";
+    return locale_layout;
+  }
 }

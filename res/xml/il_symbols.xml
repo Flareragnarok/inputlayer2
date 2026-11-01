@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Input Layer's first symbols page (?123), like Gboard's: digits, the
+common symbols, then the punctuation. =\< opens the second page. -->
+<keyboard bottom_row="false" locale_extra_keys="false">
+  <row>
+    <key c="1"/>
+    <key c="2"/>
+    <key c="3"/>
+    <key c="4"/>
+    <key c="5"/>
+    <key c="6"/>
+    <key c="7"/>
+    <key c="8"/>
+    <key c="9"/>
+    <key c="0"/>
+  </row>
+  <row>
+    <key c="\@"/>
+    <key c="\#"/>
+    <key c="€" ne="$"/>
+    <key c="_"/>
+    <key c="&amp;"/>
+    <key c="-"/>
+    <key c="+"/>
+    <key c="("/>
+    <key c=")"/>
+    <key c="/"/>
+  </row>
+  <row>
+    <key width="1.5" role="action" c="il_symbols_more"/>
+    <key c="*"/>
+    <key c="&quot;"/>
+    <key c="'"/>
+    <key c=":"/>
+    <key c=";"/>
+    <key c="!"/>
+    <key c="\?"/>
+    <key width="1.5" role="action" c="backspace"/>
+  </row>
+  <row height="0.95">
+    <key width="1.5" role="action" c="switch_text"/>
+    <key c=","/>
+    <key width="4" role="space_bar" c="space" e="cursor_right"/>
+    <key c="."/>
+    <key role="action" c="studio_sector_step" w="left" e="right" n="up" s="down"/>
+    <key width="1.5" role="action" c="enter" ne="action"/>
+  </row>
+</keyboard>

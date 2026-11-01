@@ -9,7 +9,11 @@ import xml.etree.ElementTree as XML
 
 # Layouts first in the list (these are the programming layouts). Other layouts
 # are sorted alphabetically.
-FIRST_LAYOUTS = [ "latn_qwerty_us", "latn_colemak", "latn_dvorak" ]
+FIRST_LAYOUTS = [ "il_azerty", "il_qwerty", "latn_qwerty_us", "latn_colemak", "latn_dvorak" ]
+
+# Input Layer's own layouts; every other one is upstream's, listed as legacy.
+OWN_PREFIX = "il_"
+LEGACY_LABEL = "Legacy · "
 
 # Read a layout from a file. Returns [None] if [fname] is not a layout.
 def read_layout(fname):
@@ -28,7 +32,10 @@ def read_layouts(files):
         elif layout["name"] == None:
             print("Layout doesn't have a name: %s" % layout_id)
         else:
-            yield (layout_id, layout["name"])
+            name = layout["name"]
+            if not layout_id.startswith(OWN_PREFIX):
+                name = LEGACY_LABEL + name
+            yield (layout_id, name)
 
 # Sort layouts alphabetically, except for layouts in FIRST_LAYOUTS, which are
 # placed at the top.

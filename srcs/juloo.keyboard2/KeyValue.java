@@ -36,6 +36,9 @@ public final class KeyValue implements Comparable<KeyValue>
     STUDIO_SECTOR_STEP,
     /** Backspace between removing before and after the cursor. */
     STUDIO_BACKSPACE_TOGGLE,
+    /** Input Layer's symbols pages, like Gboard's ?123 and =\< . */
+    STUDIO_SYMBOLS,
+    STUDIO_SYMBOLS_MORE,
     /** Verse's look, as picked, applied (backspace ←). */
     STUDIO_APPLY_LOOK,
     /** View's format, as picked, applied (shift ←). */
@@ -688,6 +691,8 @@ public final class KeyValue implements Comparable<KeyValue>
       case "studio_sector_step": return eventKey("⇢", Event.STUDIO_SECTOR_STEP, FLAG_SMALLER_FONT);
       case "studio_sector_step_back": return eventKey("⇠", Event.STUDIO_SECTOR_STEP, FLAG_SMALLER_FONT);
       case "studio_backspace_toggle": return eventKey("⇄", Event.STUDIO_BACKSPACE_TOGGLE, FLAG_SMALLER_FONT);
+      case "il_symbols": return eventKey("?123", Event.STUDIO_SYMBOLS, FLAG_SMALLER_FONT);
+      case "il_symbols_more": return eventKey("=\\<", Event.STUDIO_SYMBOLS_MORE, FLAG_SMALLER_FONT);
       case "studio_apply_look": return eventKey("✦", Event.STUDIO_APPLY_LOOK, FLAG_SMALLER_FONT);
       case "studio_apply_format": return eventKey("¶", Event.STUDIO_APPLY_FORMAT, FLAG_SMALLER_FONT);
       case "studio_undo": return eventKey(0xE036, Event.STUDIO_UNDO, 0);

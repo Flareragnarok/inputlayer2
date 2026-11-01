@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Input Layer AZERTY, shaped like Gboard's French keyboard: digits on the
+top row's top-right swipes, accents on the vowels' other corners, and Input
+Layer's own bottom row: ?123 opens the numbers and symbols (two pages, like
+Gboard's), no Ctrl / Fn / Compose keys. Shift, backspace and space get Input
+Layer's swipes from LayoutModifier. -->
+<keyboard name="Input Layer AZERTY" script="latin" bottom_row="false" locale_extra_keys="false">
+  <row>
+    <key c="a" ne="1" nw="à" sw="â" se="æ"/>
+    <key c="z" ne="2"/>
+    <key c="e" ne="3" nw="é" sw="è" se="ê" s="ë"/>
+    <key c="r" ne="4"/>
+    <key c="t" ne="5"/>
+    <key c="y" ne="6" nw="ÿ"/>
+    <key c="u" ne="7" nw="ù" sw="û" se="ü"/>
+    <key c="i" ne="8" nw="î" sw="ï"/>
+    <key c="o" ne="9" nw="ô" sw="œ" se="ö"/>
+    <key c="p" ne="0"/>
+  </row>
+  <row>
+    <key c="q"/>
+    <key c="s"/>
+    <key c="d"/>
+    <key c="f"/>
+    <key c="g"/>
+    <key c="h"/>
+    <key c="j"/>
+    <key c="k"/>
+    <key c="l"/>
+    <key c="m"/>
+  </row>
+  <row>
+    <key width="1.5" role="action" c="shift"/>
+    <key c="w"/>
+    <key c="x"/>
+    <key c="c" nw="ç"/>
+    <key c="v"/>
+    <key c="b"/>
+    <key c="n" nw="ñ"/>
+    <key c="'" sw="’" se="&quot;"/>
+    <key width="1.5" role="action" c="backspace"/>
+  </row>
+  <row height="0.95">
+    <key width="1.5" role="action" c="il_symbols" nw="studio_undo" ne="studio_redo"/>
+    <key c="," n="switch_emoji"/>
+    <key width="4" role="space_bar" c="space" e="cursor_right"/>
+    <key c="." n="\?" ne="!" nw="…" s=":"/>
+    <key role="action" c="studio_sector_step" w="left" e="right" n="up" s="down"/>
+    <key width="1.5" role="action" c="enter" ne="action"/>
+  </row>
+</keyboard>

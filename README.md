@@ -44,12 +44,34 @@ comfort bar's ↕ key):
 | **Comfort bar** (26dp) | tiny keys: copy/paste, cursor, height ↕, language |
 | **Selection bar** | only shown when it has something: the preview of typing in format |
 | **Suggestion bar** (28dp) | words only; see-through **Clipboard** icon bottom-left, **Memory** icon bottom-right; the Clipboard / Memory pane opens in its place, with its own bar on top |
-| **Keyboard** | upstream's layouts, with extra swipes |
+| **Keyboard** | Input Layer's own layouts (AZERTY, QWERTY), or upstream's under Legacy |
 | **Edit strip** (28dp) | eight keys to select, format and restyle text |
 
 All small keys work like keyboard keys: **tap** for the main action,
 **swipe** toward one of 8 directions for the others (the faint labels on
 the key's edges).
+
+## Input Layer's layouts
+
+**Input Layer AZERTY** and **Input Layer QWERTY** (`srcs/layouts/il_*.xml`)
+are shaped like Gboard's. The language's default ("system") picks them for
+Latin-script languages: AZERTY where the language uses AZERTY (French),
+QWERTY otherwise. Upstream's layouts are listed after them as
+*Legacy · …*, for other scripts or habits.
+
+- **Letters**: digits on the top row's ↗ swipes (A/Q 1 … P 0); accents on
+  the vowels' other corners (E: ↖ é, ↙ è, ↘ ê, ↓ ë; A: à â æ; U: ù û ü;
+  I: î ï; O: ô œ ö; Y: ÿ), C ↖ ç, N ↖ ñ.
+- **Bottom row**, no Ctrl / Fn / Compose: `?123` (↖ undo, ↗ redo) · `,`
+  (↑ emoji) · space · `.` (↑ `?`, ↗ `!`, ↓ `:`) · Sector's arrow key ·
+  Enter.
+- **?123** opens the first symbols page, like Gboard's: digits;
+  `@ # € _ & - + ( ) /` (€ ↗ $); `=\<` `* " ' : ; ! ?` ⌫.
+- **=\<** opens the second page: `~ \` | • √ π ÷ × ¶ ∆`;
+  `£ ¥ $ ¢ ^ ° = { } \`; `?123` `% © ® ™ ✓ [ ]` ⌫; `<` and `>` around
+  the space bar. **ABC** goes back to the letters.
+- Shift, backspace, space and the arrow key get Input Layer's swipes (see
+  below) on these pages too.
 
 ## Gestures on the keyboard's keys
 
@@ -59,7 +81,8 @@ the key's edges).
 | **Backspace** | ⌫, or ⌦ in forward mode (its label shows which) | ← **apply** Verse's look as picked (✦) · ↑ switch ⌫ / ⌦ · ↓ cut the selection (goes to the clipboard history) |
 | **Arrow key** (next to space) | Sector's step in the ←→ direction (label ⇢ / ⇠) | arrows (upstream) |
 | **Shift** | shift | ← **apply** View's format as picked (¶) · ↑ Caps Lock · → Compose (e.g. `a` `'` → á) |
-| **Ctrl** | ctrl | ↖ undo (Ctrl+Z) · ↗ redo (Ctrl+Shift+Z) |
+| **?123** (our layouts) | symbols | ↖ undo (Ctrl+Z) · ↗ redo (Ctrl+Shift+Z) |
+| **Ctrl** (legacy layouts) | ctrl | ↖ undo · ↗ redo |
 
 Upstream's layout switching on space ↑/↓ moved to the comfort bar's
 language key; its left cursor slider is replaced (the arrow keys move the

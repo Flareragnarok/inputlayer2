@@ -90,7 +90,21 @@ public final class LayoutModifier
     // Avoid adding extra keys to the number row
     if (added_number_row != null)
       kw = kw.insert_row(added_number_row, 0);
+    return studio_keys(kw);
+  }
+
+  /** Studio: Input Layer's swipes on backspace, space, Shift, Ctrl and the
+      arrow key, and the rows' heights. */
+  static KeyboardData studio_keys(KeyboardData kw)
+  {
     return scale_rows(ctrl_undo(arrows_and_shift(space_nests(backspace_cut(kw)))));
+  }
+
+  /** Studio: Input Layer's symbols pages, with the same swipes on their
+      keys as the letters. */
+  public static KeyboardData modify_symbols(KeyboardData kw)
+  {
+    return studio_keys(kw);
   }
 
   /** Studio: the space bar's swipes drive the edit strip's nest configs:

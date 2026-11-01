@@ -3,6 +3,8 @@
   <!-- DO NOT EDIT. This file is generated, run 'gradle genLayoutsList'. -->
   <string-array name="pref_layout_values">
     <item>system</item>
+    <item>il_azerty</item>
+    <item>il_qwerty</item>
     <item>latn_qwerty_us</item>
     <item>latn_colemak</item>
     <item>latn_dvorak</item>
@@ -97,100 +99,104 @@
   </string-array>
   <string-array name="pref_layout_entries">
     <item>@string/pref_layout_e_system</item>
-    <item>QWERTY (US)</item>
-    <item>Colemak</item>
-    <item>Dvorak</item>
-    <item>Arabic Alt</item>
-    <item>Talysh (تالشی همواج)</item>
-    <item>Arabic PC</item>
-    <item>Kurdish (کوردی) QWERTY</item>
-    <item>Central Kurdish (سۆرانی) Persian Layout</item>
-    <item>Arabic PC (Hindu numerals)</item>
-    <item>Persian PC</item>
-    <item>ՃՓԲՍՄՈ</item>
-    <item>ՔՎԸՐՏՃ</item>
-    <item>অসমীয়া (Assamese)</item>
-    <item>বাংলা (জাতীয়)</item>
-    <item>বাংলা (প্রভাত)</item>
-    <item>ФЦУЖЭН (Монгол)</item>
-    <item>ЈЦУКЕН (Всисловѣнск)</item>
-    <item>ЙЦУКЕН (Қазақша)</item>
-    <item>ЙЦУКЕН (Русский)</item>
-    <item>ЙЦУКЕН (Українська)</item>
-    <item>ЙІУКЕН</item>
-    <item>ЉЊЕРТЅ (Македонски)</item>
-    <item>ЉЊЕРТЗ (Српски)</item>
-    <item>УЕИШЩ (Български, БДС)</item>
-    <item>ЯВЕРТЪ</item>
-    <item>ЯВЕРТЫ</item>
-    <item>Tajiki Persian (Тоҷикӣ)</item>
-    <item>Old Church Slavonic (Црькъвьнословѣньскъ ѩзыкъ)</item>
-    <item>देवनागरी (हिंदी)-2</item>
-    <item>देवनागरी (हिंदी)-1</item>
-    <item>हिन्दी फोनेटिक - Hindi Phonetic</item>
-    <item>ქართული (MES)</item>
-    <item>ქართული (QWERTY)</item>
-    <item>QWERTY (Greek)</item>
-    <item>ગુજરાતી ફોનેટિક - Gujarati Phonetic</item>
-    <item>두벌식 (Korean)</item>
-    <item>Hebrew 1</item>
-    <item>Hebrew 2</item>
-    <item>ಕನ್ನಡ - Kannada</item>
-    <item>Turkish F</item>
-    <item>AZERTY (Belgian)</item>
-    <item>AZERTY (Français)</item>
-    <item>BEPO (Français)</item>
-    <item>Bone</item>
-    <item>Neo 2</item>
-    <item>QWERTY (APL)</item>
-    <item>QWERTY (Azərbaycanca)</item>
-    <item>QWERTY (BQN)</item>
-    <item>QWERTY (Brasileiro)</item>
-    <item>QWERTY (Welsh)</item>
-    <item>QWERTY (Czech)</item>
-    <item>QWERTY (Danish)</item>
-    <item>QWERTY (Español)</item>
-    <item>QWERTY (eesti)</item>
-    <item>QWERTY (Finnish)</item>
-    <item>QWERTY (Irish)</item>
-    <item>QWERTY (UK)</item>
-    <item>QWERTY (Hawaiian)</item>
-    <item>QWERTY (Magyar)</item>
-    <item>QWERTY (Íslenska)</item>
-    <item>QWERTY (Japan)</item>
-    <item>QWERTY (Qazaqşa)</item>
-    <item>QWERTY (Lietuviškai)</item>
-    <item>QWERTY (Latvian)</item>
-    <item>QWERTY (Malti)</item>
-    <item>QWERTY (Norwegian)</item>
-    <item>QWERTY (Polski)</item>
-    <item>QWERTY (Română)</item>
-    <item>QWERTY (Swedish)</item>
-    <item>QWERTY (Slovak)</item>
-    <item>QWERTY (Srpski, latinica)</item>
-    <item>QWERTY (Talysh New Latin)</item>
-    <item>QWERTY (Türkçe)</item>
-    <item>QWERTY (Oʻzbekcha)</item>
-    <item>QWERTY (Vietnamese)</item>
-    <item>QWERTZ</item>
-    <item>QWERTZ (Czech)</item>
-    <item>QWERTZ (Czech with diacritic keys)</item>
-    <item>QWERTZ Multifunctional (Czech)</item>
-    <item>QWERTZ (Deutsch)</item>
-    <item>QWERTZ (Swiss French)</item>
-    <item>QWERTZ (Magyar)</item>
-    <item>QWERTZ (Slovak)</item>
-    <item>QWERTZ (Albanian)</item>
-    <item>QZERTY (Italiano)</item>
-    <item>WORKMAN (US)</item>
-    <item>Shaw Imperial</item>
-    <item>සිංහල</item>
-    <item>தமிழ்</item>
-    <item>Urdu Phonetic</item>
+    <item>Input Layer AZERTY</item>
+    <item>Input Layer QWERTY</item>
+    <item>Legacy · QWERTY (US)</item>
+    <item>Legacy · Colemak</item>
+    <item>Legacy · Dvorak</item>
+    <item>Legacy · Arabic Alt</item>
+    <item>Legacy · Talysh (تالشی همواج)</item>
+    <item>Legacy · Arabic PC</item>
+    <item>Legacy · Kurdish (کوردی) QWERTY</item>
+    <item>Legacy · Central Kurdish (سۆرانی) Persian Layout</item>
+    <item>Legacy · Arabic PC (Hindu numerals)</item>
+    <item>Legacy · Persian PC</item>
+    <item>Legacy · ՃՓԲՍՄՈ</item>
+    <item>Legacy · ՔՎԸՐՏՃ</item>
+    <item>Legacy · অসমীয়া (Assamese)</item>
+    <item>Legacy · বাংলা (জাতীয়)</item>
+    <item>Legacy · বাংলা (প্রভাত)</item>
+    <item>Legacy · ФЦУЖЭН (Монгол)</item>
+    <item>Legacy · ЈЦУКЕН (Всисловѣнск)</item>
+    <item>Legacy · ЙЦУКЕН (Қазақша)</item>
+    <item>Legacy · ЙЦУКЕН (Русский)</item>
+    <item>Legacy · ЙЦУКЕН (Українська)</item>
+    <item>Legacy · ЙІУКЕН</item>
+    <item>Legacy · ЉЊЕРТЅ (Македонски)</item>
+    <item>Legacy · ЉЊЕРТЗ (Српски)</item>
+    <item>Legacy · УЕИШЩ (Български, БДС)</item>
+    <item>Legacy · ЯВЕРТЪ</item>
+    <item>Legacy · ЯВЕРТЫ</item>
+    <item>Legacy · Tajiki Persian (Тоҷикӣ)</item>
+    <item>Legacy · Old Church Slavonic (Црькъвьнословѣньскъ ѩзыкъ)</item>
+    <item>Legacy · देवनागरी (हिंदी)-2</item>
+    <item>Legacy · देवनागरी (हिंदी)-1</item>
+    <item>Legacy · हिन्दी फोनेटिक - Hindi Phonetic</item>
+    <item>Legacy · ქართული (MES)</item>
+    <item>Legacy · ქართული (QWERTY)</item>
+    <item>Legacy · QWERTY (Greek)</item>
+    <item>Legacy · ગુજરાતી ફોનેટિક - Gujarati Phonetic</item>
+    <item>Legacy · 두벌식 (Korean)</item>
+    <item>Legacy · Hebrew 1</item>
+    <item>Legacy · Hebrew 2</item>
+    <item>Legacy · ಕನ್ನಡ - Kannada</item>
+    <item>Legacy · Turkish F</item>
+    <item>Legacy · AZERTY (Belgian)</item>
+    <item>Legacy · AZERTY (Français)</item>
+    <item>Legacy · BEPO (Français)</item>
+    <item>Legacy · Bone</item>
+    <item>Legacy · Neo 2</item>
+    <item>Legacy · QWERTY (APL)</item>
+    <item>Legacy · QWERTY (Azərbaycanca)</item>
+    <item>Legacy · QWERTY (BQN)</item>
+    <item>Legacy · QWERTY (Brasileiro)</item>
+    <item>Legacy · QWERTY (Welsh)</item>
+    <item>Legacy · QWERTY (Czech)</item>
+    <item>Legacy · QWERTY (Danish)</item>
+    <item>Legacy · QWERTY (Español)</item>
+    <item>Legacy · QWERTY (eesti)</item>
+    <item>Legacy · QWERTY (Finnish)</item>
+    <item>Legacy · QWERTY (Irish)</item>
+    <item>Legacy · QWERTY (UK)</item>
+    <item>Legacy · QWERTY (Hawaiian)</item>
+    <item>Legacy · QWERTY (Magyar)</item>
+    <item>Legacy · QWERTY (Íslenska)</item>
+    <item>Legacy · QWERTY (Japan)</item>
+    <item>Legacy · QWERTY (Qazaqşa)</item>
+    <item>Legacy · QWERTY (Lietuviškai)</item>
+    <item>Legacy · QWERTY (Latvian)</item>
+    <item>Legacy · QWERTY (Malti)</item>
+    <item>Legacy · QWERTY (Norwegian)</item>
+    <item>Legacy · QWERTY (Polski)</item>
+    <item>Legacy · QWERTY (Română)</item>
+    <item>Legacy · QWERTY (Swedish)</item>
+    <item>Legacy · QWERTY (Slovak)</item>
+    <item>Legacy · QWERTY (Srpski, latinica)</item>
+    <item>Legacy · QWERTY (Talysh New Latin)</item>
+    <item>Legacy · QWERTY (Türkçe)</item>
+    <item>Legacy · QWERTY (Oʻzbekcha)</item>
+    <item>Legacy · QWERTY (Vietnamese)</item>
+    <item>Legacy · QWERTZ</item>
+    <item>Legacy · QWERTZ (Czech)</item>
+    <item>Legacy · QWERTZ (Czech with diacritic keys)</item>
+    <item>Legacy · QWERTZ Multifunctional (Czech)</item>
+    <item>Legacy · QWERTZ (Deutsch)</item>
+    <item>Legacy · QWERTZ (Swiss French)</item>
+    <item>Legacy · QWERTZ (Magyar)</item>
+    <item>Legacy · QWERTZ (Slovak)</item>
+    <item>Legacy · QWERTZ (Albanian)</item>
+    <item>Legacy · QZERTY (Italiano)</item>
+    <item>Legacy · WORKMAN (US)</item>
+    <item>Legacy · Shaw Imperial</item>
+    <item>Legacy · සිංහල</item>
+    <item>Legacy · தமிழ்</item>
+    <item>Legacy · Urdu Phonetic</item>
     <item>@string/pref_layout_e_custom</item>
   </string-array>
   <integer-array name="layout_ids">
     <item>-1</item>
+    <item>@xml/il_azerty</item>
+    <item>@xml/il_qwerty</item>
     <item>@xml/latn_qwerty_us</item>
     <item>@xml/latn_colemak</item>
     <item>@xml/latn_dvorak</item>

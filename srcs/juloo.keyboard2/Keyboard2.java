@@ -553,13 +553,13 @@ public class Keyboard2 extends InputMethodService
     _config.device_locales = DeviceLocales.load(this);
     if (_config.device_locales.default_ != null)
     {
-      String layout_name = _config.device_locales.default_.default_layout;
+      String layout_name = Config.own_layout(_config.device_locales.default_.default_layout);
       if (layout_name != null)
         default_layout = LayoutsPreference.layout_of_string(getResources(), layout_name);
     }
     _config.extra_keys_subtype = _config.device_locales.extra_keys();
     if (default_layout == null)
-      default_layout = loadLayout(R.xml.latn_qwerty_us);
+      default_layout = loadLayout(R.xml.il_qwerty);
     _localeTextLayout = default_layout;
   }
 
@@ -972,6 +972,14 @@ public class Keyboard2 extends InputMethodService
 
         case STUDIO_SECTOR_STEP:
           _edit_strip.sector_step();
+          break;
+
+        case STUDIO_SYMBOLS:
+          setSpecialLayout(LayoutModifier.modify_symbols(loadLayout(R.xml.il_symbols)));
+          break;
+
+        case STUDIO_SYMBOLS_MORE:
+          setSpecialLayout(LayoutModifier.modify_symbols(loadLayout(R.xml.il_symbols_more)));
           break;
 
         case STUDIO_APPLY_LOOK:

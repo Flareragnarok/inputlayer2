@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Input Layer's second symbols page (=\<), like Gboard's. ?123 goes back
+to the first page. -->
+<keyboard bottom_row="false" locale_extra_keys="false">
+  <row>
+    <key c="~"/>
+    <key c="`"/>
+    <key c="|"/>
+    <key c="•"/>
+    <key c="√"/>
+    <key c="π"/>
+    <key c="÷"/>
+    <key c="×"/>
+    <key c="¶"/>
+    <key c="∆"/>
+  </row>
+  <row>
+    <key c="£"/>
+    <key c="¥"/>
+    <key c="$"/>
+    <key c="¢"/>
+    <key c="^"/>
+    <key c="°"/>
+    <key c="="/>
+    <key c="{"/>
+    <key c="}"/>
+    <key c="\\"/>
+  </row>
+  <row>
+    <key width="1.5" role="action" c="il_symbols"/>
+    <key c="%"/>
+    <key c="©"/>
+    <key c="®"/>
+    <key c="™"/>
+    <key c="✓"/>
+    <key c="["/>
+    <key c="]"/>
+    <key width="1.5" role="action" c="backspace"/>
+  </row>
+  <row height="0.95">
+    <key width="1.5" role="action" c="switch_text"/>
+    <key c="&lt;"/>
+    <key width="4" role="space_bar" c="space" e="cursor_right"/>
+    <key c="&gt;"/>
+    <key role="action" c="studio_sector_step" w="left" e="right" n="up" s="down"/>
+    <key width="1.5" role="action" c="enter" ne="action"/>
+  </row>
+</keyboard>
