@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.Map;
 import juloo.keyboard2.KeyValue;
 import juloo.keyboard2.KeyboardData;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -44,6 +45,12 @@ public final class KeyMap
   /** layout -> key id -> its changes. */
   final Map<String, Map<String, Change>> _layouts =
     new HashMap<String, Map<String, Change>>();
+  /** layout -> its rows as key ids, top to bottom, when the edit key has
+      rearranged it ([ROWS] in the module). */
+  final Map<String, List<List<String>>> _structures =
+    new HashMap<String, List<List<String>>>();
+  /** Field of a layout holding its rows, not a key id. */
+  public static final String ROWS = "_rows";
 
   public static KeyMap of_json(JSONObject j)
   {
@@ -91,11 +98,61 @@ public final class KeyMap
       }
       if (!keys.isEmpty())
         m._layouts.put(layout, keys);
+      List<List<String>> rows = rows_of(ks.optJSONArray(ROWS));
+      if (rows != null)
+        m._structures.put(layout, rows);
     }
     return m;
   }
 
-  public boolean is_empty() { return _layouts.isEmpty(); }
+  static List<List<String>> rows_of(JSONArray a)
+  {
+    if (a == null)
+      return null;
+    List<List<String>> rows = new ArrayList<List<String>>();
+    for (int i = 0; i < a.length(); i++)
+    {
+      JSONArray r = a.optJSONArray(i);
+      if (r == null)
+        continue;
+      List<String> row = new ArrayList<String>();
+      for (int j = 0; j < r.length(); j++)
+      {
+        String id = r.optString(j, "");
+        if (!id.isEmpty())
+          row.add(id);
+      }
+      if (!row.isEmpty())
+        rows.add(row);
+    }
+    return rows.isEmpty() ? null : rows;
+  }
+
+  public boolean is_empty() { return _layouts.isEmpty() && _structures.isEmpty(); }
+
+  /** The rows of [layout] as the edit key arranged them, [null] if it
+      didn't. */
+  public List<List<String>> structure(String layout)
+  {
+    List<List<String>> r = _structures.get(layout);
+    return (r == null) ? null : Arrange.copy(r);
+  }
+
+  /** The rows of [kw] (shown, with the changes) as key ids. */
+  public List<List<String>> rows_now(KeyboardData kw)
+  {
+    String layout = layout_key(kw);
+    List<List<String>> rows = new ArrayList<List<String>>();
+    for (KeyboardData.Row r : kw.rows)
+    {
+      List<String> row = new ArrayList<String>();
+      for (KeyboardData.Key k : r.keys)
+        if (k.keys[0] != null)
+          row.add(id_of(layout, k));
+      rows.add(row);
+    }
+    return rows;
+  }
 
   public static String layout_key(KeyboardData kw)
   {
@@ -106,8 +163,11 @@ public final class KeyMap
   public KeyboardData apply(KeyboardData kw)
   {
     Map<String, Change> keys = _layouts.get(layout_key(kw));
-    if (keys == null)
+    List<List<String>> structure = _structures.get(layout_key(kw));
+    if (keys == null && structure == null)
       return kw;
+    if (keys == null)
+      keys = new HashMap<String, Change>();
     Map<KeyValue, Change> by_tap = new HashMap<KeyValue, Change>();
     for (Map.Entry<String, Change> e : keys.entrySet())
     {
@@ -144,7 +204,99 @@ public final class KeyMap
       }
       rows.add(r.with_keys(ks));
     }
+    if (structure != null)
+      rows = arrange(layout_key(kw), rows, structure, keys);
     return kw.with_rows(rows);
+  }
+
+  /** [rows] put in the order of [structure]. Keys named there but not in
+      the layout are added (one key wide, then changed like the others);
+      rows none of whose keys are named stay where they were (the layout
+      gained them later); other keys not named were removed. A row takes
+      the height of the row its first key came from. */
+  List<KeyboardData.Row> arrange(String layout, List<KeyboardData.Row> rows,
+      List<List<String>> structure, Map<String, Change> keys)
+  {
+    Map<String, KeyboardData.Key> by_id = new HashMap<String, KeyboardData.Key>();
+    Map<String, KeyboardData.Row> row_of = new HashMap<String, KeyboardData.Row>();
+    KeyboardData.Key template = null;
+    for (KeyboardData.Row r : rows)
+      for (KeyboardData.Key k : r.keys)
+      {
+        if (k.keys[0] == null)
+          continue;
+        String id = id_of(layout, k);
+        if (!by_id.containsKey(id))
+        {
+          by_id.put(id, k);
+          row_of.put(id, r);
+        }
+        if (template == null && k.role == KeyboardData.Key.Role.Normal)
+          template = k;
+      }
+    java.util.Set<String> named = new java.util.HashSet<String>();
+    for (List<String> sr : structure)
+      named.addAll(sr);
+    List<KeyboardData.Row> out = new ArrayList<KeyboardData.Row>();
+    for (List<String> sr : structure)
+    {
+      List<KeyboardData.Key> ks = new ArrayList<KeyboardData.Key>();
+      KeyboardData.Row from = null;
+      for (String id : sr)
+      {
+        KeyboardData.Key k = by_id.get(id);
+        if (k == null)
+          k = new_key(id, template, keys.get(id));
+        if (k == null)
+          continue;
+        ks.add(k);
+        if (from == null)
+          from = row_of.get(id);
+      }
+      if (ks.isEmpty())
+        continue;
+      if (from == null)
+        from = rows.isEmpty() ? null : rows.get(0);
+      if (from != null)
+        out.add(from.with_keys(ks));
+    }
+    for (int i = 0; i < rows.size(); i++)
+    {
+      boolean any = false;
+      for (KeyboardData.Key k : rows.get(i).keys)
+        if (k.keys[0] != null && named.contains(id_of(layout, k)))
+          any = true;
+      if (!any)
+        out.add(Math.min(i, out.size()), rows.get(i));
+    }
+    return out;
+  }
+
+  /** A key added by the edit key: one key wide, tapping [id]. */
+  static KeyboardData.Key new_key(String id, KeyboardData.Key template, Change c)
+  {
+    KeyValue tap = key_of_name(id);
+    if (tap == null || template == null)
+      return null;
+    KeyboardData.Key k = template.withWidthAndShift(1f, 0f);
+    for (int i = 0; i < k.keys.length; i++)
+      k = k.withKeyValue(i, (i == 0) ? tap : null);
+    return (c == null) ? k : change(k, c);
+  }
+
+  /** Fields of a [keymap] module (a copy of [j]) with [rows] as the
+      arrangement of [layout], or none if [null]. */
+  public static JSONObject set_rows(JSONObject j, String layout,
+      List<List<String>> rows) throws JSONException
+  {
+    JSONArray a = null;
+    if (rows != null)
+    {
+      a = new JSONArray();
+      for (List<String> r : rows)
+        a.put(new JSONArray(r));
+    }
+    return set_field(j, layout, ROWS, null, a, true);
   }
 
   /** [k] with the directions and width of [c] (not its split). */
@@ -281,6 +433,31 @@ public final class KeyMap
   static JSONObject set_field(JSONObject j, String layout, String id,
       String field, Object v) throws JSONException
   {
+    return set_field(j, layout, id, field, v, false);
+  }
+
+  /** With [layout_level], [id] is a field of the layout itself ([field] is
+      unused). */
+  static JSONObject set_field(JSONObject j, String layout, String id,
+      String field, Object v, boolean layout_level) throws JSONException
+  {
+    if (layout_level)
+    {
+      JSONObject r = new JSONObject(j.toString());
+      JSONObject ls = r.optJSONObject("layouts");
+      if (ls == null)
+        r.put("layouts", ls = new JSONObject());
+      JSONObject ks = ls.optJSONObject(layout);
+      if (ks == null)
+        ls.put(layout, ks = new JSONObject());
+      if (v == null)
+        ks.remove(id);
+      else
+        ks.put(id, v);
+      if (ks.length() == 0)
+        ls.remove(layout);
+      return r;
+    }
     JSONObject r = new JSONObject(j.toString());
     JSONObject ls = r.optJSONObject("layouts");
     if (ls == null)

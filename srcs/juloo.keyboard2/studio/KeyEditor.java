@@ -323,6 +323,38 @@ public final class KeyEditor
     show();
   }
 
+  /** The edit key's "add a key": pick one, put it at [pos] in row [row] of
+      the layout's rows [rows_json] (key ids), saved as its arrangement. */
+  public void add_key(final String rows_json, final int row, final int pos)
+  {
+    pick("Add a key", new Picked() {
+      public void picked(String name)
+      {
+        try
+        {
+          java.util.List<java.util.List<String>> rows =
+            KeyMap.rows_of(new org.json.JSONArray(rows_json));
+          if (rows == null || !Arrange.insert(rows, row, pos, name))
+            return;
+          ModuleStore store = new ModuleStore(_prefs);
+          Module m = store.active("keymap");
+          if (m == null)
+            m = store.get("keymap", NEW_MODULE);
+          JSONObject j = KeyMap.set_rows(m == null ? new JSONObject() : m.json,
+              _layout, rows);
+          Module nm = (m == null) ? Module.create("keymap", NEW_MODULE, j) : new Module(j);
+          store.save(nm, true);
+          Toast.makeText(_act, "Added " + glyph(name)
+              + ". Hold it on the keyboard to give it swipes.", Toast.LENGTH_LONG).show();
+        }
+        catch (Exception e)
+        {
+          Logs.exn("Add key", e);
+        }
+      }
+    }, new Runnable() { public void run() {} });
+  }
+
   /** Whether every direction is known (none "back to the layout's own",
       which isn't known here). */
   static boolean known(String[] names)

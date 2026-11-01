@@ -226,4 +226,62 @@ public class KeyMapTest
         1.25f, null, "latin", null, "IL", false, false, false);
     assertSame(nk, LayoutModifier.split_backspace(nk));
   }
+
+  static String taps(KeyboardData kw)
+  {
+    StringBuilder b = new StringBuilder();
+    for (KeyboardData.Row r : kw.rows)
+    {
+      for (KeyboardData.Key k : r.keys)
+        b.append(KeyMap.name_of(k.keys[0])).append(" ");
+      b.append("|");
+    }
+    return b.toString();
+  }
+
+  static KeyboardData two_rows()
+  {
+    KeyboardData.Row r1 = new KeyboardData.Row(new ArrayList<KeyboardData.Key>(
+          Arrays.asList(key("q", null), key("w", null), key("e", null))), 1f, 0f);
+    KeyboardData.Row r2 = new KeyboardData.Row(new ArrayList<KeyboardData.Key>(
+          Arrays.asList(key("a", null), key("s", null))), 0.8f, 0f);
+    return new KeyboardData(new ArrayList<KeyboardData.Row>(Arrays.asList(r1, r2)),
+        3f, null, "latin", null, "IL", false, false, false);
+  }
+
+  /** The edit key's arrangement: order, added keys, removed keys, rows
+      split, heights following their keys. */
+  @Test
+  public void structure() throws Exception
+  {
+    KeyMap none = KeyMap.of_json(null);
+    java.util.List<java.util.List<String>> rows = none.rows_now(two_rows());
+    assertEquals("[[q, w, e], [a, s]]", rows.toString());
+    juloo.keyboard2.studio.Arrange.move_row(rows, 1, -1);
+    juloo.keyboard2.studio.Arrange.move_key(rows, 1, 0, 1);
+    juloo.keyboard2.studio.Arrange.insert(rows, 0, 2, "♪");
+    juloo.keyboard2.studio.Arrange.remove(rows, 1, 2); // e
+    JSONObject j = KeyMap.set_rows(new JSONObject(), "IL", rows);
+    j = KeyMap.set(j, "IL", "♪", N, "🎶"); // The added key's own swipe.
+    KeyMap km = KeyMap.of_json(j);
+    KeyboardData kw = km.apply(two_rows());
+    assertEquals("a s ♪ |w q |", taps(kw));
+    assertEquals(0.8f, kw.rows.get(0).height, 1e-6f); // a s's height came along.
+    assertEquals(1f, kw.rows.get(0).keys.get(2).width, 1e-6f);
+    assertEquals("🎶", kw.rows.get(0).keys.get(2).keys[7].getString());
+    // Shown rows give the same arrangement back.
+    assertEquals(rows.toString(), km.rows_now(kw).toString());
+    // Back to the layout's own.
+    assertTrue(KeyMap.of_json(KeyMap.set_rows(j, "IL", null)).structure("IL") == null);
+  }
+
+  /** A row the layout gained later (no key of it named) stays. */
+  @Test
+  public void structure_keeps_new_rows() throws Exception
+  {
+    java.util.List<java.util.List<String>> rows = new ArrayList<java.util.List<String>>();
+    rows.add(new ArrayList<String>(Arrays.asList("w", "q", "e")));
+    KeyMap km = KeyMap.of_json(KeyMap.set_rows(new JSONObject(), "IL", rows));
+    assertEquals("w q e |a s |", taps(km.apply(two_rows())));
+  }
 }

@@ -102,10 +102,12 @@ public final class LayoutModifier
           arrows_and_shift(space_nests(backspace_cut(kw)))));
     if (globalConfig.studio == null || globalConfig.studio.split_backspace)
       kw = split_backspace(kw);
-    kw = scale_rows(ctrl_undo(kw));
+    kw = ctrl_undo(kw);
     if (globalConfig.studio != null && globalConfig.studio.keymap != null)
       kw = globalConfig.studio.keymap.apply(kw);
-    return kw;
+    // Heights by position, after the edit key rearranged the rows (it moves
+    // a row's height with it).
+    return scale_rows(kw);
   }
 
   /** Studio: Input Layer's symbols pages, with the same swipes on their

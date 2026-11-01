@@ -54,6 +54,12 @@ public class StudioActivity extends Activity
   /** The layout's other keys: ids, and 9 names per key. */
   public static final String EXTRA_KEY_ALL_IDS = "studio_key_all_ids";
   public static final String EXTRA_KEY_ALL_NAMES = "studio_key_all_names";
+  /** The edit key's "add a key": the layout, its rows (JSON, key ids), the
+      row and position. */
+  public static final String EXTRA_ADD_LAYOUT = "studio_add_layout";
+  public static final String EXTRA_ADD_ROWS = "studio_add_rows";
+  public static final String EXTRA_ADD_ROW = "studio_add_row";
+  public static final String EXTRA_ADD_POS = "studio_add_pos";
   /** Widths, in key units: the key, its row, the widest row. */
   public static final String EXTRA_KEY_WIDTH = "studio_key_width";
   public static final String EXTRA_ROW_WIDTH = "studio_row_width";
@@ -101,6 +107,7 @@ public class StudioActivity extends Activity
     handle_install_status(getIntent());
     open_editor_from(getIntent());
     open_key_editor_from(getIntent());
+    open_add_key_from(getIntent());
   }
 
   @Override
@@ -110,6 +117,25 @@ public class StudioActivity extends Activity
     handle_install_status(intent);
     open_editor_from(intent);
     open_key_editor_from(intent);
+    open_add_key_from(intent);
+  }
+
+  void open_add_key_from(Intent i)
+  {
+    String rows = (i == null) ? null : i.getStringExtra(EXTRA_ADD_ROWS);
+    if (rows == null)
+      return;
+    i.removeExtra(EXTRA_ADD_ROWS);
+    try
+    {
+      new KeyEditor(this, _prefs, i.getStringExtra(EXTRA_ADD_LAYOUT), "",
+          null, null, null).add_key(rows, i.getIntExtra(EXTRA_ADD_ROW, 0),
+            i.getIntExtra(EXTRA_ADD_POS, 0));
+    }
+    catch (Throwable e)
+    {
+      android.util.Log.e("Studio", "Add key", e);
+    }
   }
 
   void open_key_editor_from(Intent i)

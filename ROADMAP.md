@@ -8,7 +8,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 73).
+Last updated: 2026-11-01 (build 74).
 
 ## Done
 
@@ -87,6 +87,7 @@ Last updated: 2026-11-01 (build 73).
 | 71 | **Names** (owner): layout key = left end ⇄ (customizes the layout), language key = right end, suggestions key = the suggestions' language. **Language key ↓ saves the key arrangement** as "Layout N", **→ picks a saved one**. **Layout key**: tap edit mode, ↑ copy, ↓ key repeat on/off, ↗ backspace split on/off. Cut (backspace ↓) and select all (now ⌦ ←) live on the keys; paste dropped from the comfort bar (owner: superfluous); the keyboard picker is ⌦ ↓ only. |
 | 72 | Split backspace is **⅔ ⌫ / ⅓ ⌦** (owner: one much smaller). **⌦ ↓ switches key repeat** (new key `studio_toggle_repeat`), replacing the keyboard picker there. |
 | 73 | **Comfort bar order and names** (owner): layout key ⇄ · suggestions key · cursor key (center) · language key · **edit key** ↕ (was "height", now at the right end). README has a Names section. |
+| 74 | **The edit key edits everything** (owner's model): tap cycles **layers of focus** (whole keyboard, bars, components = rows, items = keys); **tap the element** to select it (the keyboard catches the taps, `FocusLayout`); ↑ ↓ size (whole: everything in proportion; key: the row keeps its width, from the next key or the whole row), ← → order (rows carry their heights), ↗ menu: add a key (Studio's picker), split / join rows, remove a key, edit its tap and swipes, arrangement back. Arrangement stored per layout as `_rows` in `keymap` (`Arrange`, `KeyMap.arrange`). Undo covers heights and arrangement. Bars' own items (comfort and edit strip keys) are not editable yet. |
 
 Infrastructure:
 
@@ -208,10 +209,12 @@ Every module is a JSON file with `module` (its type), `name` and `version`.
       "enter": { "s": "config" } } } }
 ```
 
-`keymap` (layout mode): per layout name, per key (the name of its tap in
+`keymap` (edit mode, edit key): per layout name, per key (the name of its tap in
 the layout), per direction (`c n ne e se s sw w nw`), the key put there;
 `""` empties it. `width` is the key's width in key units (0.5–5); `split`
-cuts it in two, the right half tapping that key.
+cuts it in two, the right half tapping that key. A layout's `_rows` (edit
+key) is its arrangement: rows of key ids, top to bottom; keys named there
+but not in the layout are added, keys left out are removed.
 
 ```json
 { "module": "changeheight", "name": "compact", "version": 1,

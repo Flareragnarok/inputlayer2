@@ -116,6 +116,36 @@ public final class Heights
     }
   }
 
+  /** Fields of [j] (a copy) after one step of the edit key on the whole
+      keyboard: the keyboard height one step bigger (smaller), and every
+      bar shown scaled by as much, so everything keeps its proportions.
+      [null] at the edge of the range. */
+  public static JSONObject scale_all(JSONObject j, boolean bigger,
+      boolean landscape, int percent) throws JSONException
+  {
+    JSONObject r = new JSONObject(j.toString());
+    String o = landscape ? "landscape" : "portrait";
+    JSONObject kp = r.optJSONObject("keyboard_percent");
+    if (kp == null)
+      kp = new JSONObject();
+    int cur = clamp_percent(landscape, kp.optInt(o, percent));
+    int p = clamp_percent(landscape, cur + (bigger ? 1 : -1) * PERCENT_STEP);
+    if (p == cur)
+      return null;
+    kp.put(o, p);
+    r.put("keyboard_percent", kp);
+    float f = (float)p / cur;
+    for (int i = 0; i < DP_FIELDS.length; i++)
+    {
+      double v = r.optDouble(DP_FIELDS[i], DP_DEFAULTS[i]);
+      float d = Double.isNaN(v) ? DP_DEFAULTS[i] : (float)v;
+      if (d == 0)
+        continue; // Hidden stays hidden.
+      r.put(DP_FIELDS[i], (double)round2(clamp(d * f, BAR_MIN, BAR_MAX)));
+    }
+    return r;
+  }
+
   static JSONObject step_dp(JSONObject r, int field, int sign) throws JSONException
   {
     String n = DP_FIELDS[field];

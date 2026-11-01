@@ -22,7 +22,8 @@ The owner's terms (build 73); code, docs and chats use these.
 | **Suggestions key** | the suggestions' language |
 | **Cursor key** | in the center: ← → ↑ ↓ move the cursor |
 | **Language key** | DE / FR / RU…: tap next language, ← previous, ↑ list, ↓ save the key arrangement as a layout, → pick a saved layout |
-| **Edit key** ↕ | right end: picks a part (or a row), ↑ ↓ resize it, ← → move it, ↖ undo, ↙ undo all |
+| **Edit key** ↕ | right end: tap cycles the **layer of focus** (whole keyboard → bars → components → items); tap an element to select it; ↑ ↓ size, ← → order, ↗ more, ↖ undo, ↙ undo all |
+| **Layers of focus** | **whole** keyboard (everything in proportion) · **bars** (one part) · **components** (a keyboard row, or a bar) · **items** (one key) |
 | **Parts** | the stacked areas the edit key works on: comfort bar, selection bar, suggestion bar, keyboard, edit strip |
 | **Edit mode** | the layout key's tap: tapping a key opens the key editor |
 | **Key editor** | Studio's screen for one key: tap, 8 swipes, width, split, swap. Also opened by holding a key |
@@ -107,7 +108,27 @@ tapping it in edit mode; the key isn't typed. Nothing repeats while held,
 unless key repeat is on (layout key ↓). Modifiers (Shift, Ctrl) still lock
 when held.
 
-**Resizing** with the edit key ↕: tap selects a part or a row, ↑ / ↓ resize it (hold to
+**The edit key** ↕ (build 74). Its tap cycles the layer of focus; the
+label shows it (↕ all, ↕ bars, ↕ rows, ↕ keys; then the selection, ↕ row
+2, ↕ key). While a layer is on, **tap the element itself** to select it:
+the keyboard and the bars don't type, they select (only the edit key
+still works as a key). Outlines: the whole keyboard in blue; the selected
+bar; the selected row in blue with each of its keys thinly outlined (its
+items), the selected key in orange.
+
+| Layer | ↑ ↓ | ← → | ↗ more |
+|---|---|---|---|
+| Whole | the keyboard taller / shorter, the bars in proportion | – | – |
+| Bars | the bar taller / shorter | its place in the stack | – |
+| Components | the row taller / shorter | the row up / down (its height comes along) | add a key at the end · split the row in two · join with the row below · arrangement back to the layout's own |
+| Items | the key a quarter wider / narrower, **the row keeping its width**: the space comes from the key next to it, or from the whole row (each key gives in proportion to what it has above its smallest) | the key left / right | size from: next key / whole row · add a key after it (Studio's picker) · edit its tap, swipes, split · remove it · split the row before it · arrangement back to the layout's own |
+
+Back and ↖ undo one step (each menu action is one), ↙ all since the
+keyboard was shown; Back with nothing to undo leaves the focus. The
+arrangement (rows, order, added and removed keys) is kept per layout in
+the `keymap` module (`_rows`), so it goes with saved layouts.
+
+**Resizing** with the edit key ↕, outside the layers (as before): tap selects a part or a row, ↑ / ↓ resize it (hold to
 repeat), ← / → move it. **Back** undoes the last change, one gesture at a
 time, and then leaves the selection; long Back or edit key ↙ undoes everything since
 the keyboard was shown, edit key ↖ one step. Sizes stay within sane ranges (rows
@@ -436,7 +457,7 @@ select_container height_up height_down height_undo height_revert move_up
 move_down layout_mode studio
 switch:<type>`. `keymap`: `layouts` → layout name → key (its tap's name) →
 direction → key name (`""` empties it), `width` (key units), `split` (the
-right half's tap). `snippets` and `theme` are reserved, not used yet.
+right half's tap); and per layout `_rows`, the arrangement: rows of key ids. `snippets` and `theme` are reserved, not used yet.
 
 ## Building and releasing
 

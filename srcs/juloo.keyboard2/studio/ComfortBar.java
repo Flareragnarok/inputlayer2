@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import java.util.ArrayList;
 import java.util.List;
 import juloo.keyboard2.Config;
 import juloo.keyboard2.KeyValue;
@@ -41,6 +42,15 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     List<KeyboardData> layouts();
     int current_layout();
     void select_layout(int i);
+    /** The edit key: the keyboard shown, and its focus changed (redraw the
+        outlines from [layer], [target], [sel_row], [sel_pos]). */
+    KeyboardData shown_keyboard();
+    void focus_changed();
+    /** Studio's picker for a key added at [pos] in row [row] of [layout],
+        whose rows are [rows] (key ids). */
+    void open_add_key(String layout, List<List<String>> rows, int row, int pos);
+    /** Studio's key editor for the key at [pos] in row [row]. */
+    void open_key_editor_at(int row, int pos);
   }
 
   /** Containers the height key resizes, in the order it selects them. Only
@@ -125,6 +135,21 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     return true;
   }
 
+  /** The edit key (its tap selects the layer of focus), [null] if not on
+      the bar. */
+  public View edit_key_view()
+  {
+    if (_keys == null)
+      return null;
+    for (int i = 0; i < _keys.getChildCount(); i++)
+    {
+      View v = _keys.getChildAt(i);
+      if (v instanceof ComfortKey && "select_container".equals(((ComfortKey)v)._spec.get(0)))
+        return v;
+    }
+    return null;
+  }
+
   View make_key(ComfortKeySpec s)
   {
     return new ComfortKey(getContext(), s, this, Theme.getKeyFont(getContext()));
@@ -143,13 +168,9 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
   public void perform(String action)
   {
     if (action.equals("select_container"))
-    {
-      // Containers, then each row of the keyboard, then none.
-      int n = TARGET_ROWS + _listener.keyboard_rows();
-      _target = (_target + 2) % (n + 1) - 1;
-      _listener.highlight(_target);
-      refresh(_config); // Update the key's label.
-    }
+      next_layer();
+    else if (action.equals("edit_menu"))
+      edit_menu();
     else if (action.equals("dictionary"))
     {
       // The switcher also offers downloading. Without any language to
@@ -160,11 +181,11 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
         _listener.open_dictionaries();
     }
     else if (action.equals("move_up") || action.equals("move_down"))
-      move(action.equals("move_up") ? -1 : 1);
+      op_move(action.equals("move_up") ? -1 : 1);
     else if (action.equals("height_up"))
-      change_height(true);
+      op_size(true);
     else if (action.equals("height_down"))
-      change_height(false);
+      op_size(false);
     else if (action.equals("toggle_repeat"))
     {
       boolean on = !_config.keyrepeat_enabled;
@@ -212,8 +233,8 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
   {
     switch (action)
     {
-      case "select_container":
-        return new ComfortKey.Label((_target < 0) ? "↕" : "↕ " + target_label(), false);
+      case "select_container": return new ComfortKey.Label(focus_label(), false);
+      case "edit_menu": return new ComfortKey.Label("⋯", false);
       case "move_up": return new ComfortKey.Label("⇡", false);
       case "move_down": return new ComfortKey.Label("⇣", false);
       case "height_up": return new ComfortKey.Label("+", false);
@@ -325,12 +346,457 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
   /** Clear the container selection, e.g. when the keyboard is shown again. */
   public void reset_target()
   {
-    if (_target < 0)
+    if (_target < 0 && _layer == LAYER_OFF)
       return;
     _target = -1;
+    _layer = LAYER_OFF;
+    _sel_row = -1;
+    _sel_pos = -1;
     _listener.highlight(-1);
+    _listener.focus_changed();
     if (_config != null)
       refresh(_config);
+  }
+
+  /* The edit key. Its tap cycles the layer of focus: whole keyboard, bars,
+     components (a keyboard row, or a bar), items (a key). In a layer, tap
+     the element itself to select it (the keyboard catches the taps, see
+     [tapped]); the edit key's swipes then act on it: ↑ ↓ size, ← → order,
+     ↗ more (the menu), ↖ undo, ↙ undo all. */
+
+  public static final int LAYER_OFF = 0, LAYER_WHOLE = 1, LAYER_BARS = 2,
+         LAYER_COMPONENTS = 3, LAYER_ITEMS = 4;
+  static final String[] LAYER_LABELS = { "", "all", "bars", "rows", "keys" };
+  static final String[] LAYER_HINTS = { "",
+    "Whole keyboard: ↑ ↓ resize everything",
+    "Bars: tap one, then ↑ ↓ size, ← → order",
+    "Rows: tap a row, then ↑ ↓ height, ← → order, ↗ more",
+    "Keys: tap one, then ↑ ↓ width, ← → order, ↗ more" };
+  /** Item sizes: the space comes from the whole row (else from the key next
+      to it). */
+  public static final String KEY_SIZE_FROM_ROW = "studio_edit_size_from_row";
+  static final float WIDTH_STEP = 0.25f;
+
+  int _layer = LAYER_OFF;
+  /** Selected keyboard row and key (its position in the row), [-1]. */
+  int _sel_row = -1;
+  int _sel_pos = -1;
+
+  public int layer() { return _layer; }
+  public int target() { return _target; }
+  public int sel_row() { return _sel_row; }
+  public int sel_pos() { return _sel_pos; }
+  /** Whether taps on the keyboard and bars select instead of typing. */
+  public boolean focusing() { return _layer != LAYER_OFF; }
+
+  void next_layer()
+  {
+    _layer = (_layer + 1) % LAYER_LABELS.length;
+    _target = -1;
+    _sel_row = -1;
+    _sel_pos = -1;
+    if (_layer != LAYER_OFF)
+      toast(LAYER_HINTS[_layer]);
+    _listener.highlight(-1);
+    _listener.focus_changed();
+    refresh(_config);
+  }
+
+  String focus_label()
+  {
+    if (_layer == LAYER_OFF)
+      return (_target < 0) ? "↕" : "↕ " + target_label();
+    if (_layer == LAYER_ITEMS && _sel_pos >= 0)
+      return "↕ key";
+    if (_layer == LAYER_COMPONENTS && _sel_row >= 0)
+      return "↕ row " + (_sel_row + 1);
+    if (_layer == LAYER_BARS && _target >= 0)
+      return "↕ " + target_label();
+    return "↕ " + LAYER_LABELS[_layer];
+  }
+
+  /** A tap while focusing: on part [target], and if it's the keyboard, on
+      its row [row] and that row's key [pos] ([-1] when none). */
+  public void tapped(int target, int row, int pos)
+  {
+    switch (_layer)
+    {
+      case LAYER_BARS:
+        _target = target;
+        _listener.highlight(_target);
+        break;
+      case LAYER_COMPONENTS:
+        if (target == TARGET_KEYBOARD && row >= 0)
+        {
+          _sel_row = row;
+          _target = TARGET_ROWS + row;
+          _listener.highlight(-1);
+        }
+        else
+        {
+          _sel_row = -1;
+          _target = target;
+          _listener.highlight(_target);
+        }
+        break;
+      case LAYER_ITEMS:
+        if (target == TARGET_KEYBOARD && row >= 0 && pos >= 0)
+        {
+          _sel_row = row;
+          _sel_pos = pos;
+          _target = TARGET_ROWS + row;
+        }
+        else
+          toast("Keys: only the keyboard's for now");
+        break;
+      default:
+        return;
+    }
+    _listener.focus_changed();
+    refresh(_config);
+  }
+
+  void op_size(boolean bigger)
+  {
+    switch (_layer)
+    {
+      case LAYER_WHOLE: scale_all(bigger); return;
+      case LAYER_ITEMS: resize_key(bigger); return;
+      case LAYER_BARS: case LAYER_COMPONENTS:
+        if (_target < 0)
+        {
+          toast(LAYER_HINTS[_layer]);
+          return;
+        }
+        change_height(bigger);
+        return;
+      default: change_height(bigger); // No layer: as before, keyboard or target.
+    }
+  }
+
+  void op_move(int dir)
+  {
+    try
+    {
+      if (_layer == LAYER_ITEMS && _sel_pos >= 0)
+      {
+        List<List<String>> rows = rows_now();
+        if (rows != null && Arrange.move_key(rows, _sel_row, _sel_pos, dir))
+        {
+          save_rows(rows, null);
+          _sel_pos += dir;
+          _listener.focus_changed();
+        }
+      }
+      else if (_layer == LAYER_COMPONENTS && _sel_row >= 0)
+      {
+        List<List<String>> rows = rows_now();
+        if (rows != null && Arrange.move_row(rows, _sel_row, dir))
+        {
+          // The row's height goes with it.
+          float[] fs = row_factors(rows.size());
+          float t = fs[_sel_row]; fs[_sel_row] = fs[_sel_row + dir]; fs[_sel_row + dir] = t;
+          save_rows(rows, fs);
+          _sel_row += dir;
+          _target = TARGET_ROWS + _sel_row;
+          _listener.focus_changed();
+          refresh(_config);
+        }
+      }
+      else
+        move(dir);
+    }
+    catch (Exception e)
+    {
+      Logs.exn("Edit key move", e);
+    }
+  }
+
+  /** The whole keyboard bigger or smaller, the bars in proportion. */
+  void scale_all(boolean bigger)
+  {
+    ModuleStore store = new ModuleStore(_prefs);
+    Module m = heights_module(store);
+    try
+    {
+      JSONObject r = Heights.scale_all(m == null ? new JSONObject() : m.json, bigger,
+          _config.orientation_landscape, _config.keyboard_height_percent);
+      if (r == null)
+        return;
+      remember_undo(store);
+      store.save((m == null) ? Module.create("changeheight", "quick", r) : new Module(r), true);
+    }
+    catch (Exception e)
+    {
+      Logs.exn("Edit key scale", e);
+    }
+  }
+
+  /** The selected key a quarter wider (narrower), the row keeping its
+      width: from the key next to it, or the whole row (menu). */
+  void resize_key(boolean bigger)
+  {
+    if (_sel_pos < 0)
+    {
+      toast(LAYER_HINTS[LAYER_ITEMS]);
+      return;
+    }
+    KeyboardData kw = _listener.shown_keyboard();
+    if (kw == null || _sel_row >= kw.rows.size()
+        || _sel_pos >= kw.rows.get(_sel_row).keys.size())
+      return;
+    List<KeyboardData.Key> ks = kw.rows.get(_sel_row).keys;
+    String layout = KeyMap.layout_key(kw);
+    KeyMap km = keymap();
+    float[] w = new float[ks.size()];
+    for (int i = 0; i < w.length; i++)
+      w[i] = ks.get(i).width;
+    boolean from_row = _prefs.getBoolean(KEY_SIZE_FROM_ROW, false);
+    float[] nw = Arrange.resize(w, _sel_pos, bigger ? WIDTH_STEP : -WIDTH_STEP,
+        from_row, KeyMap.WIDTH_MIN, KeyMap.WIDTH_MAX);
+    if (nw == null)
+    {
+      toast(from_row ? "No room left in the row" : "No room: the key next to it is at its smallest (↗: size from the whole row)");
+      return;
+    }
+    try
+    {
+      ModuleStore store = new ModuleStore(_prefs);
+      Module m = keymap_module(store);
+      JSONObject j = (m == null) ? new JSONObject() : m.json;
+      for (int i = 0; i < w.length; i++)
+        if (nw[i] != w[i])
+        {
+          if (ks.get(i).keys[0] == null)
+            return; // An empty key: can't be named.
+          j = KeyMap.set_width(j, layout, km.id_of(layout, ks.get(i)), nw[i]);
+        }
+      remember_undo(store);
+      store.save((m == null) ? Module.create("keymap", KeyEditor.NEW_MODULE, j) : new Module(j), true);
+    }
+    catch (Exception e)
+    {
+      Logs.exn("Edit key width", e);
+    }
+  }
+
+  /** The edit key's ↗: what else can be done with the selection. */
+  void edit_menu()
+  {
+    final List<String> labels = new ArrayList<String>();
+    final List<Runnable> acts = new ArrayList<Runnable>();
+    final KeyboardData kw = _listener.shown_keyboard();
+    if (_layer == LAYER_ITEMS && _sel_pos >= 0 && kw != null)
+    {
+      final boolean from_row = _prefs.getBoolean(KEY_SIZE_FROM_ROW, false);
+      labels.add(from_row ? "Size from: the whole row ✓ (tap: the key next to it)"
+          : "Size from: the key next to it ✓ (tap: the whole row)");
+      acts.add(new Runnable() { public void run() {
+        _prefs.edit().putBoolean(KEY_SIZE_FROM_ROW, !from_row).apply(); } });
+      labels.add("Add a key after this one…");
+      acts.add(new Runnable() { public void run() { add_key(_sel_row, _sel_pos + 1); } });
+      labels.add("Edit this key: tap, swipes, split…");
+      acts.add(new Runnable() { public void run() {
+        _listener.open_key_editor_at(_sel_row, _sel_pos); } });
+      labels.add("Remove this key");
+      acts.add(new Runnable() { public void run() { remove_key(); } });
+      labels.add("Split the row before this key");
+      acts.add(new Runnable() { public void run() { split_row(_sel_row, _sel_pos); } });
+    }
+    else if (_layer == LAYER_COMPONENTS && _sel_row >= 0 && kw != null)
+    {
+      final int n = kw.rows.get(_sel_row).keys.size();
+      labels.add("Add a key at the end of the row…");
+      acts.add(new Runnable() { public void run() { add_key(_sel_row, n); } });
+      labels.add("Split the row in two");
+      acts.add(new Runnable() { public void run() { split_row(_sel_row, n / 2); } });
+      labels.add("Join with the row below");
+      acts.add(new Runnable() { public void run() { join_row(_sel_row); } });
+    }
+    else
+    {
+      toast((_layer == LAYER_OFF) ? "Tap the edit key to pick a layer first"
+          : LAYER_HINTS[_layer]);
+      return;
+    }
+    labels.add("Arrangement back to the layout's own");
+    acts.add(new Runnable() { public void run() { reset_rows(); } });
+    android.widget.PopupMenu p = new android.widget.PopupMenu(getContext(), this);
+    for (int i = 0; i < labels.size(); i++)
+    {
+      final int idx = i;
+      p.getMenu().add(labels.get(i)).setOnMenuItemClickListener(
+          new android.view.MenuItem.OnMenuItemClickListener() {
+            public boolean onMenuItemClick(android.view.MenuItem it)
+            {
+              _gesture_saved = false; // Its own undo step.
+              acts.get(idx).run();
+              return true;
+            }
+          });
+    }
+    p.show();
+  }
+
+  KeyMap keymap()
+  {
+    Module m = new ModuleStore(_prefs).active("keymap");
+    return KeyMap.of_json(m == null ? null : m.json);
+  }
+
+  /** The active [keymap] module, or "mine" (made active when saved). */
+  static Module keymap_module(ModuleStore store)
+  {
+    Module m = store.active("keymap");
+    return (m != null) ? m : store.get("keymap", KeyEditor.NEW_MODULE);
+  }
+
+  static Module heights_module(ModuleStore store)
+  {
+    Module m = store.active("changeheight");
+    return (m != null) ? m : store.get("changeheight", "quick");
+  }
+
+  /** The rows shown, as key ids: what the arrangement operations change. */
+  List<List<String>> rows_now()
+  {
+    KeyboardData kw = _listener.shown_keyboard();
+    return (kw == null) ? null : keymap().rows_now(kw);
+  }
+
+  /** The row height factors, [n] of them. */
+  float[] row_factors(int n)
+  {
+    float[] fs = new float[n];
+    for (int i = 0; i < n; i++)
+      fs[i] = _config.studio.row_factor(i);
+    return fs;
+  }
+
+  /** Save [rows] as the arrangement of the layout shown and, if not
+      [null], the row heights [factors]: one undo step. */
+  void save_rows(List<List<String>> rows, float[] factors) throws Exception
+  {
+    KeyboardData kw = _listener.shown_keyboard();
+    if (kw == null)
+      return;
+    ModuleStore store = new ModuleStore(_prefs);
+    remember_undo(store);
+    Module m = keymap_module(store);
+    JSONObject j = KeyMap.set_rows(m == null ? new JSONObject() : m.json,
+        KeyMap.layout_key(kw), rows);
+    store.save((m == null) ? Module.create("keymap", KeyEditor.NEW_MODULE, j) : new Module(j), true);
+    if (factors != null)
+    {
+      Module h = heights_module(store);
+      JSONObject hj = (h == null) ? new JSONObject() : new JSONObject(h.json.toString());
+      org.json.JSONArray a = new org.json.JSONArray();
+      for (float f : factors)
+        a.put(Math.round(f * 100) / 100.0);
+      hj.put("rows", a);
+      store.save((h == null) ? Module.create("changeheight", "quick", hj) : new Module(hj), true);
+    }
+  }
+
+  void add_key(int row, int pos)
+  {
+    KeyboardData kw = _listener.shown_keyboard();
+    List<List<String>> rows = rows_now();
+    if (kw != null && rows != null)
+      _listener.open_add_key(KeyMap.layout_key(kw), rows, row, pos);
+  }
+
+  void remove_key()
+  {
+    try
+    {
+      List<List<String>> rows = rows_now();
+      int n = (rows == null) ? 0 : rows.size();
+      if (rows == null || !Arrange.remove(rows, _sel_row, _sel_pos))
+        return;
+      float[] fs = null;
+      if (rows.size() < n) // The row went too.
+        fs = without(row_factors(n), _sel_row);
+      save_rows(rows, fs);
+      _sel_pos = -1;
+      _listener.focus_changed();
+      refresh(_config);
+    }
+    catch (Exception e)
+    {
+      Logs.exn("Edit key remove", e);
+    }
+  }
+
+  void split_row(int row, int pos)
+  {
+    try
+    {
+      List<List<String>> rows = rows_now();
+      if (rows == null)
+        return;
+      int n = rows.size();
+      if (!Arrange.split_row(rows, row, pos))
+      {
+        toast("Nothing to split here");
+        return;
+      }
+      // The new row is as high as the one it came from.
+      float[] fs = row_factors(n), nf = new float[n + 1];
+      for (int i = 0; i <= n; i++)
+        nf[i] = fs[(i <= row) ? i : i - 1];
+      save_rows(rows, nf);
+    }
+    catch (Exception e)
+    {
+      Logs.exn("Edit key split row", e);
+    }
+  }
+
+  void join_row(int row)
+  {
+    try
+    {
+      List<List<String>> rows = rows_now();
+      if (rows == null)
+        return;
+      int n = rows.size();
+      if (!Arrange.join(rows, row))
+      {
+        toast("No row below");
+        return;
+      }
+      save_rows(rows, without(row_factors(n), row + 1));
+    }
+    catch (Exception e)
+    {
+      Logs.exn("Edit key join", e);
+    }
+  }
+
+  void reset_rows()
+  {
+    try
+    {
+      save_rows(null, null);
+      _sel_pos = -1;
+      _listener.focus_changed();
+    }
+    catch (Exception e)
+    {
+      Logs.exn("Edit key reset", e);
+    }
+  }
+
+  static float[] without(float[] a, int i)
+  {
+    if (i < 0 || i >= a.length)
+      return a;
+    float[] r = new float[a.length - 1];
+    for (int j = 0, k = 0; j < a.length; j++)
+      if (j != i)
+        r[k++] = a[j];
+    return r;
   }
 
   /** Resize the selected container (the keyboard if none), stored in the
@@ -364,8 +830,9 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
      undone with Back, one gesture at a time (a held key is one gesture). */
 
   static final int MAX_UNDO = 100;
-  final java.util.ArrayDeque<ModuleStore.Snapshot> _undo =
-    new java.util.ArrayDeque<ModuleStore.Snapshot>();
+  /** Each step: the heights and the key arrangement as they were. */
+  final java.util.ArrayDeque<ModuleStore.Snapshot[]> _undo =
+    new java.util.ArrayDeque<ModuleStore.Snapshot[]>();
   /** Whether the gesture in progress already has its undo step. */
   boolean _gesture_saved = false;
 
@@ -379,7 +846,8 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     if (_gesture_saved)
       return;
     _gesture_saved = true;
-    _undo.push(store.snapshot("changeheight"));
+    _undo.push(new ModuleStore.Snapshot[]{
+      store.snapshot("changeheight"), store.snapshot("keymap") });
     if (_undo.size() > MAX_UNDO)
       _undo.removeLast();
   }
@@ -388,7 +856,14 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       selected. */
   public boolean wants_back()
   {
-    return !_undo.isEmpty() || _target >= 0;
+    return !_undo.isEmpty() || _target >= 0 || _layer != LAYER_OFF;
+  }
+
+  void restore(ModuleStore.Snapshot[] s)
+  {
+    ModuleStore store = new ModuleStore(_prefs);
+    for (ModuleStore.Snapshot x : s)
+      store.restore(x);
   }
 
   /** Back: undo the last height change, or else leave the container
@@ -398,7 +873,7 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     if (!_undo.isEmpty())
     {
       _gesture_saved = false;
-      new ModuleStore(_prefs).restore(_undo.pop());
+      restore(_undo.pop());
     }
     else
       reset_target();
@@ -408,7 +883,7 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
   public void revert_all()
   {
     if (!_undo.isEmpty())
-      new ModuleStore(_prefs).restore(_undo.getLast());
+      restore(_undo.getLast());
     _undo.clear();
     _gesture_saved = false;
   }

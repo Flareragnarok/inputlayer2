@@ -75,6 +75,69 @@ public class Keyboard2View extends View
     invalidate();
   }
 
+  /** Studio, the edit key's focus: row [row] outlined with each of its keys
+      (or key [pos] of it, outlined strongly); with [all_rows], every row
+      lightly. [-1] for none. */
+  private int _focus_row = -1, _focus_pos = -1;
+  private boolean _focus_all_rows = false;
+  private Paint _focus_thin_paint = null, _focus_key_paint = null;
+
+  public void studio_focus(int row, int pos, boolean all_rows)
+  {
+    _focus_row = row;
+    _focus_pos = pos;
+    _focus_all_rows = all_rows;
+    if (_focus_thin_paint == null)
+    {
+      float dp = getResources().getDisplayMetrics().density;
+      _focus_thin_paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+      _focus_thin_paint.setStyle(Paint.Style.STROKE);
+      _focus_thin_paint.setColor(0x993399ff);
+      _focus_thin_paint.setStrokeWidth(1 * dp);
+      _focus_key_paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+      _focus_key_paint.setStyle(Paint.Style.STROKE);
+      _focus_key_paint.setColor(0xffffaa33);
+      _focus_key_paint.setStrokeWidth(2.5f * dp);
+    }
+    invalidate();
+  }
+
+  /** Studio: the row at [y] (view coordinates), [-1] if none. */
+  public int studio_row_at(float y)
+  {
+    if (_keyboard == null || _tc == null)
+      return -1;
+    float top = _config.marginTop;
+    for (int i = 0; i < _keyboard.rows.size(); i++)
+    {
+      KeyboardData.Row row = _keyboard.rows.get(i);
+      top += (row.shift + row.height) * _tc.row_height;
+      if (y < top)
+        return i;
+    }
+    return -1;
+  }
+
+  /** Studio: the position in row [row] of the key at [x], [-1] if none. */
+  public int studio_key_at(int row, float x)
+  {
+    if (_keyboard == null || row < 0 || row >= _keyboard.rows.size())
+      return -1;
+    float left = _marginLeft;
+    List<KeyboardData.Key> ks = _keyboard.rows.get(row).keys;
+    for (int i = 0; i < ks.size(); i++)
+    {
+      float l = left + ks.get(i).shift * _keyWidth;
+      float r = l + ks.get(i).width * _keyWidth;
+      if (x >= l && x < r)
+        return i;
+      left = r;
+    }
+    return -1;
+  }
+
+  public KeyboardData studio_keyboard() { return _keyboard; }
+
   private Theme _theme;
   private Theme.Computed _tc;
 
@@ -412,12 +475,18 @@ public class Keyboard2View extends View
     for (KeyboardData.Row row : _keyboard.rows)
     {
       y += row.shift * _tc.row_height;
+      int this_row = row_index;
       if (row_index++ == _studio_row)
         draw_studio_row(canvas, y, row.height * _tc.row_height);
+      if (_focus_all_rows || this_row == _focus_row)
+        canvas.drawRect(2, y + 1, getWidth() - 2, y + row.height * _tc.row_height - 1,
+            this_row == _focus_row ? _studio_row_paint() : _focus_thin_paint);
       float x = _marginLeft + _tc.margin_left;
       float keyH = row.height * _tc.row_height - _tc.vertical_margin;
+      int key_index = 0;
       for (KeyboardData.Key k : row.keys)
       {
+        int this_key = key_index++;
         x += k.shift * _keyWidth;
         float keyW = _keyWidth * k.width - _tc.horizontal_margin;
         boolean isKeyDown = _pointers.isKeyDown(k);
@@ -442,10 +511,19 @@ public class Keyboard2View extends View
             drawSubLabel(canvas, k.keys[i], x, y, keyW, keyH, i, isKeyDown, tc_key);
         }
         drawIndication(canvas, k, x, y, keyW, keyH, _tc);
+        if (this_row == _focus_row && _focus_thin_paint != null)
+          canvas.drawRect(x, y, x + keyW, y + keyH,
+              this_key == _focus_pos ? _focus_key_paint : _focus_thin_paint);
         x += _keyWidth * k.width;
       }
       y += row.height * _tc.row_height;
     }
+  }
+
+  Paint _studio_row_paint()
+  {
+    draw_studio_row(null, 0, 0);
+    return _studio_row_paint;
   }
 
   void draw_studio_row(Canvas canvas, float y, float h)
@@ -457,6 +535,8 @@ public class Keyboard2View extends View
       _studio_row_paint.setColor(0xcc3399ff);
       _studio_row_paint.setStrokeWidth(2 * getResources().getDisplayMetrics().density);
     }
+    if (canvas == null)
+      return;
     float m = _studio_row_paint.getStrokeWidth();
     canvas.drawRect(m, y + m / 2, getWidth() - m, y + h - m / 2, _studio_row_paint);
   }

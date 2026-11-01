@@ -209,6 +209,15 @@ public class Keyboard2 extends InputMethodService
     _keyboard_layout_view = (Keyboard2View)_keyboard_container_view.findViewById(R.id.keyboard_view);
     _candidates_view = (CandidatesView)_keyboard_container_view.findViewById(R.id.candidates_view);
     _comfort_bar = (ComfortBar)_keyboard_container_view.findViewById(R.id.comfort_bar);
+    // The edit key's focus: taps on the parts select them.
+    ((juloo.keyboard2.studio.FocusLayout)_keyboard_container_view).set_catcher(
+        new juloo.keyboard2.studio.FocusLayout.Catcher() {
+          public boolean catches(MotionEvent ev)
+          {
+            return _comfort_bar.focusing() && !on_view(_comfort_bar.edit_key_view(), ev);
+          }
+          public void tapped(float x, float y) { focus_tapped(x, y); }
+        });
     _keyboard_container_view.findViewById(R.id.corner_clipboard)
       .setOnClickListener(new View.OnClickListener() {
         public void onClick(View _v) { open_memory_pane(false); }
@@ -296,6 +305,28 @@ public class Keyboard2 extends InputMethodService
       }
       public int current_layout() { return _config.get_current_layout(); }
       public void select_layout(int i) { setTextLayout(i); }
+      public KeyboardData shown_keyboard() { return _keyboard_layout_view.studio_keyboard(); }
+      public void focus_changed() { draw_focus(); }
+      public void open_add_key(String layout, List<List<String>> rows, int row, int pos)
+      {
+        Intent i = new Intent(Keyboard2.this, StudioActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        org.json.JSONArray a = new org.json.JSONArray();
+        for (List<String> r : rows)
+          a.put(new org.json.JSONArray(r));
+        i.putExtra(StudioActivity.EXTRA_ADD_LAYOUT, layout);
+        i.putExtra(StudioActivity.EXTRA_ADD_ROWS, a.toString());
+        i.putExtra(StudioActivity.EXTRA_ADD_ROW, row);
+        i.putExtra(StudioActivity.EXTRA_ADD_POS, pos);
+        startActivity(i);
+      }
+      public void open_key_editor_at(int row, int pos)
+      {
+        KeyboardData kw = _keyboard_layout_view.studio_keyboard();
+        if (kw != null && row >= 0 && row < kw.rows.size()
+            && pos >= 0 && pos < kw.rows.get(row).keys.size())
+          open_key_editor(kw, kw.rows.get(row).keys.get(pos));
+      }
       public void toggle_layout_mode() { set_layout_mode(!_layout_mode); }
       public boolean layout_mode() { return _layout_mode; }
     }, Config.globalPrefs());
@@ -590,6 +621,69 @@ public class Keyboard2 extends InputMethodService
     i.putExtra(StudioActivity.EXTRA_KEY_ALL_IDS, ids.toArray(new String[0]));
     i.putExtra(StudioActivity.EXTRA_KEY_ALL_NAMES, names.toArray(new String[0]));
     startActivity(i);
+  }
+
+  /** Studio: whether [ev] is on [v]. */
+  static boolean on_view(View v, MotionEvent ev)
+  {
+    if (v == null)
+      return false;
+    int[] p = new int[2];
+    v.getLocationOnScreen(p);
+    float x = ev.getRawX(), y = ev.getRawY();
+    return x >= p[0] && x < p[0] + v.getWidth() && y >= p[1] && y < p[1] + v.getHeight();
+  }
+
+  /** Studio: a tap while the edit key focuses: which part, row and key. */
+  private void focus_tapped(float x, float y)
+  {
+    ViewGroup c = _keyboard_container_view;
+    View[] parts = {
+      _comfort_bar,
+      c.findViewById(R.id.candidates_frame),
+      _keyboard_layout_view,
+      _edit_strip,
+      _selection_bar };
+    for (int t = 0; t < parts.length; t++)
+    {
+      View v = parts[t];
+      if (v.getVisibility() != View.VISIBLE || y < v.getTop() || y >= v.getBottom())
+        continue;
+      int row = -1, pos = -1;
+      if (v == _keyboard_layout_view)
+      {
+        row = _keyboard_layout_view.studio_row_at(y - v.getTop());
+        pos = _keyboard_layout_view.studio_key_at(row, x - v.getLeft());
+      }
+      _comfort_bar.tapped(t, row, pos);
+      return;
+    }
+  }
+
+  /** Studio: outlines for the edit key's focus. */
+  private void draw_focus()
+  {
+    int layer = _comfort_bar.layer();
+    if (VERSION.SDK_INT >= 23)
+    {
+      GradientDrawable d = null;
+      if (layer == ComfortBar.LAYER_WHOLE)
+      {
+        d = new GradientDrawable();
+        d.setColor(0x143399ff);
+        d.setStroke((int)(2 * getResources().getDisplayMetrics().density), 0xcc3399ff);
+      }
+      _keyboard_container_view.setForeground(d);
+    }
+    int row = -1, pos = -1;
+    boolean all = false;
+    if (layer == ComfortBar.LAYER_COMPONENTS || layer == ComfortBar.LAYER_ITEMS)
+    {
+      row = _comfort_bar.sel_row();
+      pos = (layer == ComfortBar.LAYER_ITEMS) ? _comfort_bar.sel_pos() : -1;
+      all = (row < 0);
+    }
+    _keyboard_layout_view.studio_focus(row, pos, all);
   }
 
   /** Studio: outline the container the comfort bar's height key resizes. */

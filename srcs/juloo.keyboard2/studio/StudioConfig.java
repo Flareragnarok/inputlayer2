@@ -31,10 +31,12 @@ public final class StudioConfig
       // arrangement as a layout, → picks a saved one.
       ComfortKeySpec.of("c", "layout", "w", "layout_prev", "n", "layout_menu",
           "s", "layouts_save", "e", "layouts_pick"),
-      // Edit key (right end): picks a part, ↑ ↓ resize it, ← → move it;
-      // ↖ undoes the last change (like Back), ↙ all since shown.
+      // Edit key (right end): tap cycles the layer of focus (whole, bars,
+      // rows, keys); tap an element to select it; ↑ ↓ size, ← → order,
+      // ↗ more, ↖ undo (like Back), ↙ undo all since shown.
       ComfortKeySpec.of("c", "select_container", "n", "height_up", "s", "height_down",
-          "w", "move_up", "e", "move_down", "nw", "height_undo", "sw", "height_revert"));
+          "w", "move_up", "e", "move_down", "nw", "height_undo", "sw", "height_revert",
+          "ne", "edit_menu"));
 
   /** [-1] when not set. */
   public int keyboard_percent_portrait = -1;
