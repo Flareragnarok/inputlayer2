@@ -296,6 +296,8 @@ public class Keyboard2 extends InputMethodService
       }
       public int current_layout() { return _config.get_current_layout(); }
       public void select_layout(int i) { setTextLayout(i); }
+      public void toggle_layout_mode() { set_layout_mode(!_layout_mode); }
+      public boolean layout_mode() { return _layout_mode; }
     }, Config.globalPrefs());
     _keyboard_layout_view.studio_bottom = new Keyboard2View.BottomInsetTaker() {
       public boolean takes_bottom_inset() { return bottom_container() != _keyboard_layout_view; }
@@ -525,6 +527,47 @@ public class Keyboard2 extends InputMethodService
     if (_studio_edit != null)
       return _studio_edit;
     return super.getCurrentInputConnection();
+  }
+
+  /** Studio: layout mode, from the comfort bar. Tapping a key opens it in
+      Studio's key editor instead of typing. */
+  private boolean _layout_mode = false;
+
+  private void set_layout_mode(boolean on)
+  {
+    _layout_mode = on;
+    _keyboard_layout_view.studio_key_picker = !on ? null :
+      new Keyboard2View.KeyPicker() {
+        public void key_picked(KeyboardData kw, KeyboardData.Key k)
+        {
+          open_key_editor(kw, k);
+        }
+      };
+    if (VERSION.SDK_INT >= 23)
+    {
+      GradientDrawable d = null;
+      if (on)
+      {
+        d = new GradientDrawable();
+        d.setColor(0x1833cc66);
+        d.setStroke((int)(2 * getResources().getDisplayMetrics().density), 0xcc33cc66);
+      }
+      _keyboard_layout_view.setForeground(d);
+    }
+    _comfort_bar.refresh(_config);
+  }
+
+  private void open_key_editor(KeyboardData kw, KeyboardData.Key k)
+  {
+    String layout = juloo.keyboard2.studio.KeyMap.layout_key(kw);
+    juloo.keyboard2.studio.KeyMap km = (_config.studio.keymap != null)
+      ? _config.studio.keymap : juloo.keyboard2.studio.KeyMap.of_json(null);
+    Intent i = new Intent(this, StudioActivity.class);
+    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    i.putExtra(StudioActivity.EXTRA_KEY_LAYOUT, layout);
+    i.putExtra(StudioActivity.EXTRA_KEY_ID, km.id_of(layout, k));
+    i.putExtra(StudioActivity.EXTRA_KEY_NAMES, juloo.keyboard2.studio.KeyMap.names_of(k));
+    startActivity(i);
   }
 
   /** Studio: outline the container the comfort bar's height key resizes. */
@@ -819,6 +862,8 @@ public class Keyboard2 extends InputMethodService
     // Height changes are kept; their sane values become the ones to fall
     // back to.
     _comfort_bar.commit();
+    if (_layout_mode)
+      set_layout_mode(false);
     try
     {
       juloo.keyboard2.studio.Heights.check(
@@ -828,16 +873,16 @@ public class Keyboard2 extends InputMethodService
     _keyboard_layout_view.reset();
   }
 
-  /** Studio: Back undoes the last height change (long Back: all since the
-      keyboard was shown), then leaves the container selection, before it
-      hides the keyboard. */
+  /** Studio: Back leaves layout mode, undoes the last height change (long
+      Back: all since the keyboard was shown), then leaves the container
+      selection, before it hides the keyboard. */
   private boolean _back_ours = false;
 
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent event)
   {
     if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0
-        && isInputViewShown() && _comfort_bar.wants_back())
+        && isInputViewShown() && (_layout_mode || _comfort_bar.wants_back()))
     {
       _back_ours = true;
       event.startTracking();
@@ -866,7 +911,9 @@ public class Keyboard2 extends InputMethodService
     {
       _back_ours = false;
       // Canceled after a long press, already handled.
-      if (!event.isCanceled())
+      if (!event.isCanceled() && _layout_mode)
+        set_layout_mode(false);
+      else if (!event.isCanceled())
         _comfort_bar.back();
       return true;
     }

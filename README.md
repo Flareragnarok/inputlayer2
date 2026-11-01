@@ -41,7 +41,7 @@ comfort bar's ↕ key):
 
 | Part | What it is |
 |---|---|
-| **Comfort bar** (26dp) | tiny keys: copy/paste, cursor, height ↕, language |
+| **Comfort bar** (26dp) | tiny keys: layout mode ⇄ (with copy/paste on its swipes), cursor, height ↕, language |
 | **Selection bar** | only shown when it has something: the preview of typing in format |
 | **Suggestion bar** (28dp) | words only; see-through **Clipboard** icon bottom-left, **Memory** icon bottom-right; the Clipboard / Memory pane opens in its place, with its own bar on top |
 | **Keyboard** | Input Layer's own layouts (AZERTY, QWERTY), or upstream's under Legacy |
@@ -50,6 +50,18 @@ comfort bar's ↕ key):
 All small keys work like keyboard keys: **tap** for the main action,
 **swipe** toward one of 8 directions for the others (the faint labels on
 the key's edges).
+
+**Layout mode** with ⇄, the comfort bar's leftmost key (copy is now its ↑,
+cut ↖, paste ↗, select all ↙). While it's on (the keyboard is outlined in
+green, the key shows ⇄ ✓), tapping a key opens it in Studio instead of
+typing. The editor shows the key's tap and 8 swipes; pick one, then
+**Add key…** / **Replace with…** (a list of every key of every language's
+layout and every special key, grouped Latin, Greek, Cyrillic, other
+scripts, digits and symbols, special keys, alphabetical inside; with a
+search), **Remove**, or **Back to the layout's own**. Changes apply to the
+layout shown only, and are kept in a `keymap` module ("mine"). Back or ⇄
+again leaves layout mode. Example: ⚙ from Q's corner to Enter's ↓: open
+Enter, ↓, Add key, search "config"; then open Q, the ⚙ corner, Remove.
 
 **Resizing** with ↕: tap selects a part or a row, ↑ / ↓ resize it (hold to
 repeat), ← / → move it. **Back** undoes the last change, one gesture at a
@@ -369,8 +381,9 @@ to bottom (0.5–2), `order` of the containers. `comfortbar`: `c` is the tap, `n
 e se s sw w nw` the swipes; actions `left right up down select_all copy
 cut paste undo redo clipboard dictionary layout keyboard_picker
 select_container height_up height_down height_undo height_revert move_up
-move_down studio
-switch:<type>`. `snippets` and `theme` are reserved, not used yet.
+move_down layout_mode studio
+switch:<type>`. `keymap`: `layouts` → layout name → key (its tap's name) →
+direction → key name (`""` empties it). `snippets` and `theme` are reserved, not used yet.
 
 ## Building and releasing
 

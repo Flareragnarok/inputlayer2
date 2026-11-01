@@ -8,7 +8,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 64).
+Last updated: 2026-11-01 (build 65).
 
 ## Done
 
@@ -78,6 +78,7 @@ Last updated: 2026-11-01 (build 64).
 | 62 | **Fix: endless row growth** from the height key (see Bug log). **Back undoes** height changes and moves, one gesture at a time; long Back (or ↕ ↙) undoes all since the keyboard was shown; ↕ ↖ undoes one. Heights are clamped to sane ranges and **repaired on start** without touching other data. |
 | 63 | **Updater no longer hides betas silently**: with *Beta builds* off, Studio said "You have the newest build" while a newer beta existed (owner on 61, build 62 was a beta, so they had to install from GitHub). It now says which beta is out and to turn on *Beta builds*; the switch re-filters the list at once, without checking again. |
 | 64 | **Past builds lists every older build**, betas included (marked "· beta"). With *Beta builds* off it only offered stable ones, so on 61 the newest restorable build was 55. The switch now only filters the *newer* builds offered as updates. |
+| 65 | **Layout mode** (owner's request): ⇄, the comfort bar's leftmost key (copy/cut/paste/select all moved to its swipes), makes a tapped key open in Studio's **key editor**: pick the tap or a swipe, then add/replace from a searchable list of every key of every layout plus the special keys (grouped by script, alphabetical), remove, or back to the layout's own. Per layout, in a `keymap` module, applied after all other changes. Dot and comma are left to the owner to rearrange with it. |
 
 Infrastructure:
 
@@ -191,6 +192,17 @@ It was a **repeat timer that outlived its key**:
 ## Module reference (current)
 
 Every module is a JSON file with `module` (its type), `name` and `version`.
+
+```json
+{ "module": "keymap", "name": "mine", "version": 1,
+  "layouts": { "Input Layer QWERTZ": {
+      "q": { "ne": "" },
+      "enter": { "s": "config" } } } }
+```
+
+`keymap` (layout mode): per layout name, per key (the name of its tap in
+the layout), per direction (`c n ne e se s sw w nw`), the key put there;
+`""` empties it.
 
 ```json
 { "module": "changeheight", "name": "compact", "version": 1,

@@ -216,9 +216,27 @@ public class Keyboard2View extends View
     _config.handler.mods_changed(_mods);
   }
 
+  /** Studio: layout mode. While set, touching a key picks it instead of
+      typing. */
+  public interface KeyPicker
+  {
+    void key_picked(KeyboardData keyboard, KeyboardData.Key key);
+  }
+  public KeyPicker studio_key_picker = null;
+
   @Override
   public boolean onTouch(View v, MotionEvent event)
   {
+    if (studio_key_picker != null)
+    {
+      if (event.getActionMasked() == MotionEvent.ACTION_DOWN)
+      {
+        KeyboardData.Key key = getKeyAtPosition(event.getX(), event.getY());
+        if (key != null)
+          studio_key_picker.key_picked(_keyboard, key);
+      }
+      return true;
+    }
     int p;
     switch (event.getActionMasked())
     {

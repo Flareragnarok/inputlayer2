@@ -17,7 +17,9 @@ public final class StudioConfig
 
   /** Keys shown when no [comfortbar] module is active. */
   public static final List<ComfortKeySpec> DEFAULT_KEYS = Arrays.asList(
-      ComfortKeySpec.of("c", "copy", "nw", "cut", "ne", "paste", "sw", "select_all"),
+      // Left end: layout mode (tap a key to change it in Studio).
+      ComfortKeySpec.of("c", "layout_mode", "n", "copy", "nw", "cut", "ne", "paste",
+          "sw", "select_all"),
       ComfortKeySpec.of("w", "left", "e", "right", "n", "up", "s", "down"),
       // ↖ undoes the last height change (like Back), ↙ all since shown.
       ComfortKeySpec.of("c", "select_container", "n", "height_up", "s", "height_down",
@@ -47,6 +49,8 @@ public final class StudioConfig
   /** Height factor for each row, top to bottom. [null] when not set. */
   public float[] rows = null;
   public List<ComfortKeySpec> keys = DEFAULT_KEYS;
+  /** Key changes made in layout mode, [null] when none. */
+  public KeyMap keymap = null;
 
   public static StudioConfig load(SharedPreferences prefs)
   {
@@ -55,6 +59,9 @@ public final class StudioConfig
     Module h = store.active("changeheight");
     if (h != null)
       c.read_heights(h.json);
+    Module km = store.active("keymap");
+    if (km != null)
+      c.keymap = KeyMap.of_json(km.json);
     Module b = store.active("comfortbar");
     if (b != null)
       c.read_comfortbar(b.json);

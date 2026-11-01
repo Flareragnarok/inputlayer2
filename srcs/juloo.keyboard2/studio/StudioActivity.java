@@ -47,6 +47,10 @@ public class StudioActivity extends Activity
   /** Open the Spec / Vert editor on this type ("spec", "vert") and name. */
   public static final String EXTRA_EDIT_TYPE = "studio_edit_type";
   public static final String EXTRA_EDIT_NAME = "studio_edit_name";
+  /** Layout mode: the key to edit (see [KeyEditor]). */
+  public static final String EXTRA_KEY_LAYOUT = "studio_key_layout";
+  public static final String EXTRA_KEY_ID = "studio_key_id";
+  public static final String EXTRA_KEY_NAMES = "studio_key_names";
   static final String ACTION_INSTALL_STATUS = "juloo.keyboard2.studio.INSTALL_STATUS";
   static final int REQUEST_EXPORT = 1;
   static final int REQUEST_IMPORT = 2;
@@ -89,6 +93,7 @@ public class StudioActivity extends Activity
     refresh_crashes();
     handle_install_status(getIntent());
     open_editor_from(getIntent());
+    open_key_editor_from(getIntent());
   }
 
   @Override
@@ -97,6 +102,25 @@ public class StudioActivity extends Activity
     super.onNewIntent(intent);
     handle_install_status(intent);
     open_editor_from(intent);
+    open_key_editor_from(intent);
+  }
+
+  void open_key_editor_from(Intent i)
+  {
+    String id = (i == null) ? null : i.getStringExtra(EXTRA_KEY_ID);
+    if (id == null)
+      return;
+    // Only once, not again when the activity is recreated.
+    i.removeExtra(EXTRA_KEY_ID);
+    try
+    {
+      new KeyEditor(this, _prefs, i.getStringExtra(EXTRA_KEY_LAYOUT), id,
+          i.getStringArrayExtra(EXTRA_KEY_NAMES)).show();
+    }
+    catch (Throwable e)
+    {
+      android.util.Log.e("Studio", "Key editor", e);
+    }
   }
 
   View build_view()

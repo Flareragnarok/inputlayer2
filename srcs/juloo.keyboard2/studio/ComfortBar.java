@@ -28,6 +28,9 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     void comfort_key(KeyValue kv);
     void open_studio();
     void open_dictionaries();
+    /** Layout mode: tapping a key of the keyboard opens it in Studio. */
+    void toggle_layout_mode();
+    boolean layout_mode();
     /** Highlight container [target] (one of [TARGETS]), or none if [-1].
         Targets from [TARGET_ROWS] on are the keyboard's rows. */
     void highlight(int target);
@@ -162,6 +165,11 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       change_height(true);
     else if (action.equals("height_down"))
       change_height(false);
+    else if (action.equals("layout_mode"))
+    {
+      _listener.toggle_layout_mode();
+      refresh(_config); // Update the key's label.
+    }
     else if (action.equals("height_undo"))
       back();
     else if (action.equals("height_revert"))
@@ -192,6 +200,8 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       case "height_up": return new ComfortKey.Label("+", false);
       case "height_down": return new ComfortKey.Label("−", false);
       case "height_undo": return new ComfortKey.Label("↶", false);
+      case "layout_mode":
+        return new ComfortKey.Label(_listener.layout_mode() ? "⇄ ✓" : "⇄", false);
       case "height_revert": return new ComfortKey.Label("⟲", false);
       case "studio": return new ComfortKey.Label("⚙", false);
       // Tap: the suggestions' language, like upstream's button on the

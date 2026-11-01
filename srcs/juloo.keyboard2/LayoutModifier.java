@@ -94,10 +94,14 @@ public final class LayoutModifier
   }
 
   /** Studio: Input Layer's swipes on backspace, space, Shift, Ctrl and the
-      arrow key, and the rows' heights. */
+      arrow key, the rows' heights, and last the owner's own key changes
+      (layout mode). */
   static KeyboardData studio_keys(KeyboardData kw)
   {
-    return scale_rows(ctrl_undo(arrows_and_shift(space_nests(backspace_cut(kw)))));
+    kw = scale_rows(ctrl_undo(arrows_and_shift(space_nests(backspace_cut(kw)))));
+    if (globalConfig.studio != null && globalConfig.studio.keymap != null)
+      kw = globalConfig.studio.keymap.apply(kw);
+    return kw;
   }
 
   /** Studio: Input Layer's symbols pages, with the same swipes on their
