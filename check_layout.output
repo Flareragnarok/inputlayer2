@@ -19,6 +19,16 @@ deva_alt: Layout includes some ASCII punctuation but not all, missing: #, $, %, 
 deva_inscript: Layout includes some ASCII punctuation but not all, missing: ", $, ', ^, _, `, |
 hebr_1_il: Layout includes some ASCII punctuation but not all, missing: (, ), <, >, [, ], {, }
 hebr_2_il: Layout includes some ASCII punctuation but not all, missing: (, ), <, >, [, ], {, }
+il_azerty: Layout includes some ASCII punctuation but not all, missing: #, $, %, &, (, ), *, +, -, /, ;, <, =, >, @, [, \, ], ^, _, `, {, |, }, ~
+il_azerty: Layout doesn't define some important keys, missing: delete
+il_azerty: Missing important key, missing: loc capslock
+il_azerty: Missing programming keys, missing: loc esc, loc tab
+il_azerty: Layout redefines the bottom row but some important keys are missing, missing: config, ctrl, cursor_left, fn, loc alt, loc change_method, loc compose, loc end, loc home, loc meta, loc page_down, loc page_up, loc switch_clipboard, loc switch_greekmath, loc voice_typing, switch_backward, switch_forward, switch_numeric
+il_qwerty: Layout includes some ASCII punctuation but not all, missing: ", #, $, %, &, (, ), *, +, -, /, ;, <, =, >, @, [, \, ], ^, _, `, {, |, }, ~
+il_qwerty: Layout doesn't define some important keys, missing: delete
+il_qwerty: Missing important key, missing: loc capslock
+il_qwerty: Missing programming keys, missing: loc esc, loc tab
+il_qwerty: Layout redefines the bottom row but some important keys are missing, missing: config, ctrl, cursor_left, fn, loc alt, loc change_method, loc compose, loc end, loc home, loc meta, loc page_down, loc page_up, loc switch_clipboard, loc switch_greekmath, loc voice_typing, switch_backward, switch_forward, switch_numeric
 kann_kannada: Layout includes some ASCII punctuation but not all, missing: #, $, %, (, ), *, +, /, <, =, >, [, \, ], ^, `, {, |, }, ~
 latin_kbdtuf_tr: Layout includes some ASCII punctuation but not all, missing: $
 latin_kbdtuf_tr: These keys are now added automatically, unexpected: f11_placeholder, f12_placeholder
