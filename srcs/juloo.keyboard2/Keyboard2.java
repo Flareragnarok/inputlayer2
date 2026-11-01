@@ -469,6 +469,24 @@ public class Keyboard2 extends InputMethodService
   /** Corner icons' see-through, as in the studio_corner_icon style. */
   private static final float STUDIO_CORNER_ALPHA = 0.55f;
 
+  /** Studio: the icon of the open tab lights up (a blue highlight behind
+      it, fully drawn); the other stays see-through. */
+  private void light_corner_icon(int id, boolean lit)
+  {
+    View v = _keyboard_container_view.findViewById(id);
+    v.setAlpha(lit ? 1f : STUDIO_CORNER_ALPHA);
+    if (!lit)
+    {
+      v.setBackground(null);
+      return;
+    }
+    GradientDrawable d = new GradientDrawable();
+    d.setColor(0x663399ff);
+    d.setStroke((int)(1.5f * getResources().getDisplayMetrics().density), 0xcc3399ff);
+    d.setCornerRadius(6 * getResources().getDisplayMetrics().density);
+    v.setBackground(d);
+  }
+
   private MemoryPane memory_pane()
   {
     return (MemoryPane)_keyboard_container_view.findViewById(R.id.memory_pane_inline);
@@ -591,10 +609,8 @@ public class Keyboard2 extends InputMethodService
     // the other switches tabs. The open tab's icon is fully drawn.
     memory_pane().setVisibility(pane ? View.VISIBLE : View.GONE);
     boolean mem = pane && memory_pane().memory_tab();
-    _keyboard_container_view.findViewById(R.id.corner_clipboard)
-      .setAlpha((pane && !mem) ? 1f : STUDIO_CORNER_ALPHA);
-    _keyboard_container_view.findViewById(R.id.corner_memory)
-      .setAlpha(mem ? 1f : STUDIO_CORNER_ALPHA);
+    light_corner_icon(R.id.corner_clipboard, pane && !mem);
+    light_corner_icon(R.id.corner_memory, mem);
     _comfort_bar.refresh(_config);
     _edit_strip.refresh(_config);
     _selection_bar.refresh(_config);

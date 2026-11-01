@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 46).
+Last updated: 2026-11-01 (build 47).
 
 ## Done
 
@@ -57,6 +57,7 @@ Last updated: 2026-11-01 (build 46).
 | 44 | Clipboard and Memory open in the suggestion bar's place, the keyboard staying below. Long-press → Edit on a history entry, pin or Memory item: the selection bar expands into an editor and the keyboard types into it (keys, ⌫/⌦, arrows, the edit strip, Specs and Verts); ✓ saves (an edited clipboard entry becomes the newest one), ✕ cancels. |
 | 45 | The clipboard and memory icons stay in the corners over the open pane: the open tab's icon closes it (back to the keyboard), the other switches tabs. |
 | 46 | The pane's tab row (Clipboard / Memory buttons, ✕) is gone: the corner icons alone navigate, the open tab's icon drawn fully opaque. |
+| 47 | The open tab's corner icon lights up (blue highlight behind it). |
 
 Infrastructure:
 
