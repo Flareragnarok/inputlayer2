@@ -134,6 +134,37 @@ public class StudioActivity extends Activity
     root.addView(heading(R.string.studio_memory));
     root.addView(autokeep);
     root.addView(text(getString(R.string.studio_autokeep_desc)));
+    root.addView(heading(R.string.studio_suggestions));
+    CheckBox learn = new CheckBox(this);
+    learn.setText(R.string.studio_learn_words);
+    learn.setChecked(_prefs.getBoolean(UserWords.KEY_LEARN, true));
+    learn.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+      public void onCheckedChanged(CompoundButton b, boolean checked)
+      {
+        _prefs.edit().putBoolean(UserWords.KEY_LEARN, checked).apply();
+      }
+    });
+    root.addView(learn);
+    root.addView(text(getString(R.string.studio_learn_words_desc)));
+    final Button forget = button(R.string.studio_forget_words, null);
+    forget.setOnClickListener(new View.OnClickListener() {
+      boolean armed = false;
+      public void onClick(View v)
+      {
+        if (!armed)
+        {
+          armed = true;
+          forget.setText(R.string.studio_tap_again);
+          return;
+        }
+        new UserWords(new File(getFilesDir(), "user_words.json")).forget_all();
+        armed = false;
+        forget.setText(R.string.studio_forget_words);
+        toast(getString(R.string.studio_words_forgotten));
+      }
+    });
+    root.addView(forget);
+
     root.addView(heading(R.string.studio_memory_categories));
     root.addView(text(getString(R.string.studio_memory_categories_desc)));
     _categories = vertical();

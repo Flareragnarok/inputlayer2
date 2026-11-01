@@ -37,15 +37,38 @@ public final class Suggestions
     clear();
   }
 
+  /** Studio: words learned from typing, [null] when off or not loaded. */
+  public juloo.keyboard2.studio.UserWords user_words = null;
+  /** Studio: the word before the cursor, for next-word suggestions. */
+  public interface PrevWord { String prev_word(); }
+  public PrevWord prev_word = null;
+
   public void currently_typed_word(String word)
   {
     if (!_enabled)
       return;
-    if (word.length() < 2 || _config.current_dictionary == null)
+    if (word.length() < 2)
+    {
+      clear();
+      // Studio: nothing typed yet, the words that usually come next.
+      if (word.isEmpty() && user_words != null)
+        predict();
+    }
+    else if (_config.current_dictionary == null && user_words == null)
       clear();
     else
       query_suggestions(word);
     _callback.set_suggestions(this);
+  }
+
+  /** Studio: next-word suggestions from the user's typing. */
+  void predict()
+  {
+    String prev = (prev_word == null) ? null : prev_word.prev_word();
+    java.util.List<String> p = user_words.predict(prev, MAX_COUNT);
+    count = 0;
+    for (String w : p)
+      suggestions[count++] = w;
   }
 
   void clear()
@@ -60,6 +83,17 @@ public final class Suggestions
   {
     Cdict dict = _config.current_dictionary;
     boolean first_char_upper = Character.isUpperCase(word.charAt(0));
+    // Studio: the user's own words first, most used first; the dictionary
+    // fills the rest.
+    java.util.List<String> mine = (user_words == null) ? new java.util.ArrayList<String>()
+      : user_words.suggest(word, MAX_COUNT);
+    if (dict == null)
+    {
+      clear();
+      for (String w : mine)
+        suggestions[count++] = w;
+      return count;
+    }
     word = apply_substitutions(word);
     Cdict.Result r = dict.find(word);
     int i = 0;
@@ -76,11 +110,36 @@ public final class Suggestions
       if (dist.length > j && i < MAX_COUNT)
         suggestions[i++] = dict.word(dist[j]);
     }
+    count = i;
     if (first_char_upper)
       capitalize_results();
+    if (!mine.isEmpty())
+      merge_mine(mine);
     emoji_suggestion = query_emoji(word); // word with substitutions applied
-    count = i;
-    return i;
+    return count;
+  }
+
+  /** Studio: [mine] first (at most 2 when the dictionary has suggestions),
+      then the dictionary's, without repeating a word. */
+  void merge_mine(java.util.List<String> mine)
+  {
+    java.util.List<String> l = new java.util.ArrayList<String>();
+    int max_mine = (count > 0) ? Math.min(2, mine.size()) : mine.size();
+    for (int j = 0; j < max_mine; j++)
+      l.add(mine.get(j));
+    for (int j = 0; j < count; j++)
+    {
+      boolean dup = false;
+      for (String m : l)
+        if (juloo.keyboard2.studio.UserWords.key(m).equals(
+              juloo.keyboard2.studio.UserWords.key(suggestions[j])))
+          dup = true;
+      if (!dup)
+        l.add(suggestions[j]);
+    }
+    count = Math.min(MAX_COUNT, l.size());
+    for (int j = 0; j < MAX_COUNT; j++)
+      suggestions[j] = (j < count) ? l.get(j) : null;
   }
 
   void capitalize_results()

@@ -106,6 +106,11 @@ public final class ClipKeeper implements ClipboardManager.OnPrimaryClipChangedLi
     return e != null && e.getBoolean(EXTRA_IS_SENSITIVE, false);
   }
 
+  public static boolean is_password_field(EditorInfo info)
+  {
+    return info != null && is_password(info.inputType);
+  }
+
   static boolean is_password(int input_type)
   {
     int cls = input_type & InputType.TYPE_MASK_CLASS;

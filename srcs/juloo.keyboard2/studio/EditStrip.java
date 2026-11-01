@@ -67,6 +67,9 @@ public class EditStrip extends LinearLayout
     void preview(String text);
     /** The layout must be built again (a key's label changed). */
     void relayout();
+    /** Text written in typing in format, when it ends: its words become
+        suggestions as written. */
+    void written(String text);
   }
 
   static final String KEY_SYNTAX_PREFIX = "studio_format_";
@@ -737,6 +740,14 @@ public class EditStrip extends LinearLayout
 
   void stop_typing()
   {
+    // Its words, as written, become suggestions.
+    Field f = read();
+    if (f != null)
+    {
+      int ts = _typing_start - f.base, te = _typing_end - f.base;
+      if (ts >= 0 && te <= f.text.length() && ts < te)
+        _listener.written(f.text.substring(ts, te));
+    }
     _typing = false;
     _listener.preview(null);
     rebuild();

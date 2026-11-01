@@ -39,6 +39,8 @@ import juloo.keyboard2.studio.EditStrip;
 import juloo.keyboard2.studio.MemoryPane;
 import juloo.keyboard2.studio.SelectionBar;
 import juloo.keyboard2.studio.StudioActivity;
+import juloo.keyboard2.studio.TextScope;
+import juloo.keyboard2.studio.UserWords;
 import juloo.keyboard2.suggestions.CandidatesView;
 import juloo.keyboard2.suggestions.Suggestions;
 
@@ -51,6 +53,15 @@ public class Keyboard2 extends InputMethodService
   private CandidatesView _candidates_view;
   private ComfortBar _comfort_bar;
   private ClipKeeper _clip_keeper;
+  /** Studio: words learned from typing; [null] when off or the phone is
+      still locked (direct boot). */
+  private UserWords _user_words;
+  private boolean _studio_password_field = false;
+  /** Where the last learned word ended, not to count it twice. */
+  private int _studio_learned_at = -1;
+  private final Runnable _studio_flush_words = new Runnable() {
+    public void run() { if (_user_words != null) _user_words.flush(); }
+  };
   private EditStrip _edit_strip;
   private SelectionBar _selection_bar;
   /** Bottom system inset (navigation bar) on Android 15+. */
@@ -165,12 +176,17 @@ public class Keyboard2 extends InputMethodService
     create_keyboard_view();
     ClipboardHistoryService.on_startup(this, _keyeventhandler);
     _clip_keeper = ClipKeeper.start(this, prefs);
+    _suggestions.prev_word = new Suggestions.PrevWord() {
+      public String prev_word() { return studio_word_before_cursor(); }
+    };
     _foldStateTracker.setChangedCallback(() -> { refresh_config(); });
   }
 
   @Override
   public void onDestroy() {
     super.onDestroy();
+    if (_user_words != null)
+      _user_words.flush();
 
     _foldStateTracker.close();
   }
@@ -199,6 +215,7 @@ public class Keyboard2 extends InputMethodService
         apply_bottom_inset();
       }
       public void relayout() { _keyboard_layout_view.setKeyboard(current_layout()); }
+      public void written(String text) { studio_learn_written(text); }
       public void preview(String text)
       {
         _selection_bar.set_preview(text);
@@ -233,6 +250,86 @@ public class Keyboard2 extends InputMethodService
         apply_bottom_inset();
       }
     };
+  }
+
+  /** Studio: load the learned words, when learning is on and the phone is
+      unlocked (credential storage). */
+  private void studio_load_words()
+  {
+    boolean on = Config.globalPrefs().getBoolean(UserWords.KEY_LEARN, true);
+    if (!on)
+      _user_words = null;
+    else if (_user_words == null)
+    {
+      try
+      {
+        _user_words = new UserWords(new java.io.File(getFilesDir(), "user_words.json"));
+      }
+      catch (Exception _e) { _user_words = null; }
+    }
+    _suggestions.user_words = _user_words;
+  }
+
+  /** Studio: a word was just finished (a separator typed after it): learn
+      it, with the word before it. */
+  private void studio_learn(int cursor)
+  {
+    if (_user_words == null || _studio_password_field)
+      return;
+    InputConnection ic = getCurrentInputConnection();
+    if (ic == null)
+      return;
+    CharSequence cs = ic.getTextBeforeCursor(96, 0);
+    if (cs == null || cs.length() < 3)
+      return;
+    String t = cs.toString();
+    java.util.regex.Matcher m = STUDIO_FINISHED_WORD.matcher(t);
+    if (!m.find())
+      return;
+    // The word's end, absolute, so a word is counted once.
+    int end = cursor - (t.length() - m.end(2));
+    if (end == _studio_learned_at)
+      return;
+    _studio_learned_at = end;
+    String prev = (m.group(1) == null) ? null : m.group(1);
+    _user_words.learn(m.group(2), prev);
+    _handler.removeCallbacks(_studio_flush_words);
+    _handler.postDelayed(_studio_flush_words, 3000);
+  }
+
+  /** "prev word" + separators at the end; separators: spaces and
+      punctuation. */
+  private static final java.util.regex.Pattern STUDIO_FINISHED_WORD =
+    java.util.regex.Pattern.compile(
+        "(?:([\\p{L}\\p{M}\\p{N}'’_]+)[^\\p{L}\\p{M}\\p{N}'’_\\n]+)?([\\p{L}\\p{M}\\p{N}'’_]+)[\\s.,!?;:)\\]}\"]+$");
+
+  /** Studio: the last whole word before the cursor, [null] if none. */
+  private String studio_word_before_cursor()
+  {
+    InputConnection ic = getCurrentInputConnection();
+    CharSequence cs = (ic == null) ? null : ic.getTextBeforeCursor(64, 0);
+    if (cs == null)
+      return null;
+    java.util.regex.Matcher m = STUDIO_PREV_WORD.matcher(cs);
+    return m.find() ? m.group(1) : null;
+  }
+
+  private static final java.util.regex.Pattern STUDIO_PREV_WORD =
+    java.util.regex.Pattern.compile("([\\p{L}\\p{M}\\p{N}'’_]+)[^\\p{L}\\p{M}\\p{N}'’_]+$");
+
+  /** Studio: words written in typing in format, kept as written. */
+  private void studio_learn_written(String text)
+  {
+    if (_user_words == null || _studio_password_field || text == null)
+      return;
+    int[] u = TextScope.WORD.next_unit(text, 0);
+    while (u != null)
+    {
+      _user_words.learn_written(text.substring(u[0], u[1]));
+      u = TextScope.WORD.next_unit(text, u[1]);
+    }
+    _handler.removeCallbacks(_studio_flush_words);
+    _handler.postDelayed(_studio_flush_words, 3000);
   }
 
   /** Studio: [code] with Ctrl (and Shift), e.g. Ctrl+Z to undo. */
@@ -474,6 +571,9 @@ public class Keyboard2 extends InputMethodService
     _keyeventhandler.started(_config);
     _comfort_bar.reset_target();
     _clip_keeper.editor_started(info);
+    studio_load_words();
+    _studio_password_field = ClipKeeper.is_password_field(info);
+    _studio_learned_at = -1;
     _studio_sel_start = info.initialSelStart;
     _studio_sel_end = info.initialSelEnd;
     setInputView(_keyboard_container_view);
@@ -571,6 +671,8 @@ public class Keyboard2 extends InputMethodService
     _studio_sel_start = newSelStart;
     _studio_sel_end = newSelEnd;
     _edit_strip.selection_updated(newSelStart, newSelEnd);
+    if (newSelStart == newSelEnd)
+      studio_learn(newSelStart);
     _keyeventhandler.selection_updated(oldSelStart, newSelStart, newSelEnd);
     if ((oldSelStart == oldSelEnd) != (newSelStart == newSelEnd))
       _keyboard_layout_view.set_selection_state(newSelStart != newSelEnd);
@@ -580,6 +682,8 @@ public class Keyboard2 extends InputMethodService
   public void onFinishInputView(boolean finishingInput)
   {
     super.onFinishInputView(finishingInput);
+    if (_user_words != null)
+      _user_words.flush();
     _keyboard_layout_view.reset();
   }
 

@@ -54,6 +54,11 @@
   <string name="studio_allow_installs">Allow this app to install updates, then tap Install again</string>
   <string name="studio_install_failed">Install failed: %1$s</string>
   <string name="studio_modules">Modules</string>
+  <string name="studio_suggestions">Suggestions</string>
+  <string name="studio_learn_words">Learn my words</string>
+  <string name="studio_learn_words_desc">Finished words are counted: your frequent words come first in the suggestions, words not in the dictionary are suggested once typed twice, words written in typing in format are suggested as written, and with nothing typed yet the bar shows what you usually type next. Kept in private storage; never learned in password fields.</string>
+  <string name="studio_forget_words">Forget learned words</string>
+  <string name="studio_words_forgotten">Learned words forgotten</string>
   <string name="studio_tools">Edit strip tools</string>
   <string name="studio_tools_desc">Opened from Spec (selections) and Vert (formats, fonts) on the edit strip. Your own selections join the Scope cycle, formats the View cycle and fonts the Verse cycle. They are saved as modules, listed below, where you can export or delete them.</string>
   <string name="studio_tool_selection">New selection</string>

@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 39).
+Last updated: 2026-11-01 (build 40).
 
 ## Done
 
@@ -50,6 +50,7 @@ Last updated: 2026-11-01 (build 39).
 | 37 | desel removes units from the end opposite to the arrow's tip, so the tip's unit goes last (it went first). The arrow key's tap shows ⇢ or ⇠ with Sector's direction. |
 | 38 | Backspace ↑ switches between regular backspace (⌫) and forward removal (⌦), the tap and label following; the forward delete on backspace's ↗ is retired. |
 | 39 | Undo/redo that work: Ctrl ↖ undoes (Ctrl+Z), Ctrl ↗ redoes (Ctrl+Shift+Z), replacing placeholders there. The editing actions behind the comfort bar's undo key often did nothing; that key is retired from the defaults, and `undo`/`redo` in comfortbar modules now send the Ctrl keys too. |
+| 40 | Suggestions learn from typing: finished words are counted, the user's words come first (most used first) before the dictionary's, words not in the dictionary are suggested once typed twice, words written in typing in format are suggested as written, and with nothing typed yet the bar shows the usual next words. Private storage, never from password fields; off switch and "forget" in Studio. |
 
 Infrastructure:
 
@@ -88,10 +89,9 @@ Infrastructure:
 
 ## Undecided
 
-- Language and suggestions, to rethink: should the suggestions' language
-  follow the keyboard layout, should the language key cycle languages
-  directly instead of opening a list, should the suggestion bar show more
-  than 3 words (scrollable)?
+- Languages: auto-detecting the language among installed dictionaries
+  and mixing two languages' suggestions were proposed; the owner said
+  installed languages still matter "just for spec scopes" — to clarify.
 - Corner icons disappear when suggestions are turned off. Move them to the
   comfort bar in that case?
 - Comfort bar in the split layout (tablets, landscape): untested.
