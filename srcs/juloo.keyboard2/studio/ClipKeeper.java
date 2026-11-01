@@ -90,6 +90,10 @@ public final class ClipKeeper implements ClipboardManager.OnPrimaryClipChangedLi
       // Locked phone (no storage yet) or clipboard not readable.
       Logs.exn("Studio clip keeper", e);
     }
+    catch (Throwable e)
+    {
+      // A bug in Memory doesn't stop the keyboard; the copy isn't kept.
+    }
   }
 
   /** One history record per phone restart: the boot count when Android has

@@ -656,7 +656,15 @@ public class StudioActivity extends Activity
   void refresh_categories()
   {
     _categories.removeAllViews();
-    final MemoryStore store = memory();
+    final MemoryStore store;
+    // Whatever goes wrong with Memory, the rest of Studio (the updates
+    // above all) must stay usable.
+    try { store = memory(); }
+    catch (Throwable e)
+    {
+      _categories.addView(text(getString(R.string.studio_memory_error, String.valueOf(e))));
+      return;
+    }
     for (final String c : store.custom_categories())
     {
       LinearLayout row = new LinearLayout(this);

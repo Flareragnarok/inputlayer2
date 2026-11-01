@@ -125,8 +125,19 @@ public class MemoryPane extends LinearLayout
       return;
     }
     _bar.setVisibility(VISIBLE);
-    refresh_bar();
-    _content.addView(memory ? memory_view() : clipboard_view());
+    // A bug in a tab shows as a message instead of stopping the keyboard.
+    try
+    {
+      refresh_bar();
+      _content.addView(memory ? memory_view() : clipboard_view());
+    }
+    catch (Throwable e)
+    {
+      _content.removeAllViews();
+      TextView t = hint(0);
+      t.setText(getContext().getString(R.string.studio_memory_error, String.valueOf(e)));
+      _content.addView(t);
+    }
   }
 
   /** The pane closed: the item shown in the bar is forgotten, an edit is
@@ -770,7 +781,7 @@ public class MemoryPane extends LinearLayout
     {
       return new MemoryStore(new File(getContext().getFilesDir(), "memory.json"));
     }
-    catch (Exception _e)
+    catch (Throwable _e)
     {
       return null;
     }

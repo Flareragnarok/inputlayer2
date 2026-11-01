@@ -101,4 +101,5 @@
   <string name="studio_keep_hint">Big copies: ✓ keeps one in the history, ✕ drops it</string>
   <string name="studio_legacy_title">Legacy settings</string>
   <string name="studio_legacy_summary">Unexpected Keyboard\'s own settings, as upstream has them: layouts, typing, style, vibration…</string>
+  <string name="studio_memory_error">Memory can\'t be shown (a bug, please report it): %1$s</string>
 </resources>
