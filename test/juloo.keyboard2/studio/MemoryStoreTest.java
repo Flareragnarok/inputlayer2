@@ -111,6 +111,10 @@ public class MemoryStoreTest
   public void guess()
   {
     assertEquals(MemoryStore.LINKS, MemoryStore.guess_category("https://github.com/x"));
+    assertEquals(MemoryStore.MAILS, MemoryStore.guess_category("kaze.s@example.co.uk"));
+    assertEquals(MemoryStore.MAILS, MemoryStore.guess_category(" mailto:me@x.org?subject=Hi "));
+    assertEquals(MemoryStore.TEXT, MemoryStore.guess_category("write to me@x.org please"));
+    assertEquals(MemoryStore.SYMBOLS, MemoryStore.guess_category("@@"));
     assertEquals(MemoryStore.LINKS, MemoryStore.guess_category(" www.example.org "));
     assertEquals(MemoryStore.SYMBOLS, MemoryStore.guess_category("→ ★ ✓"));
     assertEquals(MemoryStore.SNIPPETS, MemoryStore.guess_category("line one\nline two"));

@@ -28,12 +28,13 @@ public final class MemoryStore
   /** Content types, in which copied things are kept automatically. */
   public static final String TEXT = "Text";
   public static final String LINKS = "Links";
+  public static final String MAILS = "Mails";
   public static final String SNIPPETS = "Snippets";
   public static final String SYMBOLS = "Symbols";
   public static final String IMAGES = "Images";
   public static final String FILES = "Files";
   public static final List<String> DEFAULT_CATEGORIES =
-    Arrays.asList(TEXT, LINKS, SNIPPETS, SYMBOLS, IMAGES, FILES);
+    Arrays.asList(TEXT, LINKS, MAILS, SNIPPETS, SYMBOLS, IMAGES, FILES);
   public static final int MAX_ITEMS = 1000;
   public static final int MAX_CATEGORY_LENGTH = 24;
 
@@ -257,6 +258,9 @@ public final class MemoryStore
   public static String guess_category(String text)
   {
     String t = text.trim();
+    // An email address, or a mailto: link.
+    if (t.matches("(?i)(mailto:)?[\\w.%+-]+@[\\w-]+(\\.[\\w-]+)+(\\?\\S*)?"))
+      return MAILS;
     if (t.matches("(?is)(https?://|www\\.)\\S+"))
       return LINKS;
     if (t.contains("\n"))
