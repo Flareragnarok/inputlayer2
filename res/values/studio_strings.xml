@@ -103,4 +103,11 @@
   <string name="studio_legacy_summary">Unexpected Keyboard\'s own settings, as upstream has them: layouts, typing, style, vibration…</string>
   <string name="studio_memory_error">Memory can\'t be shown (a bug, please report it): %1$s</string>
   <string name="studio_enable_keyboard">Turn on the keyboard</string>
+  <string name="studio_crashes">Crash reports</string>
+  <string name="studio_crashes_desc">When Input Layer crashes, or survives an error, a report is kept here: the error, where it happened and the build. Never any text you typed. Nothing is sent anywhere: copy them and send them to get the bug fixed.</string>
+  <string name="studio_crashes_none">No crash reports.</string>
+  <string name="studio_crashes_count">%1$d reports. The newest:</string>
+  <string name="studio_crashes_copy">Copy reports</string>
+  <string name="studio_crashes_clear">Clear</string>
+  <string name="studio_crashes_copied">%1$d reports copied</string>
 </resources>

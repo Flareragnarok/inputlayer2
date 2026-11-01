@@ -305,6 +305,12 @@ only):
 
 - **Updates**: installed build, newer builds dropdown + Install, past
   builds dropdown + Restore.
+- **Crash reports**: every crash, and every error the app survived (shown
+  as a message instead), is kept on the phone with the error, where it
+  happened and the build, never typed text; the last 10 stay. *Copy
+  reports* puts them on the clipboard to send; nothing is sent by itself.
+  Kept in device-protected storage, so crashes before unlocking are kept
+  too (`CrashLog.java`).
 - **Spec and Vert editor**: pick one, move ↑ ↓ / delete ✕ / add steps,
   New Spec, New Vert, Delete.
 - **Edit strip tools**: new custom selection (delimiters or a pattern),

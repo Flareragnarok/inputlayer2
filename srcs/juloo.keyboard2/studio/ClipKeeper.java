@@ -93,6 +93,7 @@ public final class ClipKeeper implements ClipboardManager.OnPrimaryClipChangedLi
     catch (Throwable e)
     {
       // A bug in Memory doesn't stop the keyboard; the copy isn't kept.
+      CrashLog.handled(_ctx, "Clip keeper: keeping a copy", e);
     }
   }
 

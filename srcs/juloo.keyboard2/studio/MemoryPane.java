@@ -133,6 +133,7 @@ public class MemoryPane extends LinearLayout
     }
     catch (Throwable e)
     {
+      CrashLog.handled(getContext(), "Memory pane, " + (memory ? "Memory" : "Clipboard") + " tab", e);
       _content.removeAllViews();
       TextView t = hint(0);
       t.setText(getContext().getString(R.string.studio_memory_error, String.valueOf(e)));

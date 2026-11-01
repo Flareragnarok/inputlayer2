@@ -71,6 +71,7 @@ public class StudioActivity extends Activity
   public void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
+    CrashLog.install(this);
     _prefs = DirectBootAwarePreferences.get_shared_preferences(this);
     _store = new ModuleStore(_prefs);
     _installed_build = getResources().getInteger(R.integer.studio_build);
@@ -78,6 +79,7 @@ public class StudioActivity extends Activity
     setContentView(build_view());
     refresh_modules();
     refresh_categories();
+    refresh_crashes();
     handle_install_status(getIntent());
     open_editor_from(getIntent());
   }
@@ -131,6 +133,29 @@ public class StudioActivity extends Activity
     root.addView(_update_status);
     _releases = vertical();
     root.addView(_releases);
+
+    root.addView(heading(R.string.studio_crashes));
+    root.addView(text(getString(R.string.studio_crashes_desc)));
+    _crashes = text("");
+    root.addView(_crashes);
+    LinearLayout crash_buttons = new LinearLayout(this);
+    crash_buttons.addView(button(R.string.studio_crashes_copy, new View.OnClickListener() {
+      public void onClick(View v)
+      {
+        List<String> rs = CrashLog.reports(StudioActivity.this);
+        if (rs.isEmpty())
+          return;
+        android.content.ClipboardManager cm = (android.content.ClipboardManager)
+          getSystemService(CLIPBOARD_SERVICE);
+        cm.setPrimaryClip(android.content.ClipData.newPlainText("Input Layer crash reports",
+              android.text.TextUtils.join("\n\n", rs)));
+        toast(getString(R.string.studio_crashes_copied, rs.size()));
+      }
+    }));
+    crash_buttons.addView(button(R.string.studio_crashes_clear, new View.OnClickListener() {
+      public void onClick(View v) { CrashLog.clear(StudioActivity.this); refresh_crashes(); }
+    }));
+    root.addView(crash_buttons);
 
     build_editor(root);
 
@@ -663,6 +688,26 @@ public class StudioActivity extends Activity
     });
   }
 
+  /* Crash reports */
+
+  TextView _crashes;
+
+  /** How many reports, and the newest one's first lines. */
+  void refresh_crashes()
+  {
+    List<String> rs = CrashLog.reports(this);
+    if (rs.isEmpty())
+    {
+      _crashes.setText(R.string.studio_crashes_none);
+      return;
+    }
+    String[] lines = rs.get(0).split("\n");
+    StringBuilder b = new StringBuilder(getString(R.string.studio_crashes_count, rs.size()));
+    for (int i = 0; i < Math.min(6, lines.length); i++)
+      b.append('\n').append(lines[i]);
+    _crashes.setText(b.toString());
+  }
+
   /* Memory categories */
 
   MemoryStore memory()
@@ -679,6 +724,7 @@ public class StudioActivity extends Activity
     try { store = memory(); }
     catch (Throwable e)
     {
+      CrashLog.handled(this, "Studio: Memory categories", e);
       _categories.addView(text(getString(R.string.studio_memory_error, String.valueOf(e))));
       return;
     }

@@ -8,7 +8,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 58).
+Last updated: 2026-11-01 (build 59).
 
 ## Done
 
@@ -72,6 +72,7 @@ Last updated: 2026-11-01 (build 58).
 | 56 | The app's icon opens Studio (upstream's launcher screen is gone), with buttons for Android's keyboard list and Legacy settings. |
 | 57 | Input Layer's own layouts, **AZERTY** and **QWERTY**, shaped like Gboard's: digits and accents on the letters' swipes, a bottom row without Ctrl / Fn / Compose (?123, comma, space, period with ? and !, Sector's arrow, Enter), and Gboard's two symbols pages (?123 and =\<, with ~ on the second). "System" picks them for Latin-script languages; upstream's layouts are listed as *Legacy · …*. |
 | 58 | **Input Layer QWERTZ** like Gboard's German keyboard (ü ö ä keys, S ↖ ß). Fix: build 57's "system" choice gave German (and every other Latin-script language) our QWERTY; now French → AZERTY, German → QWERTZ, English → QWERTY, and other languages keep their own layout. |
+| 59 | **Crash reports** in Studio: crashes and survived errors are kept on the phone (error, place, build; never typed text), the last 10, with Copy and Clear. |
 
 Infrastructure:
 

@@ -164,6 +164,8 @@ public class Keyboard2 extends InputMethodService
   public void onCreate()
   {
     super.onCreate();
+    // Studio: crashes are kept, to be copied from Studio.
+    juloo.keyboard2.studio.CrashLog.install(this);
     SharedPreferences prefs = DirectBootAwarePreferences.get_shared_preferences(this);
     _handler = new Handler(getMainLooper());
     _foldStateTracker = new FoldStateTracker(this);
