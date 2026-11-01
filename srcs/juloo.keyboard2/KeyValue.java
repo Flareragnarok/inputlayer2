@@ -36,8 +36,10 @@ public final class KeyValue implements Comparable<KeyValue>
     STUDIO_SECTOR_STEP,
     /** Backspace between removing before and after the cursor. */
     STUDIO_BACKSPACE_TOGGLE,
-    /** View's format and Verse's look, as picked, applied (backspace ←). */
-    STUDIO_APPLY,
+    /** Verse's look, as picked, applied (backspace ←). */
+    STUDIO_APPLY_LOOK,
+    /** View's format, as picked, applied (shift ←). */
+    STUDIO_APPLY_FORMAT,
     /** Undo and redo as Ctrl+Z and Ctrl+Shift+Z, which most text fields
         handle (the editing actions often do nothing). */
     STUDIO_UNDO,
@@ -686,7 +688,8 @@ public final class KeyValue implements Comparable<KeyValue>
       case "studio_sector_step": return eventKey("⇢", Event.STUDIO_SECTOR_STEP, FLAG_SMALLER_FONT);
       case "studio_sector_step_back": return eventKey("⇠", Event.STUDIO_SECTOR_STEP, FLAG_SMALLER_FONT);
       case "studio_backspace_toggle": return eventKey("⇄", Event.STUDIO_BACKSPACE_TOGGLE, FLAG_SMALLER_FONT);
-      case "studio_apply": return eventKey("✦", Event.STUDIO_APPLY, FLAG_SMALLER_FONT);
+      case "studio_apply_look": return eventKey("✦", Event.STUDIO_APPLY_LOOK, FLAG_SMALLER_FONT);
+      case "studio_apply_format": return eventKey("¶", Event.STUDIO_APPLY_FORMAT, FLAG_SMALLER_FONT);
       case "studio_undo": return eventKey(0xE036, Event.STUDIO_UNDO, 0);
       case "studio_redo": return eventKey(0xE037, Event.STUDIO_REDO, 0);
 

@@ -958,8 +958,12 @@ public class Keyboard2 extends InputMethodService
           _edit_strip.sector_step();
           break;
 
-        case STUDIO_APPLY:
-          _edit_strip.apply_picks();
+        case STUDIO_APPLY_LOOK:
+          _edit_strip.apply_look();
+          break;
+
+        case STUDIO_APPLY_FORMAT:
+          _edit_strip.apply_format();
           break;
 
         case STUDIO_CUT:

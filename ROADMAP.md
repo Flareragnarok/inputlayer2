@@ -8,7 +8,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 48).
+Last updated: 2026-11-01 (build 49).
 
 ## Done
 
@@ -62,6 +62,7 @@ Last updated: 2026-11-01 (build 48).
 | 46 | The pane's tab row (Clipboard / Memory buttons, ✕) is gone: the corner icons alone navigate, the open tab's icon drawn fully opaque. |
 | 47 | The open tab's corner icon lights up (blue highlight behind it). |
 | 48 | View and Verse only pick (tap, swipes, lists, ↑ ↓ for plain); **Backspace ←** (✦) applies the picked format and look to the selection or the unit at the cursor, replacing a format already there. Scope ↑ leaves the pushed text alone: nothing selected, and picking plain afterwards no longer unwraps or restyles it. A Verse pick during typing in format applies to the letters typed next. |
+| 49 | The apply is split: **Backspace ←** (✦) applies Verse's look only (markers around the text stay), **Shift ←** (¶) applies View's format (replacing the one there; in apps without markup, the look). |
 
 Infrastructure:
 

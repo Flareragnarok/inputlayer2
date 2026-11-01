@@ -134,7 +134,8 @@ public final class LayoutModifier
   /** Studio: the arrow key next to the space bar taps Sector's step (its
       tap was a Compose placeholder, off unless enabled). Shift gets Caps
       Lock on its up swipe and Compose on its right swipe, where free (or
-      holding a Caps Lock placeholder). */
+      holding a Caps Lock placeholder), and its left swipe applies View's
+      format as picked on the edit strip. */
   static KeyboardData arrows_and_shift(KeyboardData kw)
   {
     final KeyValue up = KeyValue.getKeyByName("up");
@@ -142,6 +143,7 @@ public final class LayoutModifier
     final KeyValue shift = KeyValue.getKeyByName("shift");
     final KeyValue capslock = KeyValue.getKeyByName("capslock");
     final KeyValue compose = KeyValue.getKeyByName("compose");
+    final KeyValue apply_format = KeyValue.getKeyByName("studio_apply_format");
     // Its label shows Sector's direction.
     final KeyValue step = KeyValue.getKeyByName(
         juloo.keyboard2.studio.EditStrip.selection_forward ? "studio_sector_step"
@@ -163,6 +165,8 @@ public final class LayoutModifier
             k = k.withKeyValue(7, capslock);
           if (k.keys[6] == null || k.keys[6].equals(capslock))
             k = k.withKeyValue(6, compose);
+          if (k.keys[5] == null)
+            k = k.withKeyValue(5, apply_format);
         }
         return k;
       }
@@ -173,7 +177,7 @@ public final class LayoutModifier
       clipboard history), swipe up switches between removing before the
       cursor and forward removal (the tap and its label follow), which
       retires the forward delete on its up-right swipe. Swipe left applies
-      View's format and Verse's look as picked on the edit strip. */
+      Verse's look as picked on the edit strip. */
   static KeyboardData backspace_cut(KeyboardData kw)
   {
     final KeyValue backspace = KeyValue.getKeyByName("backspace");
@@ -182,7 +186,7 @@ public final class LayoutModifier
     // Cuts the pinned selection when there is one.
     final KeyValue cut = KeyValue.getKeyByName("studio_cut");
     final KeyValue toggle = KeyValue.getKeyByName("studio_backspace_toggle");
-    final KeyValue apply = KeyValue.getKeyByName("studio_apply");
+    final KeyValue apply = KeyValue.getKeyByName("studio_apply_look");
     return kw.mapKeys(new KeyboardData.MapKey() {
       public KeyboardData.Key apply(KeyboardData.Key k)
       {

@@ -1405,29 +1405,46 @@ public class EditStrip extends LinearLayout
 
   /* Editing */
 
-  /** Backspace ←: View's format and Verse's look, as picked, applied to
-      the selection or the scope's unit at the cursor. A format already
-      around it is replaced; the text inside the markers stays selected, so
-      applying again after other picks replaces them in turn. */
-  public void apply_picks()
+  /** Backspace ←: Verse's look, as picked, applied to the selection or
+      the scope's unit at the cursor. Markers around it stay as they are;
+      the letters inside them get the look and stay selected. */
+  public void apply_look()
   {
     Field f = read();
-    if (f == null)
-      return;
-    int[] r = target(f);
+    int[] r = (f == null) ? null : apply_target(f);
     if (r == null)
-    {
-      toast("Nothing to apply to: select some text");
       return;
-    }
-    List<String[]> fs = formats();
     int[] outer = { r[0], r[1] }, inner = { r[0], r[1] };
-    boolean had = TextFormats.current(f.text, r, fs, outer, inner) >= 0;
+    TextFormats.current(f.text, r, formats(), outer, inner);
     String[] n = verse_nest();
     String style = n[1 + Math.min(Math.max(0, _verse_item), n.length - 2)];
     boolean is_case = n[0].equals("Case");
     String body = f.text.substring(inner[0], inner[1]);
     body = is_case ? UnicodeStyles.change_case(body, style) : UnicodeStyles.apply(body, style);
+    rec_vert((is_case ? "case:" : "look:") + style);
+    replace(f, inner[0], inner[1], body, inner[0], inner[0] + body.length());
+  }
+
+  /** Shift ←: View's format, as picked, applied to the selection or the
+      scope's unit at the cursor, replacing a format already around it
+      (plain removes it). The text inside the markers stays selected, so
+      another pick and Shift ← replace it in turn. In apps without markup,
+      View picks Verse's looks: Shift ← applies the look. */
+  public void apply_format()
+  {
+    List<String[]> fs = formats();
+    if (fs.isEmpty())
+    {
+      apply_look();
+      return;
+    }
+    Field f = read();
+    int[] r = (f == null) ? null : apply_target(f);
+    if (r == null)
+      return;
+    int[] outer = { r[0], r[1] }, inner = { r[0], r[1] };
+    boolean had = TextFormats.current(f.text, r, fs, outer, inner) >= 0;
+    String body = f.text.substring(inner[0], inner[1]);
     String[] vf = view_format();
     String open = (vf == null) ? "" : vf[1], close = (vf == null) ? "" : vf[2];
     String t;
@@ -1445,13 +1462,22 @@ public class EditStrip extends LinearLayout
       ss = open.length();
       se = ss + body.length();
     }
-    // Recorded as: remove the format, the look, then wrap in the new one.
+    // Recorded as: remove the format, then wrap in the new one.
     if (had)
       rec_vert("unwrap");
-    rec_vert((is_case ? "case:" : "look:") + style);
     if (vf != null)
       rec_vert("wrap:" + open + "|" + close);
     replace(f, outer[0], outer[1], t, outer[0] + ss, outer[0] + se);
+  }
+
+  /** What Backspace ← and Shift ← apply to, [null] (with a toast) for
+      nothing. */
+  int[] apply_target(Field f)
+  {
+    int[] r = target(f);
+    if (r == null)
+      toast("Nothing to apply to: select some text");
+    return r;
   }
 
   /** The selection [sel] (of unit [unit]) after a step forward or back:
