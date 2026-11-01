@@ -97,6 +97,23 @@ public class StudioActivity extends Activity
     int pad = dp(16);
     root.setPadding(pad, pad, pad, pad);
 
+    // Opened from the app's icon: the keyboard's own setup and upstream's
+    // settings are one tap away.
+    LinearLayout setup = new LinearLayout(this);
+    setup.addView(button(R.string.studio_enable_keyboard, new View.OnClickListener() {
+      public void onClick(View v)
+      {
+        startActivity(new Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS));
+      }
+    }));
+    setup.addView(button(R.string.studio_legacy_title, new View.OnClickListener() {
+      public void onClick(View v)
+      {
+        startActivity(new Intent(StudioActivity.this, juloo.keyboard2.SettingsActivity.class));
+      }
+    }));
+    root.addView(setup);
+
     root.addView(heading(R.string.studio_updates));
     root.addView(text(getString(R.string.studio_installed,
             getVersionName(), _installed_build)));

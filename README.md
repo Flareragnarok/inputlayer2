@@ -270,7 +270,9 @@ Memory and the clipboard history file live in the app's private
 
 ## Studio screen
 
-The app's settings show two entries: **Studio** and **Legacy settings**.
+**The app's icon opens Studio**, with *Turn on the keyboard* (Android's
+keyboard list) and *Legacy settings* at the top. The keyboard's settings
+show two entries: **Studio** and **Legacy settings**.
 Legacy settings holds all of upstream's settings, unchanged (layouts,
 typing, style, vibration, clipboard duration…; in the phone's language,
 as upstream translates them). Studio has Input Layer's own (English

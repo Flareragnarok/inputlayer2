@@ -8,7 +8,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 55).
+Last updated: 2026-11-01 (build 56).
 
 ## Done
 
@@ -69,6 +69,7 @@ Last updated: 2026-11-01 (build 55).
 | 53 | Settings cleaned up: the main screen shows only Studio and **Legacy settings**, which holds all of upstream's settings unchanged. |
 | 54 | Fix: opening Clipboard or Memory (and copying) crashed the keyboard since build 51. A content-type pattern had a bare `}`, which Android's regex engine refuses (the JVM's accepts it). Memory's file was not touched by the crash; copies made with 51–53 weren't kept. A test now checks the patterns. |
 | 55 | Builds 51–53 also crashed Studio on opening (it loads Memory's categories), so the updater couldn't be reached: those builds need build 54+ installed by hand from the releases page. Now a failure in Memory shows as a message in Studio and in the pane, and the copy keeper skips the copy, instead of stopping Studio or the keyboard. |
+| 56 | The app's icon opens Studio (upstream's launcher screen is gone), with buttons for Android's keyboard list and Legacy settings. |
 
 Infrastructure:
 
@@ -104,6 +105,8 @@ Infrastructure:
 - **`DONE-keyboard.md`** final report in the Studio-Briefing Drive folder.
 - Store texts in `fastlane/` still say "Unexpected Keyboard"; only matters
   for publishing on F-Droid.
+- **App icon**: the owner wants a new one (to be designed elsewhere, then
+  added here).
 
 ## Undecided
 

@@ -21,19 +21,20 @@
       </intent-filter>
     </activity>
 
-    <activity android:name="juloo.keyboard2.LauncherActivity" android:icon="@mipmap/ic_launcher" android:theme="@style/appTheme" android:exported="true" android:directBootAware="true">
-      <intent-filter>
-        <action android:name="android.intent.action.MAIN"/>
-        <category android:name="android.intent.category.LAUNCHER"/>
-      </intent-filter>
-    </activity>
+    <!-- Studio: the app's icon opens Studio instead of upstream's launcher -->
+    <activity android:name="juloo.keyboard2.LauncherActivity" android:icon="@mipmap/ic_launcher" android:theme="@style/appTheme" android:exported="false" android:directBootAware="true"/>
 
     <activity android:name="juloo.keyboard2.dict.DictionariesActivity" android:icon="@mipmap/ic_launcher" android:theme="@style/appTheme" android:exported="true" android:directBootAware="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
       </intent-filter>
     </activity>
-    <activity android:name="juloo.keyboard2.studio.StudioActivity" android:icon="@mipmap/ic_launcher" android:theme="@style/appTheme" android:exported="false" android:launchMode="singleTop"/>
+    <activity android:name="juloo.keyboard2.studio.StudioActivity" android:icon="@mipmap/ic_launcher" android:theme="@style/appTheme" android:exported="true" android:launchMode="singleTop">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+      </intent-filter>
+    </activity>
   </application>
 
   <!-- To query enabled input methods for voice IME detection -->
