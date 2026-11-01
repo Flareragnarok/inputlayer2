@@ -466,6 +466,9 @@ public class Keyboard2 extends InputMethodService
     refresh_candidates_view();
   }
 
+  /** Corner icons' see-through, as in the studio_corner_icon style. */
+  private static final float STUDIO_CORNER_ALPHA = 0.55f;
+
   private MemoryPane memory_pane()
   {
     return (MemoryPane)_keyboard_container_view.findViewById(R.id.memory_pane_inline);
@@ -585,8 +588,13 @@ public class Keyboard2 extends InputMethodService
     _keyboard_container_view.findViewById(R.id.candidates_frame)
       .setVisibility(should_show || pane ? View.VISIBLE : View.GONE);
     // The corner icons stay, over the pane: the open tab's icon closes it,
-    // the other switches tabs.
+    // the other switches tabs. The open tab's icon is fully drawn.
     memory_pane().setVisibility(pane ? View.VISIBLE : View.GONE);
+    boolean mem = pane && memory_pane().memory_tab();
+    _keyboard_container_view.findViewById(R.id.corner_clipboard)
+      .setAlpha((pane && !mem) ? 1f : STUDIO_CORNER_ALPHA);
+    _keyboard_container_view.findViewById(R.id.corner_memory)
+      .setAlpha(mem ? 1f : STUDIO_CORNER_ALPHA);
     _comfort_bar.refresh(_config);
     _edit_strip.refresh(_config);
     _selection_bar.refresh(_config);

@@ -67,8 +67,6 @@ public class MemoryPane extends LinearLayout
   String _confirming = null;
   /** Content type shown in the Clipboard tab, [null] for all. */
   String _clip_type = null;
-  TextView _tab_clipboard;
-  TextView _tab_memory;
   FrameLayout _content;
   int _label_color;
   int _item_color;
@@ -82,25 +80,8 @@ public class MemoryPane extends LinearLayout
     int key = ComfortKey.attr_color(ctx, R.attr.colorKey, 0xff333333);
     _item_color = ComfortKey.brighter(key, 0.08f);
     _selected_color = ComfortKey.brighter(key, 0.3f);
-    LinearLayout tabs = new LinearLayout(ctx);
-    tabs.setOrientation(HORIZONTAL);
-    tabs.setGravity(Gravity.CENTER);
-    _tab_clipboard = chip(ctx.getString(R.string.studio_tab_clipboard));
-    _tab_memory = chip(ctx.getString(R.string.studio_memory));
-    _tab_clipboard.setOnClickListener(new View.OnClickListener() {
-      public void onClick(View v) { show(false); }
-    });
-    _tab_memory.setOnClickListener(new View.OnClickListener() {
-      public void onClick(View v) { show(true); }
-    });
-    tabs.addView(_tab_clipboard, chip_params());
-    tabs.addView(_tab_memory, chip_params());
-    TextView close = chip("✕");
-    close.setOnClickListener(new View.OnClickListener() {
-      public void onClick(View v) { if (_listener != null) _listener.close(); }
-    });
-    tabs.addView(close, chip_params());
-    addView(tabs, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(36)));
+    // No tab row: the clipboard and memory icons over the pane switch
+    // between them and close it.
     _content = new FrameLayout(ctx);
     addView(_content, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
   }
@@ -112,8 +93,6 @@ public class MemoryPane extends LinearLayout
     if (memory != _memory_tab)
       _confirming = null;
     _memory_tab = memory;
-    _tab_clipboard.setBackgroundColor(memory ? _item_color : _selected_color);
-    _tab_memory.setBackgroundColor(memory ? _selected_color : _item_color);
     ClipboardHistoryService s = ClipboardHistoryService.get_service(getContext());
     if (s != null)
       s.set_on_clipboard_history_change(memory ? null : this);
