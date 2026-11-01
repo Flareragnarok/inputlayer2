@@ -441,6 +441,15 @@ public final class Pointers implements Handler.Callback
     // Latched key, no key
     if (ptr.hasFlagsAny(FLAG_P_LATCHED) || ptr.value == null)
       return;
+    // Studio: with key repeat off, holding a key (not swiping) opens it in
+    // Studio's key editor; the key isn't typed.
+    if (!_config.keyrepeat_enabled && ptr.gesture == null
+        && !ptr.hasFlagsAny(FLAG_P_SLIDING) && _handler.onPointerLongHold(ptr.key))
+    {
+      removePtr(ptr);
+      _handler.onPointerFlagsChanged(false);
+      return;
+    }
     // Key is long-pressable
     KeyValue kv = KeyModifier.modify_long_press(ptr.value);
     if (!kv.equals(ptr.value))
@@ -821,5 +830,9 @@ public final class Pointers implements Handler.Callback
 
     /** Key is repeating. */
     public void onPointerHold(KeyValue k, Modifiers mods);
+
+    /** Studio: key [key] is held, key repeat being off. Whether that was
+        handled (then the key isn't typed). */
+    public boolean onPointerLongHold(KeyboardData.Key key);
   }
 }

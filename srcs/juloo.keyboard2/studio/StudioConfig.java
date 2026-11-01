@@ -26,8 +26,9 @@ public final class StudioConfig
           "w", "move_up", "e", "move_down", "nw", "height_undo", "sw", "height_revert"),
       ComfortKeySpec.of("c", "dictionary", "se", "keyboard_picker"),
       // Right end: the layout shown; tap next, ← previous, ↑ list.
+      // ↓ switches key repeat (off: holding a key opens its editor).
       ComfortKeySpec.of("c", "layout", "w", "layout_prev", "n", "layout_menu",
-          "s", "keyboard_picker"));
+          "s", "toggle_repeat"));
 
   /** [-1] when not set. */
   public int keyboard_percent_portrait = -1;

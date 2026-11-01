@@ -223,6 +223,17 @@ public class Keyboard2View extends View
     void key_picked(KeyboardData keyboard, KeyboardData.Key key);
   }
   public KeyPicker studio_key_picker = null;
+  /** Studio: holding a key, key repeat being off. */
+  public KeyPicker studio_hold = null;
+
+  @Override
+  public boolean onPointerLongHold(KeyboardData.Key key)
+  {
+    if (studio_hold == null)
+      return false;
+    studio_hold.key_picked(_keyboard, key);
+    return true;
+  }
 
   @Override
   public boolean onTouch(View v, MotionEvent event)

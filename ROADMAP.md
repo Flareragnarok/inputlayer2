@@ -8,7 +8,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 68).
+Last updated: 2026-11-01 (build 69).
 
 ## Done
 
@@ -82,6 +82,7 @@ Last updated: 2026-11-01 (build 68).
 | 66 | Layout mode's picker gains **Music** (♩ ♪ ♫ ♬ ♭ ♮ ♯ 𝄞 … 🎵 🎶 🎼) and **Emoji** (all, in the emoji pane's order), and **Type text or emoji…** puts any text on a key (kaomoji with `:` and quotes included). Special keys show their names in the list (their icons only exist in the keyboard's font). |
 | 67 | Owner's defaults: **?123 and Shift trade places** on every layout (symbols pages follow: the key back is where ?123 was), **Ctrl on ?123's ↓**. Layout mode can **swap whole keys** ("⇄ Swap the whole key with…" in the key editor), so rearranging no longer needs a build. |
 | 68 | Owner's default: **?123 a quarter key wider, backspace as much tighter** (same row total). Layout mode's key editor gains **↔ Width** (±¼, with the row's total against the widest row) and **✂ Split into two keys** (right half: forward delete or any key, edited like any key) / **⧉ Join**. Stored as `width` and `split` in `keymap`. |
+| 69 | **Hold a key to edit it** (owner): with key repeat off, the new default, holding a key opens Studio's key editor for it instead of repeating; nothing repeats. The layout key's **↓** switches key repeat (↻ on / ✎ off; was the keyboard picker, still on the language key's ↘). Modifiers still lock when held. |
 
 Infrastructure:
 

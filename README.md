@@ -71,6 +71,13 @@ layout shown only, and are kept in a `keymap` module ("mine"). Back or ⇄
 again leaves layout mode. Example: ⚙ from Q's corner to Enter's ↓: open
 Enter, ↓, Add key, search "config"; then open Q, the ⚙ corner, Remove.
 
+**Holding a key opens it in the key editor** (build 69), the same as
+tapping it in layout mode; the key isn't typed. Nothing repeats while held.
+The **layout key** (comfort bar, right end: tap next layout, ← previous,
+↑ list) switches this with **↓**: key repeat on (label ↻: backspace,
+arrows… repeat again as upstream) or off (label ✎: hold edits). Modifiers
+(Shift, Ctrl) still lock when held.
+
 **Resizing** with ↕: tap selects a part or a row, ↑ / ↓ resize it (hold to
 repeat), ← / → move it. **Back** undoes the last change, one gesture at a
 time, and then leaves the selection; long Back or ↕ ↙ undoes everything since
@@ -390,7 +397,7 @@ module is a JSON file with `module` (type), `name` and `version`.
 `changeheight`: sizes in dp (`0` hides a bar), `rows` height factors top
 to bottom (0.5–2), `order` of the containers. `comfortbar`: `c` is the tap, `n ne
 e se s sw w nw` the swipes; actions `left right up down select_all copy
-cut paste undo redo clipboard dictionary layout keyboard_picker
+cut paste undo redo clipboard dictionary layout toggle_repeat keyboard_picker
 select_container height_up height_down height_undo height_revert move_up
 move_down layout_mode studio
 switch:<type>`. `keymap`: `layouts` → layout name → key (its tap's name) →

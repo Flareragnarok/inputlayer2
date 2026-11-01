@@ -165,6 +165,13 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       change_height(true);
     else if (action.equals("height_down"))
       change_height(false);
+    else if (action.equals("toggle_repeat"))
+    {
+      boolean on = !_config.keyrepeat_enabled;
+      _prefs.edit().putBoolean("keyrepeat_enabled", on).apply();
+      android.widget.Toast.makeText(getContext(), on ? "Key repeat on"
+          : "Key repeat off: hold a key to edit it", android.widget.Toast.LENGTH_SHORT).show();
+    }
     else if (action.equals("layout_mode"))
     {
       _listener.toggle_layout_mode();
@@ -200,6 +207,8 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       case "height_up": return new ComfortKey.Label("+", false);
       case "height_down": return new ComfortKey.Label("−", false);
       case "height_undo": return new ComfortKey.Label("↶", false);
+      case "toggle_repeat":
+        return new ComfortKey.Label(_config.keyrepeat_enabled ? "↻" : "✎", false);
       case "layout_mode":
         return new ComfortKey.Label(_listener.layout_mode() ? "⇄ ✓" : "⇄", false);
       case "height_revert": return new ComfortKey.Label("⟲", false);

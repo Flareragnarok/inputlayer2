@@ -299,6 +299,9 @@ public class Keyboard2 extends InputMethodService
       public void toggle_layout_mode() { set_layout_mode(!_layout_mode); }
       public boolean layout_mode() { return _layout_mode; }
     }, Config.globalPrefs());
+    _keyboard_layout_view.studio_hold = new Keyboard2View.KeyPicker() {
+      public void key_picked(KeyboardData kw, KeyboardData.Key k) { open_key_editor(kw, k); }
+    };
     _keyboard_layout_view.studio_bottom = new Keyboard2View.BottomInsetTaker() {
       public boolean takes_bottom_inset() { return bottom_container() != _keyboard_layout_view; }
       public void set_bottom_inset(int px)
