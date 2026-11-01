@@ -98,8 +98,8 @@ public final class LayoutModifier
       (layout mode). */
   static KeyboardData studio_keys(KeyboardData kw)
   {
-    kw = scale_rows(ctrl_undo(swap_symbols_and_shift(
-            arrows_and_shift(space_nests(backspace_cut(kw))))));
+    kw = scale_rows(ctrl_undo(widen_symbols(swap_symbols_and_shift(
+            arrows_and_shift(space_nests(backspace_cut(kw)))))));
     if (globalConfig.studio != null && globalConfig.studio.keymap != null)
       kw = globalConfig.studio.keymap.apply(kw);
     return kw;
@@ -223,6 +223,37 @@ public final class LayoutModifier
         return k;
       }
     });
+  }
+
+  /** Studio (owner, build 68): in the row of ?123 and backspace, ?123 is a
+      quarter key wider and backspace as much tighter. */
+  static final float SYMBOLS_WIDER = 0.25f;
+
+  static KeyboardData widen_symbols(KeyboardData kw)
+  {
+    KeyValue symbols = KeyValue.getKeyByName("il_symbols");
+    KeyValue backspace = KeyValue.getKeyByName("backspace");
+    ArrayList<KeyboardData.Row> rows = new ArrayList<KeyboardData.Row>();
+    for (KeyboardData.Row r : kw.rows)
+    {
+      int s = -1, b = -1;
+      for (int i = 0; i < r.keys.size(); i++)
+      {
+        KeyValue t = r.keys.get(i).keys[0];
+        if (symbols.equals(t)) s = i;
+        else if (backspace.equals(t)) b = i;
+      }
+      if (s < 0 || b < 0 || r.keys.get(b).width < 1f + SYMBOLS_WIDER)
+      {
+        rows.add(r);
+        continue;
+      }
+      ArrayList<KeyboardData.Key> ks = new ArrayList<KeyboardData.Key>(r.keys);
+      ks.set(s, ks.get(s).withWidth(ks.get(s).width + SYMBOLS_WIDER));
+      ks.set(b, ks.get(b).withWidth(ks.get(b).width - SYMBOLS_WIDER));
+      rows.add(r.with_keys(ks));
+    }
+    return kw.with_rows(rows);
   }
 
   /** Studio (owner, build 67): ?123 and Shift trade places, on every

@@ -1,6 +1,8 @@
 package juloo.keyboard2.studio;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Iterator;
 import java.util.Map;
 import juloo.keyboard2.KeyValue;
@@ -10,22 +12,38 @@ import org.json.JSONObject;
 
 /** The owner's key changes, from the active [keymap] module, made in layout
     mode: per layout (by its name), per key (by the name of its tap before
-    any change), what each direction holds. "" removes what is there.
+    any change), what each direction holds ("" removes what is there), its
+    [width] in key units, and [split]: the key is cut in two halves, the
+    right one tapping that key (changed in turn under its own name).
 
     { "module": "keymap", "name": "mine", "version": 1,
       "layouts": { "Input Layer QWERTZ": {
           "q": { "ne": "" },
-          "enter": { "s": "config" } } } } */
+          "enter": { "s": "config" },
+          "backspace": { "width": 2.25, "split": "delete" } } } } */
 public final class KeyMap
 {
   /** Directions as in [ComfortKeySpec.DIRECTIONS], to the index in
       [KeyboardData.Key.keys]. */
   static final int[] KEY_INDEX = { 0, 7, 2, 6, 4, 8, 3, 5, 1 };
+  public static final float WIDTH_MIN = 0.5f;
+  public static final float WIDTH_MAX = 5f;
+  public static final float WIDTH_STEP = 0.25f;
 
-  /** layout -> key id -> per direction ([ComfortKeySpec.DIRECTIONS] order):
-      the key's name, "" for none, [null] for unchanged. */
-  final Map<String, Map<String, String[]>> _layouts =
-    new HashMap<String, Map<String, String[]>>();
+  static final class Change
+  {
+    /** Per direction ([ComfortKeySpec.DIRECTIONS] order): the key's name,
+        "" for none, [null] for unchanged. */
+    final String[] dirs = new String[KEY_INDEX.length];
+    /** [NaN] when unchanged. */
+    float width = Float.NaN;
+    /** Tap of the right half, [null] when not split. */
+    String split = null;
+  }
+
+  /** layout -> key id -> its changes. */
+  final Map<String, Map<String, Change>> _layouts =
+    new HashMap<String, Map<String, Change>>();
 
   public static KeyMap of_json(JSONObject j)
   {
@@ -40,7 +58,7 @@ public final class KeyMap
       JSONObject ks = ls.optJSONObject(layout);
       if (ks == null)
         continue;
-      Map<String, String[]> keys = new HashMap<String, String[]>();
+      Map<String, Change> keys = new HashMap<String, Change>();
       Iterator<String> ki = ks.keys();
       while (ki.hasNext())
       {
@@ -48,16 +66,28 @@ public final class KeyMap
         JSONObject ds = ks.optJSONObject(id);
         if (ds == null)
           continue;
-        String[] v = new String[KEY_INDEX.length];
+        Change c = new Change();
         boolean any = false;
-        for (int d = 0; d < v.length; d++)
+        for (int d = 0; d < c.dirs.length; d++)
           if (ds.has(ComfortKeySpec.DIRECTIONS[d]))
           {
-            v[d] = ds.optString(ComfortKeySpec.DIRECTIONS[d], "");
+            c.dirs[d] = ds.optString(ComfortKeySpec.DIRECTIONS[d], "");
             any = true;
           }
+        double w = ds.optDouble("width", Double.NaN);
+        if (!Double.isNaN(w))
+        {
+          c.width = Heights.clamp((float)w, WIDTH_MIN, WIDTH_MAX);
+          any = true;
+        }
+        String sp = ds.optString("split", "");
+        if (!sp.isEmpty() && key_of_name(sp) != null)
+        {
+          c.split = sp;
+          any = true;
+        }
         if (any)
-          keys.put(id, v);
+          keys.put(id, c);
       }
       if (!keys.isEmpty())
         m._layouts.put(layout, keys);
@@ -75,28 +105,57 @@ public final class KeyMap
   /** [kw] with the changes for its layout. */
   public KeyboardData apply(KeyboardData kw)
   {
-    final Map<String, String[]> keys = _layouts.get(layout_key(kw));
+    Map<String, Change> keys = _layouts.get(layout_key(kw));
     if (keys == null)
       return kw;
-    final Map<KeyValue, String[]> by_tap = new HashMap<KeyValue, String[]>();
-    for (Map.Entry<String, String[]> e : keys.entrySet())
+    Map<KeyValue, Change> by_tap = new HashMap<KeyValue, Change>();
+    for (Map.Entry<String, Change> e : keys.entrySet())
     {
       KeyValue tap = key_of_name(e.getKey());
       if (tap != null)
         by_tap.put(tap, e.getValue());
     }
-    return kw.mapKeys(new KeyboardData.MapKey() {
-      public KeyboardData.Key apply(KeyboardData.Key k)
+    List<KeyboardData.Row> rows = new ArrayList<KeyboardData.Row>();
+    for (KeyboardData.Row r : kw.rows)
+    {
+      List<KeyboardData.Key> ks = new ArrayList<KeyboardData.Key>();
+      for (KeyboardData.Key k : r.keys)
       {
-        String[] v = (k.keys[0] == null) ? null : by_tap.get(k.keys[0]);
-        if (v == null)
-          return k;
-        for (int d = 0; d < v.length; d++)
-          if (v[d] != null)
-            k = k.withKeyValue(KEY_INDEX[d], v[d].isEmpty() ? null : key_of_name(v[d]));
-        return k;
+        Change c = (k.keys[0] == null) ? null : by_tap.get(k.keys[0]);
+        if (c == null)
+        {
+          ks.add(k);
+          continue;
+        }
+        k = change(k, c);
+        if (c.split == null)
+        {
+          ks.add(k);
+          continue;
+        }
+        // Two halves; the right one taps [split] and has its own changes.
+        float w = k.width / 2;
+        ks.add(k.withWidth(w));
+        KeyboardData.Key h = k.withWidthAndShift(w, 0f);
+        for (int i = 0; i < h.keys.length; i++)
+          h = h.withKeyValue(i, (i == 0) ? key_of_name(c.split) : null);
+        Change hc = by_tap.get(h.keys[0]);
+        ks.add((hc == null || hc == c) ? h : change(h, hc));
       }
-    });
+      rows.add(r.with_keys(ks));
+    }
+    return kw.with_rows(rows);
+  }
+
+  /** [k] with the directions and width of [c] (not its split). */
+  static KeyboardData.Key change(KeyboardData.Key k, Change c)
+  {
+    for (int d = 0; d < c.dirs.length; d++)
+      if (c.dirs[d] != null)
+        k = k.withKeyValue(KEY_INDEX[d], c.dirs[d].isEmpty() ? null : key_of_name(c.dirs[d]));
+    if (!Float.isNaN(c.width))
+      k = k.withWidth(c.width);
+    return k;
   }
 
   /** The id of the key [k] shown in [layout]: the name of its tap before
@@ -104,12 +163,25 @@ public final class KeyMap
   public String id_of(String layout, KeyboardData.Key k)
   {
     String tap = (k.keys[0] == null) ? "" : name_of(k.keys[0]);
-    Map<String, String[]> keys = _layouts.get(layout);
+    Map<String, Change> keys = _layouts.get(layout);
     if (keys != null)
-      for (Map.Entry<String, String[]> e : keys.entrySet())
-        if (tap.equals(e.getValue()[0]))
+      for (Map.Entry<String, Change> e : keys.entrySet())
+        if (tap.equals(e.getValue().dirs[0]))
           return e.getKey(); // Its tap was changed.
     return tap;
+  }
+
+  /** The split of key [id], [null] if it isn't. */
+  public String split_of(String layout, String id)
+  {
+    Change c = change_of(layout, id);
+    return (c == null) ? null : c.split;
+  }
+
+  Change change_of(String layout, String id)
+  {
+    Map<String, Change> keys = _layouts.get(layout);
+    return (keys == null) ? null : keys.get(id);
   }
 
   static KeyValue key_of_name(String n)
@@ -185,6 +257,51 @@ public final class KeyMap
       ds.remove(d);
     else
       ds.put(d, name);
+    return clean(r, ls, ks, ds, layout, id);
+  }
+
+  /** Fields of a [keymap] module (a copy of [j]) with the width of key [id]
+      set to [width] (clamped), or back to the layout's if [NaN]. */
+  public static JSONObject set_width(JSONObject j, String layout, String id,
+      float width) throws JSONException
+  {
+    return set_field(j, layout, id, "width",
+        Float.isNaN(width) ? null : (Object)(double)Heights.round2(
+          Heights.clamp(width, WIDTH_MIN, WIDTH_MAX)));
+  }
+
+  /** Key [id] cut in two, the right half tapping [tap]; joined again if
+      [tap] is [null]. */
+  public static JSONObject set_split(JSONObject j, String layout, String id,
+      String tap) throws JSONException
+  {
+    return set_field(j, layout, id, "split", tap);
+  }
+
+  static JSONObject set_field(JSONObject j, String layout, String id,
+      String field, Object v) throws JSONException
+  {
+    JSONObject r = new JSONObject(j.toString());
+    JSONObject ls = r.optJSONObject("layouts");
+    if (ls == null)
+      r.put("layouts", ls = new JSONObject());
+    JSONObject ks = ls.optJSONObject(layout);
+    if (ks == null)
+      ls.put(layout, ks = new JSONObject());
+    JSONObject ds = ks.optJSONObject(id);
+    if (ds == null)
+      ks.put(id, ds = new JSONObject());
+    if (v == null)
+      ds.remove(field);
+    else
+      ds.put(field, v);
+    return clean(r, ls, ks, ds, layout, id);
+  }
+
+  /** Remove what became empty. */
+  static JSONObject clean(JSONObject r, JSONObject ls, JSONObject ks,
+      JSONObject ds, String layout, String id)
+  {
     if (ds.length() == 0)
       ks.remove(id);
     if (ks.length() == 0)
@@ -212,8 +329,7 @@ public final class KeyMap
   /** Whether direction [dir] of key [id] in [layout] is changed. */
   public boolean is_changed(String layout, String id, int dir)
   {
-    Map<String, String[]> keys = _layouts.get(layout);
-    String[] v = (keys == null) ? null : keys.get(id);
-    return v != null && v[dir] != null;
+    Change c = change_of(layout, id);
+    return c != null && c.dirs[dir] != null;
   }
 }

@@ -55,6 +55,23 @@ public final class KeyEditor
       ? names.clone() : new String[DIR_LABELS.length];
   }
 
+  /** In key units; [0] when not known. */
+  float _width = 0f, _row_width = 0f, _keyboard_width = 0f;
+
+  public KeyEditor with_widths(float key, float row, float keyboard)
+  {
+    // A split key's width is the whole key's, both halves.
+    _width = (keymap().split_of(_layout, _id) != null) ? key * 2 : key;
+    _row_width = row;
+    _keyboard_width = keyboard;
+    return this;
+  }
+
+  static String units(float w)
+  {
+    return (w == Math.round(w)) ? String.valueOf(Math.round(w)) : String.valueOf(w);
+  }
+
   KeyMap keymap()
   {
     Module m = new ModuleStore(_prefs).active("keymap");
@@ -77,22 +94,36 @@ public final class KeyEditor
     KeyMap km = keymap();
     // The 9 directions, then swapping the whole key.
     final boolean can_swap = _other_ids.length > 0 && known(_names);
-    String[] rows = new String[DIR_LABELS.length + (can_swap ? 1 : 0)];
+    final List<String> rows = new ArrayList<String>();
+    final List<Runnable> acts = new ArrayList<Runnable>();
     for (int d = 0; d < DIR_LABELS.length; d++)
-      rows[d] = DIR_LABELS[d] + "    " + glyph(_names[d])
-        + (km.is_changed(_layout, _id, d) ? "    • changed" : "");
+    {
+      final int dir = d;
+      rows.add(DIR_LABELS[d] + "    " + glyph(_names[d])
+          + (km.is_changed(_layout, _id, d) ? "    • changed" : ""));
+      acts.add(new Runnable() { public void run() { direction(dir); } });
+    }
     if (can_swap)
-      rows[DIR_LABELS.length] = "⇄  Swap the whole key with…";
+    {
+      rows.add("⇄  Swap the whole key with…");
+      acts.add(new Runnable() { public void run() { pick_swap(); } });
+    }
+    if (_width > 0)
+    {
+      rows.add("↔  Width " + units(_width) + "    (row " + units(_row_width)
+          + " of " + units(_keyboard_width) + ")");
+      acts.add(new Runnable() { public void run() { width(); } });
+    }
+    final String split = km.split_of(_layout, _id);
+    rows.add(split == null ? "✂  Split into two keys…"
+        : "⧉  Join the two halves (right: " + glyph(split) + ")");
+    acts.add(new Runnable() {
+      public void run() { if (split == null) split(); else save_split(null); }
+    });
     new AlertDialog.Builder(_act)
       .setTitle("Key " + glyph(_id) + " · " + (_layout.isEmpty() ? "layout" : _layout))
-      .setItems(rows, new DialogInterface.OnClickListener() {
-        public void onClick(DialogInterface di, int d)
-        {
-          if (d < DIR_LABELS.length)
-            direction(d);
-          else
-            pick_swap();
-        }
+      .setItems(rows.toArray(new String[0]), new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface di, int i) { acts.get(i).run(); }
       })
       .setNegativeButton("Done", null)
       .show();
@@ -129,8 +160,17 @@ public final class KeyEditor
       .show();
   }
 
-  /** The list of every key, with a filter. */
+  interface Picked { void picked(String name); }
+
   void pick(final int d)
+  {
+    pick("Key for " + DIR_LABELS[d],
+        new Picked() { public void picked(String n) { save(d, n); } },
+        new Runnable() { public void run() { direction(d); } });
+  }
+
+  /** The list of every key, with a filter. */
+  void pick(String title, final Picked done, final Runnable cancel)
   {
     final List<KeyCatalog.Entry> all;
     try { all = KeyCatalog.all(_act.getResources()); }
@@ -153,10 +193,10 @@ public final class KeyEditor
     box.addView(list, new LinearLayout.LayoutParams(
           LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
     final AlertDialog dlg = new AlertDialog.Builder(_act)
-      .setTitle("Key for " + DIR_LABELS[d])
+      .setTitle(title)
       .setView(box)
       .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-        public void onClick(DialogInterface di, int i) { direction(d); }
+        public void onClick(DialogInterface di, int i) { cancel.run(); }
       })
       .create();
     filter.addTextChangedListener(new TextWatcher() {
@@ -174,10 +214,113 @@ public final class KeyEditor
       public void onItemClick(AdapterView<?> p, View v, int i, long id)
       {
         dlg.dismiss();
-        save(d, shown.get(i).name);
+        done.picked(shown.get(i).name);
       }
     });
     dlg.show();
+  }
+
+  /** Wider or narrower by a quarter key. The row's total shows: a row
+      wider than the others makes every key of the keyboard narrower. */
+  void width()
+  {
+    final String[] items = { "Wider  (+¼)", "Narrower  (−¼)", "Back to the layout's width" };
+    new AlertDialog.Builder(_act)
+      .setTitle("Width " + units(_width) + " · row " + units(_row_width)
+          + " of " + units(_keyboard_width))
+      .setItems(items, new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface di, int i)
+        {
+          if (i == 2)
+          {
+            save_width(Float.NaN);
+            show();
+            return;
+          }
+          float w = Heights.clamp(_width + (i == 0 ? 1 : -1) * KeyMap.WIDTH_STEP,
+              KeyMap.WIDTH_MIN, KeyMap.WIDTH_MAX);
+          save_width(w);
+          width();
+        }
+      })
+      .setNegativeButton("Done", new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface di, int i) { show(); }
+      })
+      .show();
+  }
+
+  void save_width(float w)
+  {
+    try
+    {
+      ModuleStore store = new ModuleStore(_prefs);
+      Module m = store.active("keymap");
+      if (m == null)
+        m = store.get("keymap", NEW_MODULE);
+      JSONObject j = KeyMap.set_width(m == null ? new JSONObject() : m.json,
+          _layout, _id, w);
+      Module nm = (m == null) ? Module.create("keymap", NEW_MODULE, j) : new Module(j);
+      store.save(nm, true);
+      if (!Float.isNaN(w))
+      {
+        _row_width += w - _width;
+        _width = w;
+      }
+      else
+        Toast.makeText(_act, "Back to the layout's width (shown next time)",
+            Toast.LENGTH_SHORT).show();
+    }
+    catch (Exception e)
+    {
+      Logs.exn("Key editor width", e);
+    }
+  }
+
+  /** Cut the key in two: the left half keeps everything, the right half
+      taps the key picked here; tap it in layout mode to change it. */
+  void split()
+  {
+    final String[] items = { "⌦  Forward delete", "Choose from the list…" };
+    new AlertDialog.Builder(_act)
+      .setTitle("The right half taps")
+      .setItems(items, new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface di, int i)
+        {
+          if (i == 0)
+            save_split("delete");
+          else
+            pick("Right half taps",
+                new Picked() { public void picked(String n) { save_split(n); } },
+                new Runnable() { public void run() { show(); } });
+        }
+      })
+      .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface di, int i) { show(); }
+      })
+      .show();
+  }
+
+  void save_split(String tap)
+  {
+    try
+    {
+      ModuleStore store = new ModuleStore(_prefs);
+      Module m = store.active("keymap");
+      if (m == null)
+        m = store.get("keymap", NEW_MODULE);
+      JSONObject j = KeyMap.set_split(m == null ? new JSONObject() : m.json,
+          _layout, _id, tap);
+      Module nm = (m == null) ? Module.create("keymap", NEW_MODULE, j) : new Module(j);
+      store.save(nm, true);
+      if (tap != null)
+        Toast.makeText(_act, "Split. Tap the right half in layout mode to change it.",
+            Toast.LENGTH_LONG).show();
+    }
+    catch (Exception e)
+    {
+      Logs.exn("Key editor split", e);
+    }
+    show();
   }
 
   /** Whether every direction is known (none "back to the layout's own",

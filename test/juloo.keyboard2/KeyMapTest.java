@@ -155,4 +155,46 @@ public class KeyMapTest
     assertEquals(KeyValue.getKeyByName("shift"),
         LayoutModifier.swap_keys(one, "shift", "il_symbols").rows.get(0).keys.get(0).keys[0]);
   }
+
+  @Test
+  public void width_and_split() throws Exception
+  {
+    JSONObject j = KeyMap.set_width(new JSONObject(), "IL", "enter", 2.25f);
+    j = KeyMap.set_split(j, "IL", "enter", "delete");
+    j = KeyMap.set(j, "IL", "delete", N, "config"); // The right half's own change.
+    KeyMap km = KeyMap.of_json(j);
+    KeyboardData kw = km.apply(layout("IL"));
+    assertEquals(4, kw.rows.get(0).keys.size());
+    KeyboardData.Key left = at(kw, 2), right = at(kw, 3);
+    assertEquals(KeyValue.getKeyByName("enter"), left.keys[0]);
+    assertEquals(1.125f, left.width, 1e-6f);
+    assertEquals(KeyValue.getKeyByName("delete"), right.keys[0]);
+    assertEquals(1.125f, right.width, 1e-6f);
+    assertEquals(KeyValue.CONFIG, right.keys[7]);
+    assertEquals(4.25f, kw.rows.get(0).keysWidth, 1e-6f);
+    assertEquals("delete", km.split_of("IL", "enter"));
+    assertEquals("delete", km.id_of("IL", right));
+    // Joined and back to the layout's width: nothing left for enter.
+    j = KeyMap.set_split(KeyMap.set_width(j, "IL", "enter", Float.NaN), "IL", "enter", null);
+    assertFalse(j.getJSONObject("layouts").getJSONObject("IL").has("enter"));
+    // Clamped.
+    j = KeyMap.set_width(new JSONObject(), "IL", "q", 99f);
+    assertEquals(KeyMap.WIDTH_MAX, at(KeyMap.of_json(j).apply(layout("IL")), 0).width, 1e-6f);
+  }
+
+  /** Owner's default (build 68): ?123 a quarter wider, backspace a quarter
+      tighter, when they share a row. */
+  @Test
+  public void symbols_wider_backspace_tighter()
+  {
+    KeyboardData.Row r = new KeyboardData.Row(new ArrayList<KeyboardData.Key>(
+          Arrays.asList(key("il_symbols", null).withWidth(1.5f), key("z", null),
+            key("backspace", null).withWidth(2.5f))), 1f, 0f);
+    KeyboardData kw = new KeyboardData(new ArrayList<KeyboardData.Row>(Arrays.asList(r)),
+        5f, null, "latin", null, "IL", false, false, false);
+    KeyboardData w = LayoutModifier.widen_symbols(kw);
+    assertEquals(1.75f, w.rows.get(0).keys.get(0).width, 1e-6f);
+    assertEquals(2.25f, w.rows.get(0).keys.get(2).width, 1e-6f);
+    assertEquals(5f, w.rows.get(0).keysWidth, 1e-6f);
+  }
 }

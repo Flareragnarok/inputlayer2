@@ -577,6 +577,13 @@ public class Keyboard2 extends InputMethodService
           ids.add(km.id_of(layout, o));
           names.addAll(Arrays.asList(juloo.keyboard2.studio.KeyMap.names_of(o)));
         }
+    float row_width = 0;
+    for (KeyboardData.Row r : kw.rows)
+      if (r.keys.contains(k))
+        row_width = r.keysWidth;
+    i.putExtra(StudioActivity.EXTRA_KEY_WIDTH, k.width);
+    i.putExtra(StudioActivity.EXTRA_ROW_WIDTH, row_width);
+    i.putExtra(StudioActivity.EXTRA_KEYBOARD_WIDTH, kw.keysWidth);
     i.putExtra(StudioActivity.EXTRA_KEY_ALL_IDS, ids.toArray(new String[0]));
     i.putExtra(StudioActivity.EXTRA_KEY_ALL_NAMES, names.toArray(new String[0]));
     startActivity(i);

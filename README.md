@@ -61,7 +61,12 @@ Greek, Cyrillic, other scripts, Music, digits and symbols, Emoji, special
 keys; alphabetical inside, emojis in the emoji pane's order; with a
 search), **Type text or emoji…** (any text on the key: 🎶, ♪~(´ε` ), a
 word), **Remove**, or **Back to the layout's own**. **⇄ Swap the whole
-key with…** (last line) trades everything two keys hold, tap and swipes. Changes apply to the
+key with…** trades everything two keys hold, tap and swipes. **↔ Width**
+makes the key a quarter wider or narrower (it shows the row's total next to
+the widest row's: keep them equal, or every key gets narrower). **✂ Split
+into two keys** cuts it in halves; the right one taps forward delete or any
+key picked, and is changed like any key by tapping it in layout mode;
+**⧉ Join** puts it back. Changes apply to the
 layout shown only, and are kept in a `keymap` module ("mine"). Back or ⇄
 again leaves layout mode. Example: ⚙ from Q's corner to Enter's ↓: open
 Enter, ↓, Add key, search "config"; then open Q, the ⚙ corner, Remove.
@@ -92,7 +97,8 @@ their letters. Upstream's layouts are listed after ours as
   (↑ emoji) · space · `.` (↑ `?`, ↗ `!`, ↓ `:`) · Sector's arrow key ·
   Enter. Since build 67, **?123 and Shift trade places** on every layout
   (Shift bottom-left, ?123 left of the third letter row), and on the
-  symbols pages the key back sits where ?123 was.
+  symbols pages the key back sits where ?123 was. Since build 68, ?123 is a
+  quarter key wider and backspace as much tighter.
 - **?123** opens the first symbols page, like Gboard's: digits;
   `@ # € _ & - + ( ) /` (€ ↗ $); `=\<` `* " ' : ; ! ?` ⌫.
 - **=\<** opens the second page: `~ \` | • √ π ÷ × ¶ ∆`;
@@ -388,7 +394,8 @@ cut paste undo redo clipboard dictionary layout keyboard_picker
 select_container height_up height_down height_undo height_revert move_up
 move_down layout_mode studio
 switch:<type>`. `keymap`: `layouts` → layout name → key (its tap's name) →
-direction → key name (`""` empties it). `snippets` and `theme` are reserved, not used yet.
+direction → key name (`""` empties it), `width` (key units), `split` (the
+right half's tap). `snippets` and `theme` are reserved, not used yet.
 
 ## Building and releasing
 

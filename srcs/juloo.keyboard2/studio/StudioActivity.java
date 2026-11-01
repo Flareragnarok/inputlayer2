@@ -54,6 +54,10 @@ public class StudioActivity extends Activity
   /** The layout's other keys: ids, and 9 names per key. */
   public static final String EXTRA_KEY_ALL_IDS = "studio_key_all_ids";
   public static final String EXTRA_KEY_ALL_NAMES = "studio_key_all_names";
+  /** Widths, in key units: the key, its row, the widest row. */
+  public static final String EXTRA_KEY_WIDTH = "studio_key_width";
+  public static final String EXTRA_ROW_WIDTH = "studio_row_width";
+  public static final String EXTRA_KEYBOARD_WIDTH = "studio_keyboard_width";
   static final String ACTION_INSTALL_STATUS = "juloo.keyboard2.studio.INSTALL_STATUS";
   static final int REQUEST_EXPORT = 1;
   static final int REQUEST_IMPORT = 2;
@@ -120,7 +124,11 @@ public class StudioActivity extends Activity
       new KeyEditor(this, _prefs, i.getStringExtra(EXTRA_KEY_LAYOUT), id,
           i.getStringArrayExtra(EXTRA_KEY_NAMES),
           i.getStringArrayExtra(EXTRA_KEY_ALL_IDS),
-          i.getStringArrayExtra(EXTRA_KEY_ALL_NAMES)).show();
+          i.getStringArrayExtra(EXTRA_KEY_ALL_NAMES))
+        .with_widths(i.getFloatExtra(EXTRA_KEY_WIDTH, 0f),
+            i.getFloatExtra(EXTRA_ROW_WIDTH, 0f),
+            i.getFloatExtra(EXTRA_KEYBOARD_WIDTH, 0f))
+        .show();
     }
     catch (Throwable e)
     {

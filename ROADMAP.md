@@ -8,7 +8,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 67).
+Last updated: 2026-11-01 (build 68).
 
 ## Done
 
@@ -81,6 +81,7 @@ Last updated: 2026-11-01 (build 67).
 | 65 | **Layout mode** (owner's request): ⇄, the comfort bar's leftmost key (copy/cut/paste/select all moved to its swipes), makes a tapped key open in Studio's **key editor**: pick the tap or a swipe, then add/replace from a searchable list of every key of every layout plus the special keys (grouped by script, alphabetical), remove, or back to the layout's own. Per layout, in a `keymap` module, applied after all other changes. Dot and comma are left to the owner to rearrange with it. |
 | 66 | Layout mode's picker gains **Music** (♩ ♪ ♫ ♬ ♭ ♮ ♯ 𝄞 … 🎵 🎶 🎼) and **Emoji** (all, in the emoji pane's order), and **Type text or emoji…** puts any text on a key (kaomoji with `:` and quotes included). Special keys show their names in the list (their icons only exist in the keyboard's font). |
 | 67 | Owner's defaults: **?123 and Shift trade places** on every layout (symbols pages follow: the key back is where ?123 was), **Ctrl on ?123's ↓**. Layout mode can **swap whole keys** ("⇄ Swap the whole key with…" in the key editor), so rearranging no longer needs a build. |
+| 68 | Owner's default: **?123 a quarter key wider, backspace as much tighter** (same row total). Layout mode's key editor gains **↔ Width** (±¼, with the row's total against the widest row) and **✂ Split into two keys** (right half: forward delete or any key, edited like any key) / **⧉ Join**. Stored as `width` and `split` in `keymap`. |
 
 Infrastructure:
 
@@ -204,7 +205,8 @@ Every module is a JSON file with `module` (its type), `name` and `version`.
 
 `keymap` (layout mode): per layout name, per key (the name of its tap in
 the layout), per direction (`c n ne e se s sw w nw`), the key put there;
-`""` empties it.
+`""` empties it. `width` is the key's width in key units (0.5–5); `split`
+cuts it in two, the right half tapping that key.
 
 ```json
 { "module": "changeheight", "name": "compact", "version": 1,
