@@ -111,6 +111,10 @@ Infrastructure:
 
 ## Later
 
+- **Release signing (owner's priorities, NOTE-inputlayer-20261101-2245 in
+  Studio-Briefing).** The release key is the owner's to create and hold.
+  A new core and dropping the debug tag are long-term; builds stay signed
+  with the debug key until then.
 - **Resize mode.** Drag the edge of a highlighted container (comfort bar,
   suggestion bar, keyboard) instead of tapping up/down, and save the result
   as a named `changeheight` module. Containers only, never single keys or
