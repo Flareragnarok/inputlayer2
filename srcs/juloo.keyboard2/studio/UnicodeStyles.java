@@ -21,7 +21,8 @@ public final class UnicodeStyles
     "sans_italic", "sans_bold_italic", "mono", "script", "bold_script",
     "fraktur", "bold_fraktur", "double", "small_caps", "circled",
     "fullwidth", "strike", "underline", "zalgo" };
-  public static final String[] CASES = { "upper", "lower", "title", "toggle" };
+  public static final String[] CASES =
+    { "upper", "lower", "title", "toggle", "snake", "camel", "alternate" };
 
   static final char STRIKE = '̶';
   static final char UNDERLINE = '̲';
@@ -180,7 +181,7 @@ public final class UnicodeStyles
   public static List<String[]> nests()
   {
     List<String[]> l = new ArrayList<String[]>();
-    l.add(new String[]{ "Case", "upper", "lower", "title", "toggle" });
+    l.add(new String[]{ "Case", "upper", "lower", "title", "toggle", "snake", "camel", "alternate" });
     l.add(new String[]{ "Serif", PLAIN, "bold", "italic", "bold_italic" });
     l.add(new String[]{ "Sans", PLAIN, "sans", "sans_bold", "sans_italic", "sans_bold_italic" });
     l.add(new String[]{ "Type", PLAIN, "mono", "script", "bold_script", "fraktur", "bold_fraktur", "double" });
@@ -305,7 +306,10 @@ public final class UnicodeStyles
     {
       case "upper": r = plain.toUpperCase(); break;
       case "lower": r = plain.toLowerCase(); break;
-      case "title": r = title(plain); break;
+      case "title": r = identifier(plain) ? join(words(plain), " ", true, true) : title(plain); break;
+      case "snake": r = join(words(plain), "_", false, false); break;
+      case "camel": r = join(words(plain), "", false, true); break;
+      case "alternate": r = alternate(plain); break;
       default: r = toggle(plain); break;
     }
     return style.equals(PLAIN) ? r : apply(r, style);
@@ -385,6 +389,83 @@ public final class UnicodeStyles
       char c = s.charAt(i);
       b.append(start ? Character.toUpperCase(c) : Character.toLowerCase(c));
       start = Character.isWhitespace(c);
+    }
+    return b.toString();
+  }
+
+  /** Words of [s]: split at spaces, '_' and '-', and inside camelCase
+      ("helloBigWorld", "HTTPServer"). */
+  static java.util.List<String> words(String s)
+  {
+    java.util.List<String> l = new java.util.ArrayList<String>();
+    StringBuilder w = new StringBuilder();
+    for (int i = 0; i < s.length(); i++)
+    {
+      char c = s.charAt(i);
+      if (Character.isWhitespace(c) || c == '_' || c == '-')
+      {
+        if (w.length() > 0) { l.add(w.toString()); w.setLength(0); }
+        continue;
+      }
+      if (w.length() > 0 && Character.isUpperCase(c))
+      {
+        char p = w.charAt(w.length() - 1);
+        boolean next_lower = i + 1 < s.length() && Character.isLowerCase(s.charAt(i + 1));
+        // "bigWorld" -> big|World, "HTTPServer" -> HTTP|Server.
+        if (Character.isLowerCase(p) || Character.isDigit(p)
+            || (Character.isUpperCase(p) && next_lower))
+        {
+          l.add(w.toString());
+          w.setLength(0);
+        }
+      }
+      w.append(c);
+    }
+    if (w.length() > 0)
+      l.add(w.toString());
+    return l;
+  }
+
+  /** One word written as an identifier: snake_case or camelCase. */
+  static boolean identifier(String s)
+  {
+    String t = s.trim();
+    return !t.isEmpty() && t.indexOf(' ') < 0 && words(t).size() > 1;
+  }
+
+  /** [ws] joined by [sep]; words after the first (or all, if [first_cap])
+      capitalized when [cap], all lowercase otherwise. */
+  static String join(java.util.List<String> ws, String sep, boolean first_cap, boolean cap)
+  {
+    StringBuilder b = new StringBuilder();
+    for (int i = 0; i < ws.size(); i++)
+    {
+      String w = ws.get(i).toLowerCase();
+      if (cap && (i > 0 || first_cap) && !w.isEmpty())
+        w = Character.toUpperCase(w.charAt(0)) + w.substring(1);
+      if (i > 0)
+        b.append(sep);
+      b.append(w);
+    }
+    return b.toString();
+  }
+
+  /** "aLtErNaTiNg": letters alternate small and capital, spaces and
+      symbols not counted. */
+  static String alternate(String s)
+  {
+    StringBuilder b = new StringBuilder();
+    boolean upper = false;
+    for (int i = 0; i < s.length(); i++)
+    {
+      char c = s.charAt(i);
+      if (Character.isLetter(c))
+      {
+        b.append(upper ? Character.toUpperCase(c) : Character.toLowerCase(c));
+        upper = !upper;
+      }
+      else
+        b.append(c);
     }
     return b.toString();
   }

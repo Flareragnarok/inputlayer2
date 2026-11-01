@@ -797,7 +797,7 @@ public class EditStrip extends LinearLayout
         || ins_start < ts || ins_end > te)
       return;
     String ins = f.text.substring(ins_start, ins_end);
-    String conv = convert_typed(ins, (ins_start > 0) ? f.text.charAt(ins_start - 1) : ' ');
+    String conv = convert_typed(ins, f.text.substring(ts, ins_start));
     if (conv.equals(ins))
       return;
     f.ic.beginBatchEdit();
@@ -810,12 +810,17 @@ public class EditStrip extends LinearLayout
         + body.substring(ins_end - ts) + close);
   }
 
-  /** [s] just typed, after the character [before], in Verse's look. Title
-      case looks at [before] to know if a word starts. */
-  String convert_typed(String s, char before)
+  /** [s] just typed after [prefix] (the typed text before it), in Verse's
+      look. Cases look at [prefix]: title for where words start, alternate
+      for the letters so far, camelCase for a space just dropped. */
+  String convert_typed(String s, String prefix)
   {
     if (_typing_style == null)
       return s;
+    char before = prefix.isEmpty() ? ' ' : prefix.charAt(prefix.length() - 1);
+    if (_typing_case && (_typing_style.equals("snake") || _typing_style.equals("camel")
+          || _typing_style.equals("alternate")))
+      return convert_typed_identifier(s, prefix);
     if (_typing_case && _typing_style.equals("title"))
     {
       StringBuilder b = new StringBuilder();
@@ -830,6 +835,51 @@ public class EditStrip extends LinearLayout
     }
     return convert(s);
   }
+
+  /** snake_case: spaces become '_', letters small. camelCase: spaces
+      dropped, the next letter capital. aLtErNaTiNg: continues the
+      alternation of [prefix]. */
+  String convert_typed_identifier(String s, String prefix)
+  {
+    StringBuilder b = new StringBuilder();
+    int letters = 0;
+    for (int i = 0; i < prefix.length(); i++)
+      if (Character.isLetter(prefix.charAt(i)))
+        letters++;
+    for (int i = 0; i < s.length(); i++)
+    {
+      char c = s.charAt(i);
+      switch (_typing_style)
+      {
+        case "snake":
+          b.append(Character.isWhitespace(c) ? '_' : Character.toLowerCase(c));
+          break;
+        case "camel":
+          if (Character.isWhitespace(c))
+            _camel_capital = !prefix.isEmpty() || b.length() > 0;
+          else
+          {
+            b.append(_camel_capital ? Character.toUpperCase(c) : Character.toLowerCase(c));
+            _camel_capital = false;
+          }
+          break;
+        default:
+          if (Character.isLetter(c))
+          {
+            b.append((letters % 2 == 1) ? Character.toUpperCase(c) : Character.toLowerCase(c));
+            letters++;
+          }
+          else
+            b.append(c);
+          break;
+      }
+    }
+    return b.toString();
+  }
+
+  /** camelCase while typing: a space was dropped, the next letter is
+      capital. */
+  boolean _camel_capital = false;
 
   String convert(String s)
   {
@@ -1148,6 +1198,9 @@ public class EditStrip extends LinearLayout
       case "upper": return "UPPER";
       case "lower": return "lower";
       case "title": return "Title Case";
+      case "snake": return "snake_case";
+      case "camel": return "camelCase";
+      case "alternate": return "aLtErNaTiNg";
       default: return "tOGGLE cASE";
     }
   }

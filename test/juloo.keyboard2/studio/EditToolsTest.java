@@ -268,6 +268,17 @@ public class EditToolsTest
     assertEquals("Hello World", UnicodeStyles.change_case("hELLO wORLD", "title"));
     assertEquals("tOGGLE cASE", UnicodeStyles.change_case("toggle case", "toggle"));
     assertEquals("tOGGLE cASE", UnicodeStyles.change_case("Toggle Case", "toggle"));
+    assertEquals("hello_big_world", UnicodeStyles.change_case("Hello big World", "snake"));
+    assertEquals("helloBigWorld", UnicodeStyles.change_case("Hello big World", "camel"));
+    assertEquals("hello_big_world", UnicodeStyles.change_case("helloBigWorld", "snake"));
+    assertEquals("helloBigWorld", UnicodeStyles.change_case("hello_big_world", "camel"));
+    assertEquals("http_server_v2", UnicodeStyles.change_case("HTTPServer v2", "snake"));
+    assertEquals("Hello Big World", UnicodeStyles.change_case("hello_big_world", "title"));
+    assertEquals("Hello World", UnicodeStyles.change_case("hello world", "title"));
+    assertEquals("hElLo BiG wOrLd", UnicodeStyles.change_case("Hello big World", "alternate"));
+    // A look is kept.
+    assertEquals(UnicodeStyles.apply("helloWorld", "bold"),
+        UnicodeStyles.change_case(UnicodeStyles.apply("hello world", "bold"), "camel"));
     // Keeps the style.
     String b = UnicodeStyles.apply("abc", "bold");
     assertEquals(UnicodeStyles.apply("ABC", "bold"), UnicodeStyles.change_case(b, "upper"));

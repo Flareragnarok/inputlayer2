@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 41).
+Last updated: 2026-11-01 (build 42).
 
 ## Done
 
@@ -52,6 +52,7 @@ Last updated: 2026-11-01 (build 41).
 | 39 | Undo/redo that work: Ctrl ↖ undoes (Ctrl+Z), Ctrl ↗ redoes (Ctrl+Shift+Z), replacing placeholders there. The editing actions behind the comfort bar's undo key often did nothing; that key is retired from the defaults, and `undo`/`redo` in comfortbar modules now send the Ctrl keys too. |
 | 40 | Suggestions learn from typing: finished words are counted, the user's words come first (most used first) before the dictionary's, words not in the dictionary are suggested once typed twice, words written in typing in format are suggested as written, and with nothing typed yet the bar shows the usual next words. Private storage, never from password fields; off switch and "forget" in Studio. |
 | 41 | Mails: copied email addresses (and mailto: links) are kept in a Mails category of Memory and can be filtered in the Clipboard tab. |
+| 42 | Verse's Case nest: snake_case, camelCase and aLtErNaTiNg, also while typing in format (a space becomes _ or is dropped with the next letter capital). snake_case and camelCase convert into each other; Title splits them back into words. |
 
 Infrastructure:
 
@@ -94,7 +95,9 @@ Infrastructure:
   verb of a sentence": the dictionaries have no word types, so this needs
   a part-of-speech tagger. Proposal: a small tagger trained once on
   Universal Dependencies (English first, ~95% right, runs on the phone,
-  no internet). Waiting for the go and the languages wanted.
+  no internet), maybe run on the desktop to update suggestions. Not now
+  (decided 2026-11-01).
+- Spec and Vert need a rework: how, to define.
 - Corner icons disappear when suggestions are turned off. Move them to the
   comfort bar in that case?
 - Comfort bar in the split layout (tablets, landscape): untested.
