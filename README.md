@@ -117,9 +117,10 @@ their letters. Upstream's layouts are listed after ours as
   (Shift bottom-left, ?123 left of the third letter row), and on the
   symbols pages the key back sits where ?123 was. Since build 68, ?123 is a
   quarter key wider and backspace as much tighter. Since build 70 a
-  backspace 2 keys wide or more (QWERTZ) is split: ⌫ with its swipes, then
-  at the edge ⌦ forward delete, ↓ keyboard picker, ← select all (layout
-  key ↗ switches the split).
+  backspace 2 keys wide or more (QWERTZ) is split: ⌫ with its swipes (two
+  thirds), then at the edge ⌦ forward delete (one third), ↓ key repeat
+  on/off, ← select all (layout key ↗ switches the split). Each part's width
+  can be changed on its own (hold it, ↔ Width).
 - **?123** opens the first symbols page, like Gboard's: digits;
   `@ # € _ & - + ( ) /` (€ ↗ $); `=\<` `* " ' : ; ! ?` ⌫.
 - **=\<** opens the second page: `~ \` | • √ π ÷ × ¶ ∆`;

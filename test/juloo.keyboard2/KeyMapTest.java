@@ -212,9 +212,10 @@ public class KeyMapTest
     KeyboardData.Key left = s.rows.get(0).keys.get(1), right = s.rows.get(0).keys.get(2);
     assertEquals(KeyValue.getKeyByName("backspace"), left.keys[0]);
     assertEquals(KeyValue.getKeyByName("delete_word"), left.keys[2]);
-    assertEquals(1.125f, left.width, 1e-6f);
+    assertEquals(1.5f, left.width, 1e-6f);
+    assertEquals(0.75f, right.width, 1e-6f);
     assertEquals(KeyValue.getKeyByName("delete"), right.keys[0]);
-    assertEquals(KeyValue.getKeyByName("change_method"), right.keys[8]);
+    assertEquals(KeyValue.getKeyByName("studio_toggle_repeat"), right.keys[8]);
     assertEquals(KeyValue.getKeyByName("selectAll"), right.keys[5]);
     assertNull(right.keys[2]);
     assertEquals(3.25f, s.rows.get(0).keysWidth, 1e-6f);

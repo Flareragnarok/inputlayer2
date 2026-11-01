@@ -115,6 +115,7 @@ public final class KeyNames
     "studio_sector_step",
     "studio_sector_step_back",
     "studio_backspace_toggle",
+    "studio_toggle_repeat",
     "il_symbols",
     "il_symbols_more",
     "studio_apply_look",

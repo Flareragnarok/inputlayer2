@@ -259,14 +259,17 @@ public final class LayoutModifier
     return kw.with_rows(rows);
   }
 
-  /** Studio (owner, build 70): a backspace at least 2 keys wide is cut in
-      two. The left half is backspace with all its swipes; the right half, at
-      the edge, is forward delete, ↓ the keyboard picker, ← select all. */
+  /** Studio (owner, builds 70, 72): a backspace at least 2 keys wide is cut
+      in two. The left part, two thirds, is backspace with all its swipes;
+      the right third, at the edge, is forward delete, ↓ key repeat on/off,
+      ← select all. */
+  static final float BACKSPACE_PART = 2f / 3f;
+
   static KeyboardData split_backspace(KeyboardData kw)
   {
     KeyValue backspace = KeyValue.getKeyByName("backspace");
     KeyValue delete = KeyValue.getKeyByName("delete");
-    KeyValue picker = KeyValue.getKeyByName("change_method");
+    KeyValue repeat = KeyValue.getKeyByName("studio_toggle_repeat");
     KeyValue select_all = KeyValue.getKeyByName("selectAll");
     ArrayList<KeyboardData.Row> rows = new ArrayList<KeyboardData.Row>();
     boolean changed = false;
@@ -280,11 +283,11 @@ public final class LayoutModifier
           ks.add(k);
           continue;
         }
-        float w = k.width / 2;
+        float w = Math.round(k.width * BACKSPACE_PART * 100) / 100f;
         ks.add(k.withWidth(w));
-        KeyboardData.Key h = k.withWidthAndShift(w, 0f);
+        KeyboardData.Key h = k.withWidthAndShift(k.width - w, 0f);
         for (int i = 0; i < h.keys.length; i++)
-          h = h.withKeyValue(i, (i == 0) ? delete : (i == 8) ? picker
+          h = h.withKeyValue(i, (i == 0) ? delete : (i == 8) ? repeat
               : (i == 5) ? select_all : null);
         ks.add(h);
         changed = true;

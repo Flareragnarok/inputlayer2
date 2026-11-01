@@ -1110,6 +1110,15 @@ public class Keyboard2 extends InputMethodService
           _keyboard_layout_view.setKeyboard(current_layout());
           break;
 
+        case STUDIO_TOGGLE_REPEAT:
+        {
+          boolean on = !_config.keyrepeat_enabled;
+          Config.globalPrefs().edit().putBoolean("keyrepeat_enabled", on).apply();
+          android.widget.Toast.makeText(Keyboard2.this, on ? "Key repeat on"
+              : "Key repeat off: hold a key to edit it", android.widget.Toast.LENGTH_SHORT).show();
+          break;
+        }
+
         case STUDIO_SECTOR_STEP:
           _edit_strip.sector_step();
           break;

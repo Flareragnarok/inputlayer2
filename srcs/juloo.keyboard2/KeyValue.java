@@ -36,6 +36,8 @@ public final class KeyValue implements Comparable<KeyValue>
     STUDIO_SECTOR_STEP,
     /** Backspace between removing before and after the cursor. */
     STUDIO_BACKSPACE_TOGGLE,
+    /** Key repeat on or off (off: holding a key opens its editor). */
+    STUDIO_TOGGLE_REPEAT,
     /** Input Layer's symbols pages, like Gboard's ?123 and =\< . */
     STUDIO_SYMBOLS,
     STUDIO_SYMBOLS_MORE,
@@ -691,6 +693,7 @@ public final class KeyValue implements Comparable<KeyValue>
       case "studio_sector_step": return eventKey("⇢", Event.STUDIO_SECTOR_STEP, FLAG_SMALLER_FONT);
       case "studio_sector_step_back": return eventKey("⇠", Event.STUDIO_SECTOR_STEP, FLAG_SMALLER_FONT);
       case "studio_backspace_toggle": return eventKey("⇄", Event.STUDIO_BACKSPACE_TOGGLE, FLAG_SMALLER_FONT);
+      case "studio_toggle_repeat": return eventKey("↻", Event.STUDIO_TOGGLE_REPEAT, FLAG_SMALLER_FONT);
       case "il_symbols": return eventKey("?123", Event.STUDIO_SYMBOLS, FLAG_SMALLER_FONT);
       case "il_symbols_more": return eventKey("=\\<", Event.STUDIO_SYMBOLS_MORE, FLAG_SMALLER_FONT);
       case "studio_apply_look": return eventKey("✦", Event.STUDIO_APPLY_LOOK, FLAG_SMALLER_FONT);

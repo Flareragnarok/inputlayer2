@@ -8,7 +8,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 71).
+Last updated: 2026-11-01 (build 72).
 
 ## Done
 
@@ -85,6 +85,7 @@ Last updated: 2026-11-01 (build 71).
 | 69 | **Hold a key to edit it** (owner): with key repeat off, the new default, holding a key opens Studio's key editor for it instead of repeating; nothing repeats. The layout key's **↓** switches key repeat (↻ on / ✎ off; was the keyboard picker, still on the language key's ↘). Modifiers still lock when held. |
 | 70 | Keyboard picker on the **layout key's ↘** (off the language key). A backspace 2 keys wide or more (QWERTZ) is **split**: ⌫ with its swipes, then at the edge **⌦ forward delete, ↓ keyboard picker**. Narrower backspaces stay whole. |
 | 71 | **Names** (owner): layout key = left end ⇄ (customizes the layout), language key = right end, suggestions key = the suggestions' language. **Language key ↓ saves the key arrangement** as "Layout N", **→ picks a saved one**. **Layout key**: tap edit mode, ↑ copy, ↓ key repeat on/off, ↗ backspace split on/off. Cut (backspace ↓) and select all (now ⌦ ←) live on the keys; paste dropped from the comfort bar (owner: superfluous); the keyboard picker is ⌦ ↓ only. |
+| 72 | Split backspace is **⅔ ⌫ / ⅓ ⌦** (owner: one much smaller). **⌦ ↓ switches key repeat** (new key `studio_toggle_repeat`), replacing the keyboard picker there. |
 
 Infrastructure:
 
