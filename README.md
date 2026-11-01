@@ -270,7 +270,11 @@ Memory and the clipboard history file live in the app's private
 
 ## Studio screen
 
-Settings → Studio (or from keys that open it):
+The app's settings show two entries: **Studio** and **Legacy settings**.
+Legacy settings holds all of upstream's settings, unchanged (layouts,
+typing, style, vibration, clipboard duration…; in the phone's language,
+as upstream translates them). Studio has Input Layer's own (English
+only):
 
 - **Updates**: installed build, newer builds dropdown + Install, past
   builds dropdown + Restore.

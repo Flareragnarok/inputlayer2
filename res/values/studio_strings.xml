@@ -99,4 +99,6 @@
   <string name="studio_big_copy">Ask before keeping copies of at least this many characters</string>
   <string name="studio_big_copy_desc">Bigger copies are not kept silently: they wait under "Keep?" at the top of Memory, where ✓ keeps one and ✕ drops it.</string>
   <string name="studio_keep_hint">Big copies: ✓ keeps one in the history, ✕ drops it</string>
+  <string name="studio_legacy_title">Legacy settings</string>
+  <string name="studio_legacy_summary">Unexpected Keyboard\'s own settings, as upstream has them: layouts, typing, style, vibration…</string>
 </resources>
