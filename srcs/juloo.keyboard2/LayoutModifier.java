@@ -90,7 +90,7 @@ public final class LayoutModifier
     // Avoid adding extra keys to the number row
     if (added_number_row != null)
       kw = kw.insert_row(added_number_row, 0);
-    return scale_rows(arrows_and_shift(space_nests(backspace_cut(kw))));
+    return scale_rows(ctrl_undo(arrows_and_shift(space_nests(backspace_cut(kw)))));
   }
 
   /** Studio: the space bar's swipes drive the edit strip's nest configs:
@@ -110,6 +110,23 @@ public final class LayoutModifier
         if (k.keys[0] == null || !k.keys[0].equals(space) || k.keys.length <= 8)
           return k;
         return k.withKeyValue(8, reset).withKeyValue(7, next).withKeyValue(5, save);
+      }
+    });
+  }
+
+  /** Studio: Ctrl's up-left swipe undoes, up-right redoes (replacing
+      upstream's placeholders there, which do nothing unless enabled). */
+  static KeyboardData ctrl_undo(KeyboardData kw)
+  {
+    final KeyValue ctrl = KeyValue.getKeyByName("ctrl");
+    final KeyValue undo = KeyValue.getKeyByName("studio_undo");
+    final KeyValue redo = KeyValue.getKeyByName("studio_redo");
+    return kw.mapKeys(new KeyboardData.MapKey() {
+      public KeyboardData.Key apply(KeyboardData.Key k)
+      {
+        if (k.keys[0] == null || !k.keys[0].equals(ctrl) || k.keys.length <= 2)
+          return k;
+        return k.withKeyValue(1, undo).withKeyValue(2, redo);
       }
     });
   }

@@ -196,8 +196,11 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     switch (action)
     {
       case "left": case "right": case "up": case "down":
-      case "copy": case "cut": case "paste": case "undo": case "redo":
+      case "copy": case "cut": case "paste":
         return action;
+      // Ctrl+Z / Ctrl+Shift+Z: the editing actions often do nothing.
+      case "undo": return "studio_undo";
+      case "redo": return "studio_redo";
       case "select_all": return "selectAll";
       case "layout": return "switch_forward";
       case "keyboard_picker": return "change_method";

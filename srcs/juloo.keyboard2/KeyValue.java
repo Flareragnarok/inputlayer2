@@ -36,6 +36,10 @@ public final class KeyValue implements Comparable<KeyValue>
     STUDIO_SECTOR_STEP,
     /** Backspace between removing before and after the cursor. */
     STUDIO_BACKSPACE_TOGGLE,
+    /** Undo and redo as Ctrl+Z and Ctrl+Shift+Z, which most text fields
+        handle (the editing actions often do nothing). */
+    STUDIO_UNDO,
+    STUDIO_REDO,
   }
 
   // Must be evaluated in the reverse order of their values.
@@ -680,6 +684,8 @@ public final class KeyValue implements Comparable<KeyValue>
       case "studio_sector_step": return eventKey("⇢", Event.STUDIO_SECTOR_STEP, FLAG_SMALLER_FONT);
       case "studio_sector_step_back": return eventKey("⇠", Event.STUDIO_SECTOR_STEP, FLAG_SMALLER_FONT);
       case "studio_backspace_toggle": return eventKey("⇄", Event.STUDIO_BACKSPACE_TOGGLE, FLAG_SMALLER_FONT);
+      case "studio_undo": return eventKey(0xE036, Event.STUDIO_UNDO, 0);
+      case "studio_redo": return eventKey(0xE037, Event.STUDIO_REDO, 0);
 
       /* Key events */
       case "esc": return keyeventKey("Esc", KeyEvent.KEYCODE_ESCAPE, FLAG_SMALLER_FONT);

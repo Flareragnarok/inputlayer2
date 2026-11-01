@@ -235,6 +235,19 @@ public class Keyboard2 extends InputMethodService
     };
   }
 
+  /** Studio: [code] with Ctrl (and Shift), e.g. Ctrl+Z to undo. */
+  private void send_ctrl_key(int code, boolean shift)
+  {
+    InputConnection ic = getCurrentInputConnection();
+    if (ic == null)
+      return;
+    int meta = KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_LEFT_ON
+      | (shift ? KeyEvent.META_SHIFT_ON | KeyEvent.META_SHIFT_LEFT_ON : 0);
+    long now = android.os.SystemClock.uptimeMillis();
+    ic.sendKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, code, 0, meta));
+    ic.sendKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_UP, code, 0, meta));
+  }
+
   /** Studio: the containers, by their name in [StudioConfig.order]. */
   private View container(String name)
   {
@@ -723,6 +736,14 @@ public class Keyboard2 extends InputMethodService
 
         case STUDIO_NESTS_SAVE:
           _edit_strip.save_nest_config();
+          break;
+
+        case STUDIO_UNDO:
+          send_ctrl_key(KeyEvent.KEYCODE_Z, false);
+          break;
+
+        case STUDIO_REDO:
+          send_ctrl_key(KeyEvent.KEYCODE_Z, true);
           break;
 
         case STUDIO_BACKSPACE_TOGGLE:

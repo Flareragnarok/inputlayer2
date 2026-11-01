@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 38).
+Last updated: 2026-11-01 (build 39).
 
 ## Done
 
@@ -49,6 +49,7 @@ Last updated: 2026-11-01 (build 38).
 | 36 | The arrow key next to the space bar: tap is Sector's step in the ←→ direction (its tap was an off-by-default Compose placeholder). Sector's tap cycles excl/incl/desel. Shift: swipe up Caps Lock, swipe right Compose. Verse's tOGGLE cASE gives exactly that (it flipped every letter, like UPPER on lowercase). |
 | 37 | desel removes units from the end opposite to the arrow's tip, so the tip's unit goes last (it went first). The arrow key's tap shows ⇢ or ⇠ with Sector's direction. |
 | 38 | Backspace ↑ switches between regular backspace (⌫) and forward removal (⌦), the tap and label following; the forward delete on backspace's ↗ is retired. |
+| 39 | Undo/redo that work: Ctrl ↖ undoes (Ctrl+Z), Ctrl ↗ redoes (Ctrl+Shift+Z), replacing placeholders there. The editing actions behind the comfort bar's undo key often did nothing; that key is retired from the defaults, and `undo`/`redo` in comfortbar modules now send the Ctrl keys too. |
 
 Infrastructure:
 

@@ -20,7 +20,6 @@ public final class StudioConfig
   /** Keys shown when no [comfortbar] module is active. */
   public static final List<ComfortKeySpec> DEFAULT_KEYS = Arrays.asList(
       ComfortKeySpec.of("c", "copy", "nw", "cut", "ne", "paste", "sw", "select_all"),
-      ComfortKeySpec.of("c", "undo", "e", "redo"),
       ComfortKeySpec.of("w", "left", "e", "right", "n", "up", "s", "down"),
       ComfortKeySpec.of("c", "select_container", "n", "height_up", "s", "height_down",
           "w", "move_up", "e", "move_down"),
