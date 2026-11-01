@@ -452,8 +452,17 @@ public class MemoryPane extends LinearLayout
       any = true;
       sections.addView(section_head(c + " · " + is.size(), null));
       LinearLayout shelf = shelf(sections);
-      for (MemoryStore.Item it : is)
-        shelf.addView(memory_item(store, it));
+      // Alike items are next to each other: a group of several starts with
+      // what they share ("git", "github.com").
+      for (int i = 0; i < is.size(); i++)
+      {
+        String k = ContentType.look(is.get(i).text, c);
+        boolean starts = !k.isEmpty()
+          && (i == 0 || !k.equals(ContentType.look(is.get(i - 1).text, c)));
+        if (starts && i + 1 < is.size() && k.equals(ContentType.look(is.get(i + 1).text, c)))
+          shelf.addView(group_label(k));
+        shelf.addView(memory_item(store, is.get(i)));
+      }
     }
     if (!any && pending.isEmpty())
       sections.addView(hint(R.string.studio_memory_empty));
@@ -500,6 +509,20 @@ public class MemoryPane extends LinearLayout
     if (button != null)
       head.addView(button, new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(26)));
     return head;
+  }
+
+  /** What a group of alike entries shares, before them in a row. */
+  TextView group_label(String k)
+  {
+    TextView t = hint(0);
+    t.setText(k);
+    t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+    t.setGravity(Gravity.CENTER_VERTICAL);
+    t.setPadding(dp(8), 0, dp(2), 0);
+    LayoutParams p = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(30));
+    p.setMargins(dp(4), dp(3), 0, 0);
+    t.setLayoutParams(p);
+    return t;
   }
 
   /** A row of entries scrolling sideways, added to [parent]. */

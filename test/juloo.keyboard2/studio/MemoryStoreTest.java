@@ -44,19 +44,19 @@ public class MemoryStoreTest
   {
     File f = tmp();
     MemoryStore s = new MemoryStore(f);
-    assertTrue(s.add_category("Commands"));
-    assertFalse(s.add_category("commands"));
+    assertTrue(s.add_category("Recipes"));
+    assertFalse(s.add_category("recipes"));
     assertFalse(s.add_category("links"));
     assertFalse(s.add_category("   "));
     assertFalse(s.add_category("a very very long category name"));
-    s.add("ls -la", "Commands");
+    s.add("ls -la", "Recipes");
     s.add("ls -la", MemoryStore.TEXT);
     assertEquals(MemoryStore.DEFAULT_CATEGORIES.size() + 1, s.categories().size());
-    MemoryStore.Item it = s.items("Commands").get(0);
+    MemoryStore.Item it = s.items("Recipes").get(0);
     s.move(it, MemoryStore.SNIPPETS);
     assertEquals(1, s.items(MemoryStore.SNIPPETS).size());
-    s.add("git status", "Commands");
-    s.remove_category("Commands");
+    s.add("git status", "Recipes");
+    s.remove_category("Recipes");
     s.remove_category(MemoryStore.LINKS); // Default categories stay
     assertEquals(MemoryStore.DEFAULT_CATEGORIES, s.categories());
     assertEquals(2, s.items(MemoryStore.TEXT).size()); // git status moved to Text

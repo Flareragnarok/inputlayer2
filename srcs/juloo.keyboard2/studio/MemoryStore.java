@@ -30,12 +30,18 @@ public final class MemoryStore
   public static final String TEXT = "Text";
   public static final String LINKS = "Links";
   public static final String MAILS = "Mails";
+  public static final String COMMANDS = "Commands";
+  /** What a terminal shows. */
+  public static final String OUTPUT = "Output";
+  public static final String LOGS = "Logs";
+  public static final String CODE = "Code";
   public static final String SNIPPETS = "Snippets";
   public static final String SYMBOLS = "Symbols";
   public static final String IMAGES = "Images";
   public static final String FILES = "Files";
   public static final List<String> DEFAULT_CATEGORIES =
-    Arrays.asList(TEXT, LINKS, MAILS, SNIPPETS, SYMBOLS, IMAGES, FILES);
+    Arrays.asList(TEXT, LINKS, MAILS, COMMANDS, OUTPUT, LOGS, CODE, SNIPPETS,
+        SYMBOLS, IMAGES, FILES);
   public static final int MAX_ITEMS = 1000;
   public static final int MAX_CATEGORY_LENGTH = 24;
   /** Big copies waiting for "Keep?", the oldest dropped beyond. */
@@ -102,7 +108,9 @@ public final class MemoryStore
   }
 
   /** Items of [category], or of all categories if [null], newest first. A
-      text that is both saved and in the history is listed once. */
+      text that is both saved and in the history is listed once. In a
+      category, items that look alike ([ContentType.look]) are next to each
+      other: groups in the order of their newest item. */
   public List<Item> items(String category)
   {
     List<Item> l = new ArrayList<Item>();
@@ -119,7 +127,28 @@ public final class MemoryStore
         continue;
       l.add(it);
     }
-    return l;
+    return (category == null) ? l : grouped(l, category);
+  }
+
+  static List<Item> grouped(List<Item> l, String category)
+  {
+    java.util.LinkedHashMap<String, List<Item>> groups =
+      new java.util.LinkedHashMap<String, List<Item>>();
+    for (int i = 0; i < l.size(); i++)
+    {
+      String k = ContentType.look(l.get(i).text, category);
+      // Nothing in common: on its own.
+      if (k.isEmpty())
+        k = "\u0000" + i;
+      List<Item> g = groups.get(k);
+      if (g == null)
+        groups.put(k, g = new ArrayList<Item>());
+      g.add(l.get(i));
+    }
+    List<Item> r = new ArrayList<Item>();
+    for (List<Item> g : groups.values())
+      r.addAll(g);
+    return r;
   }
 
   /** History records, newest restart first. Empty records are left out. */
@@ -320,22 +349,10 @@ public final class MemoryStore
     save();
   }
 
-  /** The category a new item most likely belongs to. */
+  /** The category a new item most likely belongs to, see [ContentType]. */
   public static String guess_category(String text)
   {
-    String t = text.trim();
-    // An email address, or a mailto: link.
-    if (t.matches("(?i)(mailto:)?[\\w.%+-]+@[\\w-]+(\\.[\\w-]+)+(\\?\\S*)?"))
-      return MAILS;
-    if (t.matches("(?is)(https?://|www\\.)\\S+"))
-      return LINKS;
-    if (t.contains("\n"))
-      return SNIPPETS;
-    boolean letters = false;
-    for (int i = 0; i < t.length(); i++)
-      if (Character.isLetterOrDigit(t.charAt(i)))
-        letters = true;
-    return letters ? TEXT : SYMBOLS;
+    return ContentType.guess(text);
   }
 
   /** Too many items: the oldest history goes first, then the oldest saved. */
@@ -394,6 +411,16 @@ public final class MemoryStore
             session = null;
           _items.add(new Item(o.optString("text"), c, o.optLong("added", 0), session));
         }
+      // Rules changed: what was kept automatically is sorted again; saved
+      // and moved items stay where the user put them.
+      boolean resort = j.optInt("rules", 0) != ContentType.RULES_VERSION;
+      if (resort)
+        for (int i = 0; i < _items.size(); i++)
+        {
+          Item it = _items.get(i);
+          if (it.is_history())
+            _items.set(i, it.with_category(guess_category(it.text)));
+        }
       JSONArray ps = j.optJSONArray("pending");
       if (ps != null)
         for (int i = 0; i < ps.length(); i++)
@@ -407,6 +434,8 @@ public final class MemoryStore
           _pending.add(new Item(o.optString("text"), c, o.optLong("added", 0),
                 o.optString("session", "boot-unknown")));
         }
+      if (resort)
+        save();
     }
     catch (Exception _e)
     {
@@ -421,6 +450,7 @@ public final class MemoryStore
     {
       JSONObject j = new JSONObject();
       j.put("version", 2);
+      j.put("rules", ContentType.RULES_VERSION);
       j.put("categories", new JSONArray(_custom));
       JSONObject ss = new JSONObject();
       for (int i = 0; i < _session_keys.size(); i++)

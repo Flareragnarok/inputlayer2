@@ -205,11 +205,11 @@ to switch.
   upstream: one tap turns it on.
 - **Memory**: the left 30% is kept free for now. On the right, the
   categories scroll up and down, each one a row of entries scrolling
-  sideways: **Text, Links, Mails, Snippets, Symbols, Images, Files** and
-  your own (added in Studio), only those with items. Everything you copy is
-  kept automatically under its content type, except copies from password
-  fields and copies marked sensitive (Android 13+); a switch in Studio
-  turns it off.
+  sideways: **Text, Links, Mails, Commands, Output, Logs, Code, Snippets,
+  Symbols, Images, Files** and your own (added in Studio), only those with
+  items. Everything you copy is kept automatically under its content type
+  (see *How copies are sorted*), except copies from password fields and
+  copies marked sensitive (Android 13+); a switch in Studio turns it off.
 - **Keep?** (top of Memory): copies of 1,000 characters or more (Studio →
   Memory sets the size) aren't kept silently. They wait there: ✓ keeps
   one in the history, ✕ drops it; the 20 newest wait.
@@ -222,6 +222,33 @@ to switch.
   cursor; tap in it to place the cursor. ✓ saves (an edited clipboard
   entry becomes the newest entry), ✕ cancels, and so does closing the
   pane.
+
+### How copies are sorted
+
+By content only, never by the app (Android doesn't say which app copied).
+The first rule that matches wins (`ContentType.java`):
+
+| Category | When |
+|---|---|
+| **Mails** | an email address alone, or a `mailto:` link |
+| **Links** | a URL alone |
+| **Logs** | most lines have a timestamp and a level (`ERROR`, `W/Tag`, `E ActivityManager:`), or several lines a level, or a stack trace (`Traceback`, `at x.y(…)`, `Caused by:`) |
+| **Output** | a terminal's: a prompt line (`$ ls`, `me@host:~$ …`) followed by other lines, `ls -l` rows, or most of 3+ lines in aligned columns |
+| **Commands** | every line a command: after a `$`/`#` prompt; a known program (`git`, `adb`, `sudo`, `ls`, `pip`…) with arguments, unless it reads as a sentence (`make sure to…`); `./x`, `~/x`; a lowercase word with flags, `|`, `&&` or `>` |
+| **Code** | two code signs or more: lines ending with `{ } ;`, starting with `def`, `class`, `import`, `function`, `return`, `#include`…, `=>`, decorators |
+| **Snippets** | other text on several lines |
+| **Text / Symbols** | the rest; Symbols when there is no letter nor digit |
+
+**Alike items stay together** in a category: commands by program (`git`,
+`adb`, after a prompt, `sudo` and `X=y`), links and mails by domain, logs
+by tag or exception, output by the command that made it, code by
+language. Groups come in the order of their newest item, and a group of
+several starts with what they share (a small `git` label). Text,
+Snippets and Symbols stay newest first.
+
+When the rules change (`ContentType.RULES_VERSION`), the history is
+sorted again on the next start; items you saved or moved stay where you
+put them.
 
 Memory and the clipboard history file live in the app's private
 (credential-protected) storage: readable only once the phone is unlocked.
@@ -332,7 +359,8 @@ colours. Main steps (details per build in [ROADMAP.md](ROADMAP.md)):
    Mails, snake/camel/alternating cases, the pane in the suggestions'
    place, editing items with the keyboard, icon navigation; from 50 one
    line per item, the bar of last copies, Memory as rows of categories,
-   "Keep?" for big copies and the editor in the whole pane.
+   "Keep?" for big copies and the editor in the whole pane; 51 Commands,
+   Output, Logs and Code, alike items grouped.
 
 Decisions taken along the way: View and Verse pick, Backspace ← applies the
 look, Shift ← the format (the finished text of typing in format must not be restyled by a pick);

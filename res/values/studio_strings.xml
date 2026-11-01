@@ -29,7 +29,7 @@
   <string name="studio_memory_empty">Nothing here yet. Copied text lands here automatically, or long-press something in Clipboard to save it.</string>
   <string name="studio_memory_locked">Memory is available once the phone is unlocked</string>
   <string name="studio_memory_categories">Memory categories</string>
-  <string name="studio_memory_categories_desc">Text, Links, Mails, Snippets, Symbols, Images and Files are always there. Add your own:</string>
+  <string name="studio_memory_categories_desc">Text, Links, Mails, Commands, Output, Logs, Code, Snippets, Symbols, Images and Files are always there. Add your own:</string>
   <string name="studio_autokeep">Keep everything copied in Memory</string>
   <string name="studio_autokeep_desc">Copied text is recorded in Memory\'s history (⟲ History at the bottom of Memory, one record per phone restart) and shown under its content type. Delete single items, a record or all history there; what you save or move yourself stays. Never kept: copies made in password fields and copies an app marks as sensitive (password managers do, on Android 13 and newer).</string>
   <string name="studio_category_hint">New category</string>
