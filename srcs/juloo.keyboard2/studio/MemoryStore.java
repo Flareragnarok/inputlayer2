@@ -21,6 +21,7 @@ import org.json.JSONObject;
     - history: kept automatically when copied (see [ClipKeeper]), grouped
       into one record per phone restart ("session"), which can be deleted
       by item, by record or all at once.
+    Big copies wait in [pending] until the user keeps or drops them.
     Stored in a file in the app's credential-protected storage, so it is only
     readable once the phone is unlocked, unlike the keyboard's settings. */
 public final class MemoryStore
@@ -37,6 +38,8 @@ public final class MemoryStore
     Arrays.asList(TEXT, LINKS, MAILS, SNIPPETS, SYMBOLS, IMAGES, FILES);
   public static final int MAX_ITEMS = 1000;
   public static final int MAX_CATEGORY_LENGTH = 24;
+  /** Big copies waiting for "Keep?", the oldest dropped beyond. */
+  public static final int MAX_PENDING = 20;
 
   public static final class Item
   {
@@ -75,6 +78,9 @@ public final class MemoryStore
   /** Session key -> start time, in the order they appeared. */
   final List<String> _session_keys = new ArrayList<String>();
   final List<Long> _session_starts = new ArrayList<Long>();
+  /** Big copies waiting to be kept, newest first. Their session is the
+      record they join when kept. */
+  final List<Item> _pending = new ArrayList<Item>();
 
   public MemoryStore(File file)
   {
@@ -182,6 +188,51 @@ public final class MemoryStore
     trim();
     save();
     return true;
+  }
+
+  /** A big copy: it waits in [pending] for the user to keep it. */
+  public boolean add_pending(String text, String category, String session_key,
+      long session_start)
+  {
+    if (text == null || text.isEmpty() || !categories().contains(category))
+      return false;
+    if (!_session_keys.contains(session_key))
+    {
+      _session_keys.add(session_key);
+      _session_starts.add(session_start);
+    }
+    for (int i = _pending.size() - 1; i >= 0; i--)
+      if (_pending.get(i).text.equals(text))
+        _pending.remove(i);
+    _pending.add(0, new Item(text, category, System.currentTimeMillis(), session_key));
+    while (_pending.size() > MAX_PENDING)
+      _pending.remove(_pending.size() - 1);
+    save();
+    return true;
+  }
+
+  /** Big copies waiting for "Keep?", newest first. */
+  public List<Item> pending() { return new ArrayList<Item>(_pending); }
+
+  /** Kept: the big copy joins the history of its restart. */
+  public void keep_pending(Item it)
+  {
+    if (!_pending.remove(it))
+      return;
+    if (!_session_keys.contains(it.session))
+    {
+      _session_keys.add(it.session);
+      _session_starts.add(it.added);
+    }
+    _items.add(0, it);
+    trim();
+    save();
+  }
+
+  public void drop_pending(Item it)
+  {
+    if (_pending.remove(it))
+      save();
   }
 
   /** The item [text] of [category] edited into [new_text], keeping its
@@ -343,6 +394,19 @@ public final class MemoryStore
             session = null;
           _items.add(new Item(o.optString("text"), c, o.optLong("added", 0), session));
         }
+      JSONArray ps = j.optJSONArray("pending");
+      if (ps != null)
+        for (int i = 0; i < ps.length(); i++)
+        {
+          JSONObject o = ps.optJSONObject(i);
+          if (o == null || o.optString("text", "").isEmpty())
+            continue;
+          String c = o.optString("category", TEXT);
+          if (!categories().contains(c))
+            c = TEXT;
+          _pending.add(new Item(o.optString("text"), c, o.optLong("added", 0),
+                o.optString("session", "boot-unknown")));
+        }
     }
     catch (Exception _e)
     {
@@ -375,6 +439,17 @@ public final class MemoryStore
         is.put(o);
       }
       j.put("items", is);
+      JSONArray ps = new JSONArray();
+      for (Item it : _pending)
+      {
+        JSONObject o = new JSONObject();
+        o.put("text", it.text);
+        o.put("category", it.category);
+        o.put("added", it.added);
+        o.put("session", it.session);
+        ps.put(o);
+      }
+      j.put("pending", ps);
       File tmp = new File(_file.getPath() + ".tmp");
       OutputStream out = new FileOutputStream(tmp);
       try { out.write(j.toString().getBytes("UTF-8")); }

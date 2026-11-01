@@ -149,6 +149,27 @@ public class StudioActivity extends Activity
     root.addView(heading(R.string.studio_memory));
     root.addView(autokeep);
     root.addView(text(getString(R.string.studio_autokeep_desc)));
+    root.addView(text(getString(R.string.studio_big_copy)));
+    final EditText big = new EditText(this);
+    big.setSingleLine(true);
+    big.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+    big.setText(String.valueOf(_prefs.getInt(ClipKeeper.KEY_BIG_COPY, ClipKeeper.DEFAULT_BIG_COPY)));
+    big.addTextChangedListener(new android.text.TextWatcher() {
+      public void beforeTextChanged(CharSequence s, int a, int b, int c) {}
+      public void onTextChanged(CharSequence s, int a, int b, int c) {}
+      public void afterTextChanged(android.text.Editable s)
+      {
+        try
+        {
+          int n = Integer.parseInt(s.toString());
+          if (n > 0)
+            _prefs.edit().putInt(ClipKeeper.KEY_BIG_COPY, n).apply();
+        }
+        catch (NumberFormatException _e) {}
+      }
+    });
+    root.addView(big);
+    root.addView(text(getString(R.string.studio_big_copy_desc)));
     root.addView(heading(R.string.studio_suggestions));
     CheckBox learn = new CheckBox(this);
     learn.setText(R.string.studio_learn_words);

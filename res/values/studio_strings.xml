@@ -31,7 +31,7 @@
   <string name="studio_memory_categories">Memory categories</string>
   <string name="studio_memory_categories_desc">Text, Links, Mails, Snippets, Symbols, Images and Files are always there. Add your own:</string>
   <string name="studio_autokeep">Keep everything copied in Memory</string>
-  <string name="studio_autokeep_desc">Copied text is recorded in Memory\'s history (Memory → ⟲ History, one record per phone restart) and shown under its content type. Delete single items, a record or all history there; what you save or move yourself stays. Never kept: copies made in password fields and copies an app marks as sensitive (password managers do, on Android 13 and newer).</string>
+  <string name="studio_autokeep_desc">Copied text is recorded in Memory\'s history (⟲ History at the bottom of Memory, one record per phone restart) and shown under its content type. Delete single items, a record or all history there; what you save or move yourself stays. Never kept: copies made in password fields and copies an app marks as sensitive (password managers do, on Android 13 and newer).</string>
   <string name="studio_category_hint">New category</string>
   <string name="studio_category_add">Add</string>
   <string name="studio_category_invalid">Empty, too long or already there</string>
@@ -93,4 +93,9 @@
   <string name="studio_imported">Imported %1$s module \"%2$s\"</string>
   <string name="studio_exported">Exported \"%1$s\"</string>
   <string name="studio_import_failed">Not a Studio module: %1$s</string>
+  <string name="studio_bar_empty">Copy something: the last three copies show here</string>
+  <string name="studio_keep_big">Keep? · big copies · %1$d</string>
+  <string name="studio_editing">✎ Editing · %1$d characters</string>
+  <string name="studio_big_copy">Ask before keeping copies of at least this many characters</string>
+  <string name="studio_big_copy_desc">Bigger copies are not kept silently: they wait under "Keep?" at the top of Memory, where ✓ keeps one and ✕ drops it.</string>
 </resources>

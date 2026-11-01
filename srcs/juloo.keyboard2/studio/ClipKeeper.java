@@ -24,6 +24,10 @@ public final class ClipKeeper implements ClipboardManager.OnPrimaryClipChangedLi
   public static final String KEY_AUTOKEEP = "studio_memory_autokeep";
   /** Bigger texts are not kept. */
   static final int MAX_TEXT_LENGTH = 10000;
+  /** Copies this long or longer wait for "Keep?" in Memory instead of
+      being kept. */
+  public static final String KEY_BIG_COPY = "studio_memory_big_copy";
+  public static final int DEFAULT_BIG_COPY = 1000;
   /** [ClipDescription.EXTRA_IS_SENSITIVE], API 33. */
   static final String EXTRA_IS_SENSITIVE = "android.content.extra.IS_SENSITIVE";
 
@@ -75,7 +79,11 @@ public final class ClipKeeper implements ClipboardManager.OnPrimaryClipChangedLi
         return;
       MemoryStore m = new MemoryStore(new File(_ctx.getFilesDir(), "memory.json"));
       long boot = System.currentTimeMillis() - SystemClock.elapsedRealtime();
-      m.add_history(text, MemoryStore.guess_category(text), session_key(boot), boot);
+      String cat = MemoryStore.guess_category(text);
+      if (text.length() >= _prefs.getInt(KEY_BIG_COPY, DEFAULT_BIG_COPY))
+        m.add_pending(text, cat, session_key(boot), boot);
+      else
+        m.add_history(text, cat, session_key(boot), boot);
     }
     catch (Exception e)
     {

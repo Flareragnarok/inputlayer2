@@ -68,7 +68,6 @@ public class Keyboard2 extends InputMethodService
   private boolean _studio_memory_open = false;
   /** Studio: the item being edited with the keyboard, [null] when none. */
   private juloo.keyboard2.studio.ItemEditor _studio_edit = null;
-  private MemoryPane.Saver _studio_edit_saver = null;
   /** Bottom system inset (navigation bar) on Android 15+. */
   private int _studio_bottom_inset = 0;
   /** Studio: selection as last reported by the editor, for the edit strip. */
@@ -244,15 +243,11 @@ public class Keyboard2 extends InputMethodService
     _selection_bar.setup(new SelectionBar.Listener() {
       public void select_pinned() { _edit_strip.select_pinned(); }
       public void unpin() { _edit_strip.unpin(); }
-      public void edit_done(String text)
-      {
-        MemoryPane.Saver s = _studio_edit_saver;
-        _studio_edit = null;
-        _studio_edit_saver = null;
-        if (text != null && s != null)
-          s.save(text);
-        apply_bottom_inset();
-      }
+    });
+    memory_pane().set_listener(new MemoryPane.Listener() {
+      public void close() { close_memory_pane(); }
+      public void edit_started(juloo.keyboard2.studio.ItemEditor e) { _studio_edit = e; }
+      public void edit_ended() { _studio_edit = null; }
       public void edit_changed(int sel_start, int sel_end)
       {
         // As the app's field would: selection, typing in format, learning.
@@ -260,10 +255,6 @@ public class Keyboard2 extends InputMethodService
         _studio_sel_end = sel_end;
         _edit_strip.selection_updated(sel_start, sel_end);
       }
-    });
-    memory_pane().set_listener(new MemoryPane.Listener() {
-      public void close() { close_memory_pane(); }
-      public void edit(String text, MemoryPane.Saver done) { start_item_edit(text, done); }
     });
     _keyboard_container_view.findViewById(R.id.corner_memory)
       .setOnClickListener(new View.OnClickListener() {
@@ -494,6 +485,8 @@ public class Keyboard2 extends InputMethodService
 
   private void close_memory_pane()
   {
+    // An edit in progress is cancelled, the bar's item forgotten.
+    memory_pane().closed();
     _studio_memory_open = false;
     refresh_candidates_view();
   }
@@ -506,13 +499,6 @@ public class Keyboard2 extends InputMethodService
     if (_studio_edit != null)
       return _studio_edit;
     return super.getCurrentInputConnection();
-  }
-
-  private void start_item_edit(String text, MemoryPane.Saver saver)
-  {
-    _studio_edit_saver = saver;
-    _studio_edit = _selection_bar.start_edit(text);
-    apply_bottom_inset();
   }
 
   /** Studio: outline the container the comfort bar's height key resizes. */
@@ -666,8 +652,7 @@ public class Keyboard2 extends InputMethodService
     _keyeventhandler.started(_config);
     _comfort_bar.reset_target();
     // A new field: no pane, no item being edited.
-    if (_studio_edit != null)
-      _selection_bar.end_edit(false);
+    memory_pane().closed();
     _studio_memory_open = false;
     _clip_keeper.editor_started(info);
     studio_load_words();

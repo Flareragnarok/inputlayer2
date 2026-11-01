@@ -42,8 +42,8 @@ comfort bar's ↕ key):
 | Part | What it is |
 |---|---|
 | **Comfort bar** (26dp) | tiny keys: copy/paste, cursor, height ↕, language |
-| **Selection bar** | only shown when it has something: the preview of typing in format, or the editor of a Memory / clipboard item |
-| **Suggestion bar** (28dp) | words only; see-through **Clipboard** icon bottom-left, **Memory** icon bottom-right; the Clipboard / Memory pane opens in its place |
+| **Selection bar** | only shown when it has something: the preview of typing in format |
+| **Suggestion bar** (28dp) | words only; see-through **Clipboard** icon bottom-left, **Memory** icon bottom-right; the Clipboard / Memory pane opens in its place, with its own bar on top |
 | **Keyboard** | upstream's layouts, with extra swipes |
 | **Edit strip** (28dp) | eight keys to select, format and restyle text |
 
@@ -193,25 +193,35 @@ the pane opens in the suggestion bar's place, the keyboard staying below.
 The open tab's icon lights up blue; tap it again to close, the other icon
 to switch.
 
-- **Clipboard**: history of copied text on the left third (content type
-  filters, Clear), pins on the right two thirds. History is off by
-  default upstream: one tap turns it on.
-- **Memory**: your items by category: **Text, Links, Mails, Snippets,
-  Symbols, Images, Files** and your own (added in Studio). Everything you
-  copy is kept automatically under its content type, except copies from
-  password fields and copies marked sensitive (Android 13+); a switch in
-  Studio turns it off.
-- **⟲ History** (right end of Memory's categories): what was copied, one
-  record per phone restart; delete one item, one record or all (tap
-  twice). Items you saved or moved yourself are never deleted with the
-  history.
-- **Tap** an item to type it; **long-press** for: Edit, Pin / Unpin, Save
-  to Memory (likely category first), Copy to clipboard, Move to, Remove /
-  Delete.
-- **Edit**: the selection bar expands into an editor holding the item; the
-  keyboard types into it instead of the app (keys, ⌫/⌦, arrows, copy/paste,
-  the edit strip, Specs and Verts). ✓ saves (an edited clipboard entry
-  becomes the newest entry), ✕ cancels.
+- **The bar** on top of the pane: the last three copies, cut with `…` (tap
+  one to type it); after you tap any item, its whole text on one line
+  (scroll it sideways, tap to type it again, ✕ to go back to the last
+  three).
+- **Every item is one line**: its first words, then `…`. **Tap** types it,
+  **✎** edits it, **long-press** opens the menu, Delete first (then Pin /
+  Unpin, Save to Memory or Move to, Copy to clipboard).
+- **Clipboard**: content type filters on top; the history of copies on the
+  left 30% (with Clear), pins on the right. History is off by default
+  upstream: one tap turns it on.
+- **Memory**: the left 30% is kept free for now. On the right, the
+  categories scroll up and down, each one a row of entries scrolling
+  sideways: **Text, Links, Mails, Snippets, Symbols, Images, Files** and
+  your own (added in Studio), only those with items. Everything you copy is
+  kept automatically under its content type, except copies from password
+  fields and copies marked sensitive (Android 13+); a switch in Studio
+  turns it off.
+- **Keep?** (top of Memory): copies of 1,000 characters or more (Studio →
+  Memory sets the size) aren't kept silently. They wait there: ✓ keeps
+  one in the history, ✕ drops it; the 20 newest wait.
+- **⟲ History** (bottom of Memory): what was copied, one record per phone
+  restart, each a row; delete one item, one record or all (tap twice).
+  Items you saved or moved yourself are never deleted with the history.
+- **Editing** (✎): the whole pane becomes the editor, the keyboard below
+  typing into it instead of the app (keys, ⌫/⌦, arrows, copy/paste, the
+  edit strip, Specs and Verts). The whole text scrolls and follows the
+  cursor; tap in it to place the cursor. ✓ saves (an edited clipboard
+  entry becomes the newest entry), ✕ cancels, and so does closing the
+  pane.
 
 Memory and the clipboard history file live in the app's private
 (credential-protected) storage: readable only once the phone is unlocked.
@@ -320,7 +330,9 @@ colours. Main steps (details per build in [ROADMAP.md](ROADMAP.md)):
    simplification and an editor.
 8. **Suggestions and Memory** (40–47): learned words and next words,
    Mails, snake/camel/alternating cases, the pane in the suggestions'
-   place, editing items with the keyboard, icon navigation.
+   place, editing items with the keyboard, icon navigation; from 50 one
+   line per item, the bar of last copies, Memory as rows of categories,
+   "Keep?" for big copies and the editor in the whole pane.
 
 Decisions taken along the way: View and Verse pick, Backspace ← applies the
 look, Shift ← the format (the finished text of typing in format must not be restyled by a pick);
@@ -372,8 +384,9 @@ is postponed.
 - Some apps don't give the keyboard the field's whole text: typing in
   format and the edit strip see only the text around the cursor there.
 - Ctrl+Z / Ctrl+Shift+Z depend on the app; a few keep their own undo.
-- The item editor draws its own cursor (`▏`); keyboard windows can't show
-  the system's.
+- The item editor draws its own cursor (`▏`), and a tap places it but
+  can't drag a selection (the edit strip and Sector select); keyboard
+  windows can't show the system's.
 - Copied images and files aren't kept yet.
 
 ## License

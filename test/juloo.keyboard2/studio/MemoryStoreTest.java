@@ -136,4 +136,43 @@ public class MemoryStoreTest
     assertTrue(aside.exists());
     aside.delete();
   }
+
+  @Test
+  public void pending_big_copies()
+  throws Exception
+  {
+    File f = tmp();
+    MemoryStore s = new MemoryStore(f);
+    assertTrue(s.add_pending("big one", MemoryStore.TEXT, "boot-1", 1000));
+    assertTrue(s.add_pending("big two", MemoryStore.TEXT, "boot-1", 1000));
+    assertTrue(s.add_pending("big one", MemoryStore.TEXT, "boot-1", 1000)); // Moves up
+    // Waiting ones are not in Memory yet.
+    assertEquals(0, s.items(null).size());
+    assertEquals(2, s.pending().size());
+    assertEquals("big one", s.pending().get(0).text);
+    // They wait across reloads.
+    MemoryStore r = new MemoryStore(f);
+    assertEquals(2, r.pending().size());
+    r.keep_pending(r.pending().get(0));
+    r.drop_pending(r.pending().get(0));
+    assertEquals(0, r.pending().size());
+    List<MemoryStore.Item> is = r.items(null);
+    assertEquals(1, is.size());
+    assertEquals("big one", is.get(0).text);
+    assertTrue(is.get(0).is_history());
+    assertEquals(1, r.sessions().size());
+    assertEquals(0, new MemoryStore(f).pending().size());
+    assertEquals(1, new MemoryStore(f).items(null).size());
+  }
+
+  @Test
+  public void pending_is_bounded()
+  throws Exception
+  {
+    MemoryStore s = new MemoryStore(tmp());
+    for (int i = 0; i < MemoryStore.MAX_PENDING + 5; i++)
+      s.add_pending("big " + i, MemoryStore.TEXT, "boot-1", 1000);
+    assertEquals(MemoryStore.MAX_PENDING, s.pending().size());
+    assertEquals("big " + (MemoryStore.MAX_PENDING + 4), s.pending().get(0).text);
+  }
 }

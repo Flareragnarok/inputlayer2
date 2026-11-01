@@ -18,8 +18,8 @@ import android.view.inputmethod.ExtractedTextRequest;
     input connection on the keyboard's own text, used instead of the app's
     field. Handles what the keyboard sends: text, removals, key events
     (⌫, ⌦, arrows, Home/End, Enter), the editing actions (copy, cut, paste,
-    select all), the selection. The selection bar shows it, with its own
-    cursor (the keyboard's windows can't hold the system's). */
+    select all), the selection. The Clipboard / Memory pane shows it, with
+    its own cursor (the keyboard's windows can't hold the system's). */
 public final class ItemEditor extends BaseInputConnection
 {
   public interface Listener
@@ -229,17 +229,20 @@ public final class ItemEditor extends BaseInputConnection
     return true;
   }
 
+  public static final String CURSOR = "▏";
+
   /** Characters shown around the cursor of a long text. */
   static final int WINDOW = 240;
 
   /** The text as shown: the selection highlighted, a thin bar at the
-      cursor; a long text cut around the cursor. */
-  public CharSequence display(int highlight)
+      cursor ([CURSOR], one character); unless [whole], a long text is cut
+      around the cursor. */
+  public CharSequence display(int highlight, boolean whole)
   {
     String t = text();
     int s = sel_start(), e = sel_end();
     int from = 0, to = t.length();
-    if (t.length() > WINDOW)
+    if (!whole && t.length() > WINDOW)
     {
       from = Math.max(0, Math.min(s - WINDOW / 2, t.length() - WINDOW));
       to = Math.min(t.length(), Math.max(e, from + WINDOW));
@@ -249,7 +252,7 @@ public final class ItemEditor extends BaseInputConnection
     if (ds != de)
       b.setSpan(new BackgroundColorSpan(highlight), ds, de, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
     else
-      b.insert(ds, "▏");
+      b.insert(ds, CURSOR);
     if (to < t.length())
       b.append("…");
     if (from > 0)

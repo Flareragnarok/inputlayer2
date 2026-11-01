@@ -4,12 +4,14 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.text.Layout;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.SubMenu;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,21 +30,28 @@ import juloo.keyboard2.Config;
 import juloo.keyboard2.R;
 import org.json.JSONArray;
 
-/** The pane opened from the clipboard and memory icons, with two tabs:
-    - Clipboard: the history of copied text on the left third, pinned items
-      on the right two thirds.
-    - Memory: the user's own items, by category.
-    Tap an item to type it, long-press for more (pin, save to Memory, copy to
-    the clipboard, move, delete). */
+/** The pane opened from the clipboard and memory icons, in the suggestion
+    bar's place. On top, a bar like the suggestion bar: the last three
+    copies, or the whole text of the item last tapped. Then one of two tabs:
+    - Clipboard: the history of copied text on the left 30%, pinned items on
+      the right; one line per item.
+    - Memory: categories on the right, one row of entries each, scrolling
+      sideways; big copies waiting for "Keep?" first, the history records
+      last. The left 30% is kept free.
+    Tap an item to type it, ✎ to edit it in the whole pane, long-press for
+    more (delete first). */
 public class MemoryPane extends LinearLayout
   implements ClipboardHistoryService.OnClipboardHistoryChange
 {
-  /** The keyboard: closing the pane, editing an item with the keyboard. */
+  /** The keyboard: closing the pane, typing into an item being edited. */
   public interface Listener
   {
     void close();
-    /** Edit [text] with the keyboard; [done] gets the edited text. */
-    void edit(String text, Saver done);
+    /** Editing started: the keyboard types into [e] until it ends. */
+    void edit_started(ItemEditor e);
+    void edit_ended();
+    /** The item being edited changed (what the app's field would report). */
+    void edit_changed(int sel_start, int sel_end);
   }
 
   public interface Saver { void save(String text); }
@@ -57,20 +66,29 @@ public class MemoryPane extends LinearLayout
   /** Same storage as upstream's pinned clipboards, so pins are kept. */
   static final String PINS_FILE = "pinned_clipboards";
   static final String PINS_PREF = "pinned";
+  /** Characters of an item shown in its one line. */
+  static final int PREVIEW_CHARS = 120;
 
   boolean _memory_tab = false;
-  /** Memory category shown, [null] for all. */
-  String _category = null;
-  /** Memory shows the history records instead of a category. */
-  boolean _history = false;
   /** Delete button waiting for its confirming second tap. */
   String _confirming = null;
   /** Content type shown in the Clipboard tab, [null] for all. */
   String _clip_type = null;
+  /** The item last tapped, shown whole in the bar; [null] for none. */
+  String _selected = null;
+  /** The item being edited in the pane, [null] when not editing. */
+  ItemEditor _editor = null;
+  Saver _editor_saver = null;
+  String _editor_original = null;
+  TextView _edit_title;
+  TextView _edit_text;
+  ScrollView _edit_scroll;
+  FrameLayout _bar;
   FrameLayout _content;
   int _label_color;
   int _item_color;
   int _selected_color;
+  int _highlight = 0x553399ff;
 
   public MemoryPane(Context ctx, AttributeSet attrs)
   {
@@ -82,11 +100,14 @@ public class MemoryPane extends LinearLayout
     _selected_color = ComfortKey.brighter(key, 0.3f);
     // No tab row: the clipboard and memory icons over the pane switch
     // between them and close it.
+    _bar = new FrameLayout(ctx);
+    addView(_bar, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(28)));
     _content = new FrameLayout(ctx);
     addView(_content, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
   }
 
-  /** Show the Memory tab if [memory], the Clipboard tab otherwise. */
+  /** Show the Memory tab if [memory], the Clipboard tab otherwise. While
+      an item is edited, the editor stays. */
   public void show(boolean memory)
   {
     // A pending delete confirmation doesn't carry over to the other tab.
@@ -96,15 +117,123 @@ public class MemoryPane extends LinearLayout
     ClipboardHistoryService s = ClipboardHistoryService.get_service(getContext());
     if (s != null)
       s.set_on_clipboard_history_change(memory ? null : this);
-
     _content.removeAllViews();
+    if (_editor != null)
+    {
+      _bar.setVisibility(GONE);
+      _content.addView(editor_view());
+      return;
+    }
+    _bar.setVisibility(VISIBLE);
+    refresh_bar();
     _content.addView(memory ? memory_view() : clipboard_view());
+  }
+
+  /** The pane closed: the item shown in the bar is forgotten, an edit is
+      cancelled. */
+  public void closed()
+  {
+    end_edit(false);
+    _selected = null;
   }
 
   public void on_clipboard_history_change()
   {
-    if (!_memory_tab)
+    if (!_memory_tab && _editor == null)
       show(false);
+  }
+
+  /** Type [text] and show it whole in the bar. Only the bar is redrawn, so
+      the lists keep their scroll. */
+  void type(String text)
+  {
+    ClipboardHistoryService.paste(text);
+    _selected = text;
+    refresh_bar();
+  }
+
+  /* The bar */
+
+  void refresh_bar()
+  {
+    _bar.removeAllViews();
+    LinearLayout row = new LinearLayout(getContext());
+    row.setOrientation(HORIZONTAL);
+    _bar.addView(row);
+    if (_selected != null)
+    {
+      // The whole text on one line, scrolling sideways; tap types it again.
+      final String text = _selected;
+      TextView t = bar_text(text.replace("\n", " ⏎ "));
+      t.setOnClickListener(new View.OnClickListener() {
+        public void onClick(View v) { ClipboardHistoryService.paste(text); }
+      });
+      HorizontalScrollView hs = new HorizontalScrollView(getContext());
+      hs.setHorizontalScrollBarEnabled(false);
+      hs.addView(t, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.MATCH_PARENT));
+      row.addView(hs, new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+      TextView close = bar_text("✕");
+      close.setGravity(Gravity.CENTER);
+      close.setOnClickListener(new View.OnClickListener() {
+        public void onClick(View v) { _selected = null; refresh_bar(); }
+      });
+      row.addView(close, new LayoutParams(dp(36), ViewGroup.LayoutParams.MATCH_PARENT));
+      return;
+    }
+    List<String> recent = recent(3);
+    if (recent.isEmpty())
+    {
+      TextView t = bar_text(getContext().getString(R.string.studio_bar_empty));
+      t.setAlpha(0.6f);
+      row.addView(t, new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+      return;
+    }
+    for (final String r : recent)
+    {
+      TextView t = bar_text(one_line(r));
+      t.setGravity(Gravity.CENTER);
+      t.setSingleLine(true);
+      t.setEllipsize(TextUtils.TruncateAt.END);
+      t.setBackgroundColor(_item_color);
+      t.setOnClickListener(new View.OnClickListener() {
+        public void onClick(View v) { type(r); }
+      });
+      LayoutParams lp = new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f);
+      lp.setMargins(dp(2), dp(2), dp(2), dp(2));
+      row.addView(t, lp);
+    }
+  }
+
+  /** The last [n] copies: the clipboard history, then Memory's. */
+  List<String> recent(int n)
+  {
+    List<String> l = new ArrayList<String>();
+    ClipboardHistoryService service = ClipboardHistoryService.get_service(getContext());
+    if (service != null && Config.globalConfig().clipboard_history_enabled)
+    {
+      List<String> h = service.clear_expired_and_get_history();
+      for (int i = h.size() - 1; i >= 0 && l.size() < n; i--)
+        if (!l.contains(h.get(i)))
+          l.add(h.get(i));
+    }
+    MemoryStore store = (l.size() < n) ? memory() : null;
+    if (store != null)
+      for (MemoryStore.Item it : store.items(null))
+        if (l.size() < n && !l.contains(it.text))
+          l.add(it.text);
+    return l;
+  }
+
+  TextView bar_text(String s)
+  {
+    TextView t = new TextView(getContext());
+    t.setText(s);
+    t.setTextColor(_label_color);
+    t.setSingleLine(true);
+    t.setGravity(Gravity.CENTER_VERTICAL);
+    t.setPadding(dp(8), 0, dp(8), 0);
+    return t;
   }
 
   /* Clipboard tab */
@@ -133,14 +262,16 @@ public class MemoryPane extends LinearLayout
     HorizontalScrollView hs = new HorizontalScrollView(getContext());
     hs.setHorizontalScrollBarEnabled(false);
     hs.addView(chips);
-    v.addView(hs, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(32)));
+    v.addView(hs, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(30)));
     LinearLayout row = new LinearLayout(getContext());
     row.setOrientation(HORIZONTAL);
     v.addView(row, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
     LinearLayout history = column(R.string.studio_history);
     if (!Config.globalConfig().clipboard_history_enabled)
     {
-      TextView on = item_view(getContext().getString(R.string.studio_history_off));
+      TextView on = hint(R.string.studio_history_off);
+      on.setAlpha(1f);
+      on.setBackgroundColor(_item_color);
       on.setOnClickListener(new View.OnClickListener() {
         public void onClick(View v)
         {
@@ -175,8 +306,8 @@ public class MemoryPane extends LinearLayout
         pins.addView(pin_item(p));
     if (ps.isEmpty())
       pins.addView(hint(R.string.studio_pins_empty));
-    row.addView(scroll(history), new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 34f));
-    row.addView(scroll(pins), new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 66f));
+    row.addView(scroll(history), new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 30f));
+    row.addView(scroll(pins), new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 70f));
     return v;
   }
 
@@ -206,25 +337,21 @@ public class MemoryPane extends LinearLayout
 
   View history_item(final String text)
   {
-    return item(text, new MenuBuilder() {
+    // The edited text becomes the newest clipboard entry, instead of this
+    // one.
+    Saver saver = new Saver() {
+      public void save(String t)
+      {
+        ClipboardHistoryService s = ClipboardHistoryService.get_service(getContext());
+        if (s != null)
+          s.remove_history_entry(text);
+        copy_to_clipboard(t);
+      }
+    };
+    return entry(text, false, saver, new MenuBuilder() {
       public void build(Menu m)
       {
-        add(m, R.string.studio_pin, new Runnable() {
-          public void run() { add_pin(text); show(false); }
-        });
-        // The edited text becomes the newest clipboard entry, instead of
-        // this one.
-        edit_menu(m, text, new Saver() {
-          public void save(String t)
-          {
-            ClipboardHistoryService s = ClipboardHistoryService.get_service(getContext());
-            if (s != null)
-              s.remove_history_entry(text);
-            copy_to_clipboard(t);
-          }
-        });
-        save_to_memory_menu(m, text);
-        add(m, R.string.studio_remove_from_history, new Runnable() {
+        add(m, R.string.studio_delete, new Runnable() {
           public void run()
           {
             ClipboardHistoryService s = ClipboardHistoryService.get_service(getContext());
@@ -232,45 +359,28 @@ public class MemoryPane extends LinearLayout
               s.remove_history_entry(text);
           }
         });
+        add(m, R.string.studio_pin, new Runnable() {
+          public void run() { add_pin(text); show(false); }
+        });
+        save_to_memory_menu(m, text);
       }
     });
   }
 
   View pin_item(final String text)
   {
-    return item(text, new MenuBuilder() {
+    Saver saver = new Saver() {
+      public void save(String t) { replace_pin(text, t); }
+    };
+    return entry(text, false, saver, new MenuBuilder() {
       public void build(Menu m)
       {
-        edit_menu(m, text, new Saver() {
-          public void save(String t) { replace_pin(text, t); }
+        add(m, R.string.studio_unpin, new Runnable() {
+          public void run() { remove_pin(text); show(false); }
         });
         save_to_memory_menu(m, text);
         add(m, R.string.studio_copy_to_clipboard, new Runnable() {
           public void run() { copy_to_clipboard(text); }
-        });
-        add(m, R.string.studio_unpin, new Runnable() {
-          public void run() { remove_pin(text); show(false); }
-        });
-      }
-    });
-  }
-
-  /** "Edit": the keyboard edits [text] in the selection bar; [saver]
-      stores the result, then the pane shows it. */
-  void edit_menu(Menu m, final String text, final Saver saver)
-  {
-    if (_listener == null)
-      return;
-    add(m, R.string.studio_edit, new Runnable() {
-      public void run()
-      {
-        _listener.edit(text, new Saver() {
-          public void save(String t)
-          {
-            if (!t.equals(text))
-              saver.save(t);
-            show(_memory_tab);
-          }
         });
       }
     });
@@ -313,81 +423,95 @@ public class MemoryPane extends LinearLayout
   View memory_view()
   {
     LinearLayout v = new LinearLayout(getContext());
-    v.setOrientation(VERTICAL);
+    v.setOrientation(HORIZONTAL);
     final MemoryStore store = memory();
     if (store == null)
     {
       v.addView(hint(R.string.studio_memory_locked));
       return v;
     }
-    if (_category != null && !store.categories().contains(_category))
-      _category = null;
-    // Categories scroll, the history button stays at the right end.
-    LinearLayout top = new LinearLayout(getContext());
-    top.setOrientation(HORIZONTAL);
-    LinearLayout chips = new LinearLayout(getContext());
-    chips.setOrientation(HORIZONTAL);
-    chips.addView(category_chip(null, getContext().getString(R.string.studio_all)), chip_params());
-    for (String c : store.categories())
-      chips.addView(category_chip(c, c), chip_params());
-    HorizontalScrollView hs = new HorizontalScrollView(getContext());
-    hs.setHorizontalScrollBarEnabled(false);
-    hs.addView(chips);
-    top.addView(hs, new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
-    TextView history = chip("⟲ " + getContext().getString(R.string.studio_history));
-    history.setBackgroundColor(_history ? _selected_color : _item_color);
-    history.setOnClickListener(new View.OnClickListener() {
-      public void onClick(View _v) { _history = !_history; _confirming = null; show(true); }
-    });
-    top.addView(history, chip_params());
-    v.addView(top, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(32)));
-    LinearLayout items = new LinearLayout(getContext());
-    items.setOrientation(VERTICAL);
-    if (_history)
-      fill_history(store, items);
-    else
+    // The left side is kept free for now.
+    v.addView(new View(getContext()), new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 30f));
+    LinearLayout sections = new LinearLayout(getContext());
+    sections.setOrientation(VERTICAL);
+    List<MemoryStore.Item> pending = store.pending();
+    if (!pending.isEmpty())
     {
-      List<MemoryStore.Item> is = store.items(_category);
-      for (MemoryStore.Item it : is)
-        items.addView(memory_item(store, it));
-      if (is.isEmpty())
-        items.addView(hint(R.string.studio_memory_empty));
+      sections.addView(section_head(getContext().getString(R.string.studio_keep_big,
+              pending.size()), null));
+      LinearLayout shelf = shelf(sections);
+      for (MemoryStore.Item it : pending)
+        shelf.addView(pending_entry(store, it));
     }
-    v.addView(scroll(items), new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+    boolean any = false;
+    for (String c : store.categories())
+    {
+      List<MemoryStore.Item> is = store.items(c);
+      if (is.isEmpty())
+        continue;
+      any = true;
+      sections.addView(section_head(c + " · " + is.size(), null));
+      LinearLayout shelf = shelf(sections);
+      for (MemoryStore.Item it : is)
+        shelf.addView(memory_item(store, it));
+    }
+    if (!any && pending.isEmpty())
+      sections.addView(hint(R.string.studio_memory_empty));
+    fill_history(store, sections);
+    v.addView(scroll(sections), new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 70f));
     return v;
   }
 
   /** One record per phone restart, newest first, each deletable, and a
       button deleting all of them. Deleting asks for a second tap. */
-  void fill_history(final MemoryStore store, LinearLayout items)
+  void fill_history(final MemoryStore store, LinearLayout sections)
   {
     List<MemoryStore.Session> ss = store.sessions();
     if (ss.isEmpty())
-    {
-      items.addView(hint(R.string.studio_history_none));
       return;
-    }
-    items.addView(confirm_button("all", R.string.studio_delete_all_history,
-          new Runnable() { public void run() { store.delete_history(); } }));
+    sections.addView(section_head("⟲ " + getContext().getString(R.string.studio_history),
+          confirm_button("all", R.string.studio_delete_all_history,
+            new Runnable() { public void run() { store.delete_history(); } })));
     java.text.DateFormat fmt = java.text.DateFormat.getDateTimeInstance(
         java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT);
     for (final MemoryStore.Session s : ss)
     {
-      LinearLayout head = new LinearLayout(getContext());
-      head.setOrientation(HORIZONTAL);
-      head.setGravity(Gravity.CENTER_VERTICAL);
-      TextView title = hint(0);
-      title.setText(getContext().getString(R.string.studio_since_restart,
-            fmt.format(new java.util.Date(s.started)), s.items.size()));
-      title.setAlpha(0.8f);
-      head.addView(title, new LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-      head.addView(confirm_button(s.key, R.string.studio_delete_record,
-            new Runnable() { public void run() { store.delete_session(s.key); } }),
-          new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(30)));
-      items.addView(head);
+      sections.addView(section_head(getContext().getString(R.string.studio_since_restart,
+              fmt.format(new java.util.Date(s.started)), s.items.size()),
+            confirm_button(s.key, R.string.studio_delete_record,
+              new Runnable() { public void run() { store.delete_session(s.key); } })));
+      LinearLayout shelf = shelf(sections);
       for (MemoryStore.Item it : s.items)
-        items.addView(memory_item(store, it));
+        shelf.addView(memory_item(store, it));
     }
+  }
+
+  /** A category's title, with a button at its end ([null] for none). */
+  View section_head(String title, View button)
+  {
+    LinearLayout head = new LinearLayout(getContext());
+    head.setOrientation(HORIZONTAL);
+    head.setGravity(Gravity.CENTER_VERTICAL);
+    TextView t = hint(0);
+    t.setText(title);
+    t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+    t.setPadding(dp(6), dp(4), dp(6), 0);
+    head.addView(t, new LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+    if (button != null)
+      head.addView(button, new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(26)));
+    return head;
+  }
+
+  /** A row of entries scrolling sideways, added to [parent]. */
+  LinearLayout shelf(LinearLayout parent)
+  {
+    LinearLayout l = new LinearLayout(getContext());
+    l.setOrientation(HORIZONTAL);
+    HorizontalScrollView hs = new HorizontalScrollView(getContext());
+    hs.setHorizontalScrollBarEnabled(false);
+    hs.addView(l);
+    parent.addView(hs);
+    return l;
   }
 
   /** A delete button: the first tap asks to tap again, the second deletes. */
@@ -409,30 +533,20 @@ public class MemoryPane extends LinearLayout
         show(_memory_tab);
       }
     });
-    t.setPadding(dp(10), dp(4), dp(10), dp(4));
-    return t;
-  }
-
-  View category_chip(final String category, String label)
-  {
-    TextView t = chip(label);
-    boolean selected = !_history
-      && ((category == null) ? _category == null : category.equals(_category));
-    t.setBackgroundColor(selected ? _selected_color : _item_color);
-    t.setOnClickListener(new View.OnClickListener() {
-      public void onClick(View v) { _category = category; _history = false; show(true); }
-    });
+    t.setPadding(dp(10), dp(2), dp(10), dp(2));
     return t;
   }
 
   View memory_item(final MemoryStore store, final MemoryStore.Item it)
   {
-    String label = (_category == null || _history) ? it.text + "   · " + it.category : it.text;
-    TextView t = (TextView)item(it.text, new MenuBuilder() {
+    Saver saver = new Saver() {
+      public void save(String t) { memory().replace_text(it.text, it.category, t); }
+    };
+    return entry(it.text, true, saver, new MenuBuilder() {
       public void build(Menu m)
       {
-        edit_menu(m, it.text, new Saver() {
-          public void save(String t) { memory().replace_text(it.text, it.category, t); }
+        add(m, R.string.studio_delete, new Runnable() {
+          public void run() { store.remove(it); show(true); }
         });
         add(m, R.string.studio_copy_to_clipboard, new Runnable() {
           public void run() { copy_to_clipboard(it.text); }
@@ -455,13 +569,144 @@ public class MemoryPane extends LinearLayout
                 public void run() { store.move(it, c); show(true); }
               });
         }
-        add(m, R.string.studio_delete, new Runnable() {
-          public void run() { store.remove(it); show(true); }
-        });
       }
     });
-    t.setText(label);
-    return t;
+  }
+
+  /** A big copy waiting: tap types it, ✓ keeps it in the history, ✕ drops
+      it. */
+  View pending_entry(final MemoryStore store, final MemoryStore.Item it)
+  {
+    LinearLayout r = entry_row(it.text, true);
+    TextView keep = small_button("✓");
+    keep.setOnClickListener(new View.OnClickListener() {
+      public void onClick(View v) { store.keep_pending(it); show(true); }
+    });
+    TextView drop = small_button("✕");
+    drop.setOnClickListener(new View.OnClickListener() {
+      public void onClick(View v) { store.drop_pending(it); show(true); }
+    });
+    r.addView(keep, new LayoutParams(dp(28), ViewGroup.LayoutParams.MATCH_PARENT));
+    r.addView(drop, new LayoutParams(dp(28), ViewGroup.LayoutParams.MATCH_PARENT));
+    return r;
+  }
+
+  /* Editing, in the whole pane */
+
+  /** The keyboard types into [text] in the pane until ✓ or ✕; [saver]
+      gets the result if it changed. */
+  void start_edit(String text, Saver saver)
+  {
+    end_edit(false);
+    _editor_original = text;
+    _editor_saver = saver;
+    _editor = new ItemEditor(this, text, new ItemEditor.Listener() {
+      public void changed(ItemEditor e)
+      {
+        refresh_editor();
+        if (_listener != null)
+          _listener.edit_changed(e.sel_start(), e.sel_end());
+      }
+    });
+    if (_listener != null)
+      _listener.edit_started(_editor);
+    show(_memory_tab);
+  }
+
+  public boolean editing() { return _editor != null; }
+
+  public void end_edit(boolean save)
+  {
+    if (_editor == null)
+      return;
+    String t = _editor.text();
+    Saver s = _editor_saver;
+    boolean changed = !t.equals(_editor_original);
+    _editor = null;
+    _editor_saver = null;
+    _editor_original = null;
+    if (_listener != null)
+      _listener.edit_ended();
+    if (save && changed && s != null && !t.isEmpty())
+    {
+      s.save(t);
+      if (_selected != null)
+        _selected = t;
+    }
+    show(_memory_tab);
+  }
+
+  View editor_view()
+  {
+    LinearLayout v = new LinearLayout(getContext());
+    v.setOrientation(VERTICAL);
+    LinearLayout head = new LinearLayout(getContext());
+    head.setOrientation(HORIZONTAL);
+    _edit_title = bar_text("");
+    _edit_title.setAlpha(0.7f);
+    head.addView(_edit_title, new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+    TextView save = small_button("✓");
+    save.setOnClickListener(new View.OnClickListener() {
+      public void onClick(View _v) { end_edit(true); }
+    });
+    head.addView(save, new LayoutParams(dp(44), ViewGroup.LayoutParams.MATCH_PARENT));
+    TextView cancel = small_button("✕");
+    cancel.setOnClickListener(new View.OnClickListener() {
+      public void onClick(View _v) { end_edit(false); }
+    });
+    head.addView(cancel, new LayoutParams(dp(44), ViewGroup.LayoutParams.MATCH_PARENT));
+    v.addView(head, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(28)));
+    _edit_text = new TextView(getContext());
+    _edit_text.setTextColor(_label_color);
+    _edit_text.setBackgroundColor(_item_color);
+    _edit_text.setPadding(dp(8), dp(6), dp(8), dp(6));
+    // A tap places the cursor.
+    _edit_text.setOnTouchListener(new View.OnTouchListener() {
+      public boolean onTouch(View view, MotionEvent ev)
+      {
+        if (ev.getAction() != MotionEvent.ACTION_UP || _editor == null)
+          return true;
+        int o = _edit_text.getOffsetForPosition(ev.getX(), ev.getY());
+        int s = _editor.sel_start();
+        // The cursor is drawn as one more character.
+        if (s == _editor.sel_end() && o > s)
+          o -= ItemEditor.CURSOR.length();
+        o = Math.max(0, Math.min(o, _editor.text().length()));
+        _editor.setSelection(o, o);
+        return true;
+      }
+    });
+    _edit_scroll = scroll(_edit_text);
+    v.addView(_edit_scroll, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+    refresh_editor();
+    return v;
+  }
+
+  /** The text with its cursor, scrolled to show the cursor. */
+  void refresh_editor()
+  {
+    if (_editor == null || _edit_text == null)
+      return;
+    _edit_title.setText(getContext().getString(R.string.studio_editing,
+          _editor.text().length()));
+    _edit_text.setText(_editor.display(_highlight, true));
+    final int cursor = _editor.sel_end();
+    _edit_text.post(new Runnable() {
+      public void run()
+      {
+        Layout l = _edit_text.getLayout();
+        if (l == null || _edit_scroll == null)
+          return;
+        int line = l.getLineForOffset(Math.min(cursor, l.getText().length()));
+        int top = l.getLineTop(line) + _edit_text.getPaddingTop();
+        int bottom = l.getLineBottom(line) + _edit_text.getPaddingTop();
+        int y = _edit_scroll.getScrollY(), h = _edit_scroll.getHeight();
+        if (top < y)
+          _edit_scroll.scrollTo(0, top);
+        else if (bottom > y + h)
+          _edit_scroll.scrollTo(0, bottom - h);
+      }
+    });
   }
 
   /* Storage */
@@ -541,22 +786,76 @@ public class MemoryPane extends LinearLayout
 
   interface MenuBuilder { void build(Menu m); }
 
-  /** A row: tap to type [text], long-press for the menu. */
-  View item(final String text, final MenuBuilder menu)
+  /** An item on one line, its start then "…": tap types it, ✎ edits it
+      in the pane, long-press opens [menu] (delete first). [shelf]: an entry
+      of a sideways row, as wide as its text up to a limit. */
+  View entry(final String text, boolean shelf, final Saver saver, final MenuBuilder menu)
   {
-    final TextView t = item_view(text);
-    t.setOnClickListener(new View.OnClickListener() {
-      public void onClick(View v) { ClipboardHistoryService.paste(text); }
+    final LinearLayout r = entry_row(text, shelf);
+    TextView pen = small_button("✎");
+    pen.setAlpha(0.7f);
+    pen.setOnClickListener(new View.OnClickListener() {
+      public void onClick(View v) { start_edit(text, saver); }
     });
-    t.setOnLongClickListener(new View.OnLongClickListener() {
+    r.addView(pen, new LayoutParams(dp(28), ViewGroup.LayoutParams.MATCH_PARENT));
+    r.setOnLongClickListener(new View.OnLongClickListener() {
       public boolean onLongClick(View v)
       {
-        PopupMenu p = new PopupMenu(getContext(), t);
+        PopupMenu p = new PopupMenu(getContext(), r);
         menu.build(p.getMenu());
         p.show();
         return true;
       }
     });
+    return r;
+  }
+
+  /** The row of an entry, with its text; tapping it types [text]. */
+  LinearLayout entry_row(final String text, boolean shelf)
+  {
+    LinearLayout r = new LinearLayout(getContext());
+    r.setOrientation(HORIZONTAL);
+    r.setBackgroundColor(_item_color);
+    TextView t = new TextView(getContext());
+    t.setText(one_line(text));
+    t.setTextColor(_label_color);
+    t.setSingleLine(true);
+    t.setEllipsize(TextUtils.TruncateAt.END);
+    t.setGravity(Gravity.CENTER_VERTICAL);
+    t.setPadding(dp(8), 0, dp(4), 0);
+    if (shelf)
+    {
+      t.setMaxWidth(dp(150));
+      r.addView(t, new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.MATCH_PARENT));
+    }
+    else
+      r.addView(t, new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+    r.setOnClickListener(new View.OnClickListener() {
+      public void onClick(View v) { type(text); }
+    });
+    LayoutParams p = new LayoutParams(
+        shelf ? ViewGroup.LayoutParams.WRAP_CONTENT : ViewGroup.LayoutParams.MATCH_PARENT,
+        dp(30));
+    p.setMargins(dp(3), dp(3), dp(3), 0);
+    r.setLayoutParams(p);
+    return r;
+  }
+
+  /** The start of [s] on one line: spaces and line breaks as single spaces. */
+  static String one_line(String s)
+  {
+    String t = s.length() > PREVIEW_CHARS * 2 ? s.substring(0, PREVIEW_CHARS * 2) : s;
+    t = t.trim().replaceAll("\\s+", " ");
+    return t.length() > PREVIEW_CHARS ? t.substring(0, PREVIEW_CHARS) + "…" : t;
+  }
+
+  TextView small_button(String label)
+  {
+    TextView t = new TextView(getContext());
+    t.setText(label);
+    t.setTextColor(_label_color);
+    t.setGravity(Gravity.CENTER);
     return t;
   }
 
@@ -575,22 +874,6 @@ public class MemoryPane extends LinearLayout
     return new MenuItem.OnMenuItemClickListener() {
       public boolean onMenuItemClick(MenuItem i) { r.run(); return true; }
     };
-  }
-
-  TextView item_view(String text)
-  {
-    TextView t = new TextView(getContext());
-    t.setText(text);
-    t.setTextColor(_label_color);
-    t.setBackgroundColor(_item_color);
-    t.setMaxLines(3);
-    t.setEllipsize(TextUtils.TruncateAt.END);
-    t.setPadding(dp(8), dp(6), dp(8), dp(6));
-    LayoutParams p = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-        ViewGroup.LayoutParams.WRAP_CONTENT);
-    p.setMargins(dp(3), dp(3), dp(3), 0);
-    t.setLayoutParams(p);
-    return t;
   }
 
   TextView hint(int res)
