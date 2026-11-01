@@ -8,7 +8,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 53).
+Last updated: 2026-11-01 (build 54).
 
 ## Done
 
@@ -67,6 +67,7 @@ Last updated: 2026-11-01 (build 53).
 | 51 | New content types **Commands, Output, Logs, Code** with fixed rules (README → How copies are sorted); Snippets keeps other multi-line text. In a category, alike items are next to each other (commands by program, links and mails by domain, logs by tag, code by language), a group of several labelled. The history is sorted again with the new rules; saved and moved items stay. |
 | 52 | Memory in three columns: the left 30% free, the categories listed on the right (Keep? first, ⟲ History last), the tapped one's items in the middle, one per line, groups labelled. Editing an item: the keyboard follows the item's cursor and selection instead of the app's (the app's selection updates no longer reach the edit strip and cursor keys meanwhile, the item's do), so Sector and the cursor keys land where expected; the view follows a selection's moving end. |
 | 53 | Settings cleaned up: the main screen shows only Studio and **Legacy settings**, which holds all of upstream's settings unchanged. |
+| 54 | Fix: opening Clipboard or Memory (and copying) crashed the keyboard since build 51. A content-type pattern had a bare `}`, which Android's regex engine refuses (the JVM's accepts it). Memory's file was not touched by the crash; copies made with 51–53 weren't kept. A test now checks the patterns. |
 
 Infrastructure:
 

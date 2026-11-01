@@ -26,7 +26,11 @@ import java.util.regex.Pattern;
     - Code: at least two code signs (lines ending with `{ } ; :`, starting
       with def, class, import, function, return...).
     - Snippets: other text on several lines.
-    - Text, or Symbols when there is no letter nor digit. */
+    - Text, or Symbols when there is no letter nor digit.
+
+    Android's regex engine (ICU) is stricter than the JVM's the tests run
+    on: a `{` or `}` outside a character class must be escaped unless it
+    is a quantifier (ContentTypeTest checks it). */
 public final class ContentType
 {
   /** Changes when the rules change: the history is sorted again then. */
@@ -51,7 +55,7 @@ public final class ContentType
   static final Pattern FLAGS = Pattern.compile("\\s--?[A-Za-z][\\w-]*(=\\S*)?(\\s|$)|\\s\\|\\s|\\s&&\\s|\\s>>?\\s");
   static final Pattern WORD = Pattern.compile("^[a-z][\\w.+-]*$");
   static final Pattern CODE_LINE = Pattern.compile(
-      "[{};]\\s*$|^\\s*}|^\\s*(def|class|import|from \\S+ import|function|return|const|let|var|public|private|protected|static|fn|func|package|#include|#define|struct|enum|interface)\\b|=>|^\\s*(if|for|while|elif|else)\\b.*[:{]\\s*$|^\\s*@\\w+");
+      "[{};]\\s*$|^\\s*\\}|^\\s*(def|class|import|from \\S+ import|function|return|const|let|var|public|private|protected|static|fn|func|package|#include|#define|struct|enum|interface)\\b|=>|^\\s*(if|for|while|elif|else)\\b.*[:{]\\s*$|^\\s*@\\w+");
 
   static final Set<String> PROGRAMS = new HashSet<String>(Arrays.asList(
       "adb", "apt", "apt-get", "awk", "bash", "brew", "cargo", "cat", "cd",

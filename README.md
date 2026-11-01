@@ -332,6 +332,10 @@ switch:<type>`. `snippets` and `theme` are reserved, not used yet.
   `./gradlew clean test assembleDebug`. Keep `debug.keystore` (gitignored)
   to sign like the published builds.
 - On the build VM, Gradle can miss newly added files: build with `clean`.
+- Android's regex engine (ICU) is stricter than the JVM's the unit tests
+  use: a bare `{` or `}` compiles in the tests and crashes on the phone
+  (builds 51–53 crashed opening Clipboard / Memory). `ContentTypeTest`
+  checks the patterns for it; escape braces in new patterns.
   GitHub's job logs aren't reachable from there; read failures through
   the check-run annotations.
 

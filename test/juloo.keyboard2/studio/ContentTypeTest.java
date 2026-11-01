@@ -1,7 +1,9 @@
 package juloo.keyboard2.studio;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.regex.Pattern;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -101,5 +103,72 @@ public class ContentTypeTest
     assertEquals("ls -la", is.get(2).text);
     // All categories: newest first only.
     assertEquals("ls -la", s.items(null).get(1).text);
+  }
+
+  /** Android's ICU refuses a bare `{` or `}` outside a character class
+      (the JVM takes them as literals): a crash when the class loads. */
+  @Test
+  public void patterns_are_icu_safe()
+  throws Exception
+  {
+    for (Field f : ContentType.class.getDeclaredFields())
+    {
+      if (f.getType() != Pattern.class)
+        continue;
+      f.setAccessible(true);
+      String p = ((Pattern)f.get(null)).pattern();
+      assertNull(f.getName() + ": " + p, bare_brace(p));
+    }
+  }
+
+  /** Where [p] has a brace that isn't escaped, in a class or a {n,m}
+      quantifier; [null] if none. */
+  static Integer bare_brace(String p)
+  {
+    boolean in_class = false;
+    for (int i = 0; i < p.length(); i++)
+    {
+      char c = p.charAt(i);
+      if (c == '\\')
+      {
+        i++;
+        continue;
+      }
+      if (in_class)
+      {
+        if (c == ']')
+          in_class = false;
+        continue;
+      }
+      if (c == '[')
+      {
+        in_class = true;
+        // A ']' right after '[' or '[^' is a literal.
+        if (i + 1 < p.length() && p.charAt(i + 1) == '^')
+          i++;
+        if (i + 1 < p.length() && p.charAt(i + 1) == ']')
+          i++;
+        continue;
+      }
+      if (c == '{')
+      {
+        int j = p.indexOf('}', i);
+        if (j < 0 || !p.substring(i + 1, j).matches("\\d+(,\\d*)?"))
+          return i;
+        i = j;
+        continue;
+      }
+      if (c == '}')
+        return i;
+    }
+    return null;
+  }
+
+  @Test
+  public void brace_check_works()
+  {
+    assertNotNull(bare_brace("^\\s*}"));
+    assertNotNull(bare_brace("a{b"));
+    assertNull(bare_brace("\\d{4}-[{};]\\s*\\}"));
   }
 }
