@@ -321,7 +321,8 @@ only):
 - **Updates**: installed build, newer builds dropdown + Install, past
   builds dropdown + Restore. **Beta builds**: every push comes out as a
   beta (a GitHub pre-release); with the switch off (default) only stable
-  builds are offered. On a beta that works, *Mark build N stable* opens its
+  builds are offered as updates, and Studio names a newer beta when one is
+  hidden. Past builds always lists every older build, betas marked. On a beta that works, *Mark build N stable* opens its
   GitHub page: untick *pre-release*. Restores come out stable.
 - **Crash reports**: every crash, and every error the app survived (shown
   as a message instead), is kept on the phone with the error, where it

@@ -906,7 +906,7 @@ public class StudioActivity extends Activity
                 }
               }));
     List<Updater.Release> rs = Updater.channel(all, _prefs.getBoolean(KEY_UPDATE_BETA, false));
-    if (rs.isEmpty() && Updater.newer_beta(all, _installed_build) == null)
+    if (all.isEmpty())
     {
       _update_status.setText(R.string.studio_no_releases);
       return;
@@ -916,7 +916,10 @@ public class StudioActivity extends Activity
     for (Updater.Release r : rs)
       if (r.build > _installed_build)
         newer.add(r);
-      else if (r.build < _installed_build)
+    // Restoring is a deliberate pick: every past build, betas included
+    // (labelled), whatever the switch says.
+    for (Updater.Release r : all)
+      if (r.build < _installed_build)
         older.add(r);
     // Never say "newest" while a newer beta is hidden.
     Updater.Release hidden = _prefs.getBoolean(KEY_UPDATE_BETA, false) ? null

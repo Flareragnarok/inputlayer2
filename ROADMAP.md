@@ -8,7 +8,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 63).
+Last updated: 2026-11-01 (build 64).
 
 ## Done
 
@@ -77,6 +77,7 @@ Last updated: 2026-11-01 (build 63).
 | 61 | **Layout key** at the right end of the comfort bar: shows the layout (FR, DE, RU, EL…), tap next, ← previous, ↑ list. **Studio → Languages** ticks the layouts to switch between (automatic, French AZERTY, German QWERTZ, English QWERTY, Russian, Greek). Every layout, upstream's included, gets Input Layer's bottom row (no Ctrl / Fn / Compose). |
 | 62 | **Fix: endless row growth** from the height key (see Bug log). **Back undoes** height changes and moves, one gesture at a time; long Back (or ↕ ↙) undoes all since the keyboard was shown; ↕ ↖ undoes one. Heights are clamped to sane ranges and **repaired on start** without touching other data. |
 | 63 | **Updater no longer hides betas silently**: with *Beta builds* off, Studio said "You have the newest build" while a newer beta existed (owner on 61, build 62 was a beta, so they had to install from GitHub). It now says which beta is out and to turn on *Beta builds*; the switch re-filters the list at once, without checking again. |
+| 64 | **Past builds lists every older build**, betas included (marked "· beta"). With *Beta builds* off it only offered stable ones, so on 61 the newest restorable build was 55. The switch now only filters the *newer* builds offered as updates. |
 
 Infrastructure:
 
