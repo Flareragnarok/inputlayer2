@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 44).
+Last updated: 2026-11-01 (build 45).
 
 ## Done
 
@@ -55,6 +55,7 @@ Last updated: 2026-11-01 (build 44).
 | 42 | Verse's Case nest: snake_case, camelCase and aLtErNaTiNg, also while typing in format (a space becomes _ or is dropped with the next letter capital). snake_case and camelCase convert into each other; Title splits them back into words. |
 | 43 | Spec and Vert reworked. A Spec is a lens: atomic selection steps (scope, mode, direction, step, unit, move) giving the scope a Vert works on. A Vert operates on that scope once, faithfully: typing, ⌫/⌦, clear, wrap/unwrap, look, case (insertions even on an empty selection; transformations of nothing do nothing). Both are recorded in typing in format and simplified when saved (back-and-forth steps cancel), and edited step by step in Studio (Spec ↑ / Vert ↑). Old Specs became Verts. |
 | 44 | Clipboard and Memory open in the suggestion bar's place, the keyboard staying below. Long-press → Edit on a history entry, pin or Memory item: the selection bar expands into an editor and the keyboard types into it (keys, ⌫/⌦, arrows, the edit strip, Specs and Verts); ✓ saves (an edited clipboard entry becomes the newest one), ✕ cancels. |
+| 45 | The clipboard and memory icons stay in the corners over the open pane: the open tab's icon closes it (back to the keyboard), the other switches tabs. |
 
 Infrastructure:
 

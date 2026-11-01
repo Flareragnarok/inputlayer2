@@ -9,11 +9,11 @@
     <TextView android:id="@+id/candidates_middle" style="@style/candidates_item"/>
     <TextView android:id="@+id/candidates_right" style="@style/candidates_item"/>
   </juloo.keyboard2.suggestions.CandidatesView>
+  <!-- Studio: Clipboard / Memory, in the suggestion bar's place, the keyboard staying below; under the corner icons, which open and close it -->
+  <juloo.keyboard2.studio.MemoryPane android:id="@+id/memory_pane_inline" android:layout_width="match_parent" android:layout_height="@dimen/studio_memory_pane_height" android:visibility="gone"/>
   <!-- Studio: see-through shortcuts in the bottom corners of the suggestion bar -->
   <TextView android:id="@+id/corner_clipboard" style="@style/studio_corner_icon" android:layout_gravity="bottom|start"/>
   <TextView android:id="@+id/corner_memory" style="@style/studio_corner_icon" android:layout_gravity="bottom|end" android:text="▤"/>
-  <!-- Studio: Clipboard / Memory, in the suggestion bar's place, the keyboard staying below -->
-  <juloo.keyboard2.studio.MemoryPane android:id="@+id/memory_pane_inline" android:layout_width="match_parent" android:layout_height="@dimen/studio_memory_pane_height" android:visibility="gone"/>
   </FrameLayout>
   <juloo.keyboard2.Keyboard2View android:id="@+id/keyboard_view" android:layout_width="match_parent" android:layout_height="wrap_content"/>
   <juloo.keyboard2.studio.EditStrip android:id="@+id/edit_strip" android:layout_width="match_parent" android:layout_height="28dp"/>

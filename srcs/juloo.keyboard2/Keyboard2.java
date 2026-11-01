@@ -202,7 +202,11 @@ public class Keyboard2 extends InputMethodService
     _keyboard_layout_view = (Keyboard2View)_keyboard_container_view.findViewById(R.id.keyboard_view);
     _candidates_view = (CandidatesView)_keyboard_container_view.findViewById(R.id.candidates_view);
     _comfort_bar = (ComfortBar)_keyboard_container_view.findViewById(R.id.comfort_bar);
-    setup_corner_icon(R.id.corner_clipboard, "switch_clipboard");
+    _keyboard_container_view.findViewById(R.id.corner_clipboard)
+      .setOnClickListener(new View.OnClickListener() {
+        public void onClick(View _v) { open_memory_pane(false); }
+      });
+    setup_corner_icon_label(R.id.corner_clipboard, "switch_clipboard");
     _edit_strip = (EditStrip)_keyboard_container_view.findViewById(R.id.edit_strip);
     _edit_strip.setup(new EditStrip.Listener() {
       public InputConnection input() { return getCurrentInputConnection(); }
@@ -436,20 +440,14 @@ public class Keyboard2 extends InputMethodService
   }
 
   /** Studio: a see-through shortcut on the suggestion bar, showing the icon
-      of key [key_name] and acting like it. */
-  private void setup_corner_icon(int id, String key_name)
+      of key [key_name]. */
+  private void setup_corner_icon_label(int id, String key_name)
   {
     final KeyValue kv = KeyValue.getKeyByName(key_name);
     TextView v = (TextView)_keyboard_container_view.findViewById(id);
     v.setText(kv.getString());
     if (kv.hasFlagsAny(KeyValue.FLAG_KEY_FONT))
       v.setTypeface(Theme.getKeyFont(this));
-    v.setOnClickListener(new View.OnClickListener() {
-      public void onClick(View _v)
-      {
-        _keyeventhandler.key_up(kv, Pointers.Modifiers.EMPTY);
-      }
-    });
   }
 
   /** Studio: the Clipboard / Memory pane replaces upstream's clipboard pane.
@@ -586,10 +584,8 @@ public class Keyboard2 extends InputMethodService
     _candidates_view.setVisibility(should_show && !pane ? View.VISIBLE : View.GONE);
     _keyboard_container_view.findViewById(R.id.candidates_frame)
       .setVisibility(should_show || pane ? View.VISIBLE : View.GONE);
-    _keyboard_container_view.findViewById(R.id.corner_clipboard)
-      .setVisibility(pane ? View.GONE : View.VISIBLE);
-    _keyboard_container_view.findViewById(R.id.corner_memory)
-      .setVisibility(pane ? View.GONE : View.VISIBLE);
+    // The corner icons stay, over the pane: the open tab's icon closes it,
+    // the other switches tabs.
     memory_pane().setVisibility(pane ? View.VISIBLE : View.GONE);
     _comfort_bar.refresh(_config);
     _edit_strip.refresh(_config);
