@@ -553,7 +553,8 @@ public class Keyboard2 extends InputMethodService
     _config.device_locales = DeviceLocales.load(this);
     if (_config.device_locales.default_ != null)
     {
-      String layout_name = Config.own_layout(_config.device_locales.default_.default_layout);
+      String layout_name = Config.own_layout(_config.device_locales.default_.lang_tag,
+          _config.device_locales.default_.default_layout);
       if (layout_name != null)
         default_layout = LayoutsPreference.layout_of_string(getResources(), layout_name);
     }

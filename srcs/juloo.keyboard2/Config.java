@@ -402,17 +402,19 @@ public final class Config
     return new LayoutsPreference.NamedLayout(name);
   }
 
-  /** Studio: the layout "system" picks for a language, Input Layer's own
-      for Latin-script ones: AZERTY where the language's layout is AZERTY,
-      QWERTY otherwise. Other scripts keep their layout. */
-  public static String own_layout(String locale_layout)
+  /** Studio: the layout "system" picks for a language: Input Layer's own
+      where it covers the language (English, French, German), the
+      language's own layout otherwise, since ours lack other languages'
+      letters. */
+  public static String own_layout(String lang_tag, String locale_layout)
   {
-    if (locale_layout == null)
-      return "il_qwerty";
-    if (locale_layout.startsWith("latn_azerty"))
+    String lang = (lang_tag == null) ? "" : lang_tag.split("[-_]")[0];
+    if ("latn_azerty_fr".equals(locale_layout) && lang.equals("fr"))
       return "il_azerty";
-    if (locale_layout.startsWith("latn_"))
+    if ("latn_qwertz_de".equals(locale_layout) && lang.equals("de"))
+      return "il_qwertz";
+    if (lang.equals("en"))
       return "il_qwerty";
-    return locale_layout;
+    return (locale_layout == null) ? "il_qwerty" : locale_layout;
   }
 }

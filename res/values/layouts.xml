@@ -4,6 +4,7 @@
   <string-array name="pref_layout_values">
     <item>system</item>
     <item>il_azerty</item>
+    <item>il_qwertz</item>
     <item>il_qwerty</item>
     <item>latn_qwerty_us</item>
     <item>latn_colemak</item>
@@ -100,6 +101,7 @@
   <string-array name="pref_layout_entries">
     <item>@string/pref_layout_e_system</item>
     <item>Input Layer AZERTY</item>
+    <item>Input Layer QWERTZ</item>
     <item>Input Layer QWERTY</item>
     <item>Legacy · QWERTY (US)</item>
     <item>Legacy · Colemak</item>
@@ -196,6 +198,7 @@
   <integer-array name="layout_ids">
     <item>-1</item>
     <item>@xml/il_azerty</item>
+    <item>@xml/il_qwertz</item>
     <item>@xml/il_qwerty</item>
     <item>@xml/latn_qwerty_us</item>
     <item>@xml/latn_colemak</item>

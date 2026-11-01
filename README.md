@@ -53,11 +53,13 @@ the key's edges).
 
 ## Input Layer's layouts
 
-**Input Layer AZERTY** and **Input Layer QWERTY** (`srcs/layouts/il_*.xml`)
-are shaped like Gboard's. The language's default ("system") picks them for
-Latin-script languages: AZERTY where the language uses AZERTY (French),
-QWERTY otherwise. Upstream's layouts are listed after them as
-*Legacy · …*, for other scripts or habits.
+**Input Layer AZERTY**, **QWERTZ** and **QWERTY** (`srcs/layouts/il_*.xml`)
+are shaped like Gboard's French, German and English keyboards (QWERTZ:
+ü ö ä on their own keys, S ↖ ß). The language's default ("system") picks
+ours where they cover the language: French → AZERTY, German → QWERTZ,
+English → QWERTY. Other languages keep their own layout, since ours lack
+their letters. Upstream's layouts are listed after ours as
+*Legacy · …*.
 
 - **Letters**: digits on the top row's ↗ swipes (A/Q 1 … P 0); accents on
   the vowels' other corners (E: ↖ é, ↙ è, ↘ ê, ↓ ë; A: à â æ; U: ù û ü;

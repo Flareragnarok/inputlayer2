@@ -9,7 +9,7 @@ import xml.etree.ElementTree as XML
 
 # Layouts first in the list (these are the programming layouts). Other layouts
 # are sorted alphabetically.
-FIRST_LAYOUTS = [ "il_azerty", "il_qwerty", "latn_qwerty_us", "latn_colemak", "latn_dvorak" ]
+FIRST_LAYOUTS = [ "il_azerty", "il_qwertz", "il_qwerty", "latn_qwerty_us", "latn_colemak", "latn_dvorak" ]
 
 # Input Layer's own layouts; every other one is upstream's, listed as legacy.
 OWN_PREFIX = "il_"
