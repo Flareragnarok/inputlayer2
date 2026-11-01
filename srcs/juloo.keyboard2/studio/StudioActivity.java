@@ -51,6 +51,9 @@ public class StudioActivity extends Activity
   public static final String EXTRA_KEY_LAYOUT = "studio_key_layout";
   public static final String EXTRA_KEY_ID = "studio_key_id";
   public static final String EXTRA_KEY_NAMES = "studio_key_names";
+  /** The layout's other keys: ids, and 9 names per key. */
+  public static final String EXTRA_KEY_ALL_IDS = "studio_key_all_ids";
+  public static final String EXTRA_KEY_ALL_NAMES = "studio_key_all_names";
   static final String ACTION_INSTALL_STATUS = "juloo.keyboard2.studio.INSTALL_STATUS";
   static final int REQUEST_EXPORT = 1;
   static final int REQUEST_IMPORT = 2;
@@ -115,7 +118,9 @@ public class StudioActivity extends Activity
     try
     {
       new KeyEditor(this, _prefs, i.getStringExtra(EXTRA_KEY_LAYOUT), id,
-          i.getStringArrayExtra(EXTRA_KEY_NAMES)).show();
+          i.getStringArrayExtra(EXTRA_KEY_NAMES),
+          i.getStringArrayExtra(EXTRA_KEY_ALL_IDS),
+          i.getStringArrayExtra(EXTRA_KEY_ALL_NAMES)).show();
     }
     catch (Throwable e)
     {

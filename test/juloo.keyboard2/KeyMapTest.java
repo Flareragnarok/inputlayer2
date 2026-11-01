@@ -112,4 +112,47 @@ public class KeyMapTest
     KeyboardData kw = KeyMap.of_json(j).apply(layout("IL"));
     assertEquals("♪~(´ε` )", at(kw, 1).keys[8].getString());
   }
+
+  /** Layout mode's swap: two keys trade everything they hold. */
+  @Test
+  public void swap_keys() throws Exception
+  {
+    KeyboardData kw = layout("IL");
+    JSONObject j = KeyMap.swap(new JSONObject(), "IL", "q", KeyMap.names_of(at(kw, 0)),
+        "enter", KeyMap.names_of(at(kw, 2)));
+    KeyMap km = KeyMap.of_json(j);
+    KeyboardData r = km.apply(kw);
+    assertEquals(KeyValue.getKeyByName("enter"), at(r, 0).keys[0]);
+    assertNull(at(r, 0).keys[2]);
+    assertEquals(KeyValue.getKeyByName("q"), at(r, 2).keys[0]);
+    assertEquals(KeyValue.CONFIG, at(r, 2).keys[2]);
+    // Each still knows which key it is.
+    assertEquals("q", km.id_of("IL", at(r, 0)));
+    assertEquals("enter", km.id_of("IL", at(r, 2)));
+  }
+
+  /** Owner's default (build 67): ?123 and Shift trade places, Ctrl on
+      ?123's down. */
+  @Test
+  public void symbols_and_shift_swap()
+  {
+    KeyboardData.Row r1 = new KeyboardData.Row(new ArrayList<KeyboardData.Key>(
+          Arrays.asList(key("shift", null), key("z", null))), 1f, 0f);
+    KeyboardData.Row r2 = new KeyboardData.Row(new ArrayList<KeyboardData.Key>(
+          Arrays.asList(key("il_symbols", "studio_redo"), key("space", null))), 1f, 0f);
+    KeyboardData kw = new KeyboardData(new ArrayList<KeyboardData.Row>(Arrays.asList(r1, r2)),
+        2f, null, "latin", null, "IL", false, false, false);
+    KeyboardData s = LayoutModifier.swap_symbols_and_shift(kw);
+    KeyboardData.Key top = s.rows.get(0).keys.get(0), bottom = s.rows.get(1).keys.get(0);
+    assertEquals(KeyValue.getKeyByName("il_symbols"), top.keys[0]);
+    assertEquals(KeyValue.getKeyByName("studio_redo"), top.keys[2]);
+    assertEquals(KeyValue.getKeyByName("ctrl"), top.keys[8]);
+    assertEquals(KeyValue.getKeyByName("shift"), bottom.keys[0]);
+    assertNull(bottom.keys[2]);
+    // A layout without both is left alone.
+    KeyboardData one = new KeyboardData(new ArrayList<KeyboardData.Row>(Arrays.asList(r1)),
+        2f, null, "latin", null, "IL", false, false, false);
+    assertEquals(KeyValue.getKeyByName("shift"),
+        LayoutModifier.swap_keys(one, "shift", "il_symbols").rows.get(0).keys.get(0).keys[0]);
+  }
 }

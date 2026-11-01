@@ -567,6 +567,18 @@ public class Keyboard2 extends InputMethodService
     i.putExtra(StudioActivity.EXTRA_KEY_LAYOUT, layout);
     i.putExtra(StudioActivity.EXTRA_KEY_ID, km.id_of(layout, k));
     i.putExtra(StudioActivity.EXTRA_KEY_NAMES, juloo.keyboard2.studio.KeyMap.names_of(k));
+    // Every key of the layout, for "Swap with another key".
+    ArrayList<String> ids = new ArrayList<String>();
+    ArrayList<String> names = new ArrayList<String>();
+    for (KeyboardData.Row r : kw.rows)
+      for (KeyboardData.Key o : r.keys)
+        if (o != k && o.keys[0] != null)
+        {
+          ids.add(km.id_of(layout, o));
+          names.addAll(Arrays.asList(juloo.keyboard2.studio.KeyMap.names_of(o)));
+        }
+    i.putExtra(StudioActivity.EXTRA_KEY_ALL_IDS, ids.toArray(new String[0]));
+    i.putExtra(StudioActivity.EXTRA_KEY_ALL_NAMES, names.toArray(new String[0]));
     startActivity(i);
   }
 

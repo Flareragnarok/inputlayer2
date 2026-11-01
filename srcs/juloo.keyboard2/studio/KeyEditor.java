@@ -36,9 +36,17 @@ public final class KeyEditor
       layout's own (not known here). */
   final String[] _names;
 
+  /** The layout's other keys, for swapping: ids and 9 names each. */
+  final String[] _other_ids;
+  final String[] _other_names;
+
   public KeyEditor(Activity act, SharedPreferences prefs, String layout,
-      String id, String[] names)
+      String id, String[] names, String[] other_ids, String[] other_names)
   {
+    boolean others_ok = other_ids != null && other_names != null
+      && other_names.length == other_ids.length * DIR_LABELS.length;
+    _other_ids = others_ok ? other_ids : new String[0];
+    _other_names = others_ok ? other_names : new String[0];
     _act = act;
     _prefs = prefs;
     _layout = (layout == null) ? "" : layout;
@@ -67,14 +75,24 @@ public final class KeyEditor
   public void show()
   {
     KeyMap km = keymap();
-    String[] rows = new String[DIR_LABELS.length];
-    for (int d = 0; d < rows.length; d++)
+    // The 9 directions, then swapping the whole key.
+    final boolean can_swap = _other_ids.length > 0 && known(_names);
+    String[] rows = new String[DIR_LABELS.length + (can_swap ? 1 : 0)];
+    for (int d = 0; d < DIR_LABELS.length; d++)
       rows[d] = DIR_LABELS[d] + "    " + glyph(_names[d])
         + (km.is_changed(_layout, _id, d) ? "    • changed" : "");
+    if (can_swap)
+      rows[DIR_LABELS.length] = "⇄  Swap the whole key with…";
     new AlertDialog.Builder(_act)
       .setTitle("Key " + glyph(_id) + " · " + (_layout.isEmpty() ? "layout" : _layout))
       .setItems(rows, new DialogInterface.OnClickListener() {
-        public void onClick(DialogInterface di, int d) { direction(d); }
+        public void onClick(DialogInterface di, int d)
+        {
+          if (d < DIR_LABELS.length)
+            direction(d);
+          else
+            pick_swap();
+        }
       })
       .setNegativeButton("Done", null)
       .show();
@@ -160,6 +178,67 @@ public final class KeyEditor
       }
     });
     dlg.show();
+  }
+
+  /** Whether every direction is known (none "back to the layout's own",
+      which isn't known here). */
+  static boolean known(String[] names)
+  {
+    for (String n : names)
+      if (n == null)
+        return false;
+    return true;
+  }
+
+  String[] other_names(int i)
+  {
+    String[] r = new String[DIR_LABELS.length];
+    System.arraycopy(_other_names, i * r.length, r, 0, r.length);
+    return r;
+  }
+
+  /** Swap with another key of the layout: everything it holds, tap and
+      swipes. */
+  void pick_swap()
+  {
+    String[] labels = new String[_other_ids.length];
+    for (int i = 0; i < labels.length; i++)
+      labels[i] = glyph(other_names(i)[0]);
+    new AlertDialog.Builder(_act)
+      .setTitle("Swap " + glyph(_names[0]) + " with")
+      .setItems(labels, new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface di, int i) { swap(i); }
+      })
+      .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface di, int i) { show(); }
+      })
+      .show();
+  }
+
+  void swap(int i)
+  {
+    String[] theirs = other_names(i);
+    try
+    {
+      ModuleStore store = new ModuleStore(_prefs);
+      Module m = store.active("keymap");
+      if (m == null)
+        m = store.get("keymap", NEW_MODULE);
+      JSONObject j = KeyMap.swap(m == null ? new JSONObject() : m.json,
+          _layout, _id, _names, _other_ids[i], theirs);
+      Module nm = (m == null) ? Module.create("keymap", NEW_MODULE, j) : new Module(j);
+      store.save(nm, true);
+      String[] mine = _names.clone();
+      System.arraycopy(theirs, 0, _names, 0, _names.length);
+      System.arraycopy(mine, 0, _other_names, i * mine.length, mine.length);
+      Toast.makeText(_act, "Swapped", Toast.LENGTH_SHORT).show();
+    }
+    catch (Exception e)
+    {
+      Logs.exn("Key editor swap", e);
+      Toast.makeText(_act, "Not swapped: " + e.getMessage(), Toast.LENGTH_LONG).show();
+    }
+    show();
   }
 
   /** Any text on the key: an emoji, ♪, a kaomoji, a word. */

@@ -98,7 +98,8 @@ public final class LayoutModifier
       (layout mode). */
   static KeyboardData studio_keys(KeyboardData kw)
   {
-    kw = scale_rows(ctrl_undo(arrows_and_shift(space_nests(backspace_cut(kw)))));
+    kw = scale_rows(ctrl_undo(swap_symbols_and_shift(
+            arrows_and_shift(space_nests(backspace_cut(kw))))));
     if (globalConfig.studio != null && globalConfig.studio.keymap != null)
       kw = globalConfig.studio.keymap.apply(kw);
     return kw;
@@ -219,6 +220,65 @@ public final class LayoutModifier
           k = k.withKeyValue(5, apply);
         if (delete.equals(k.keys[2]))
           k = k.withKeyValue(2, null);
+        return k;
+      }
+    });
+  }
+
+  /** Studio (owner, build 67): ?123 and Shift trade places, on every
+      layout, and the symbols pages follow so that the key going back is
+      where ?123 was. Ctrl is ?123's ↓. */
+  static KeyboardData swap_symbols_and_shift(KeyboardData kw)
+  {
+    kw = swap_keys(kw, "shift", "il_symbols");
+    kw = swap_keys(kw, "il_symbols_more", "switch_text"); // Symbols page.
+    kw = swap_keys(kw, "il_symbols", "switch_text"); // More symbols page.
+    final KeyValue symbols = KeyValue.getKeyByName("il_symbols");
+    final KeyValue ctrl = KeyValue.getKeyByName("ctrl");
+    return kw.mapKeys(new KeyboardData.MapKey() {
+      public KeyboardData.Key apply(KeyboardData.Key k)
+      {
+        if (symbols.equals(k.keys[0]) && k.keys[8] == null)
+          return k.withKeyValue(8, ctrl);
+        return k;
+      }
+    });
+  }
+
+  /** The keys whose taps are [a] and [b] swap everything they hold (not
+      their size), if there is one of each. */
+  static KeyboardData swap_keys(KeyboardData kw, String a, String b)
+  {
+    final KeyValue ka = KeyValue.getKeyByName(a);
+    final KeyValue kb = KeyValue.getKeyByName(b);
+    KeyboardData.Key found_a = null, found_b = null;
+    for (KeyboardData.Row r : kw.rows)
+      for (KeyboardData.Key k : r.keys)
+      {
+        if (ka.equals(k.keys[0]))
+        {
+          if (found_a != null)
+            return kw;
+          found_a = k;
+        }
+        else if (kb.equals(k.keys[0]))
+        {
+          if (found_b != null)
+            return kw;
+          found_b = k;
+        }
+      }
+    if (found_a == null || found_b == null)
+      return kw;
+    final KeyboardData.Key fa = found_a, fb = found_b;
+    return kw.mapKeys(new KeyboardData.MapKey() {
+      public KeyboardData.Key apply(KeyboardData.Key k)
+      {
+        KeyboardData.Key from = (k == fa) ? fb : (k == fb) ? fa : null;
+        if (from == null)
+          return k;
+        for (int i = 0; i < k.keys.length; i++)
+          k = k.withKeyValue(i, from.keys[i]);
         return k;
       }
     });

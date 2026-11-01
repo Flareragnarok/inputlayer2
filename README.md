@@ -60,7 +60,8 @@ layout, every special key, music notes and all emojis, grouped Latin,
 Greek, Cyrillic, other scripts, Music, digits and symbols, Emoji, special
 keys; alphabetical inside, emojis in the emoji pane's order; with a
 search), **Type text or emoji…** (any text on the key: 🎶, ♪~(´ε` ), a
-word), **Remove**, or **Back to the layout's own**. Changes apply to the
+word), **Remove**, or **Back to the layout's own**. **⇄ Swap the whole
+key with…** (last line) trades everything two keys hold, tap and swipes. Changes apply to the
 layout shown only, and are kept in a `keymap` module ("mine"). Back or ⇄
 again leaves layout mode. Example: ⚙ from Q's corner to Enter's ↓: open
 Enter, ↓, Add key, search "config"; then open Q, the ⚙ corner, Remove.
@@ -89,7 +90,9 @@ their letters. Upstream's layouts are listed after ours as
 - **Bottom row** on every layout, upstream's included (it replaces
   `res/xml/bottom_row.xml`), no Ctrl / Fn / Compose: `?123` (↖ undo, ↗ redo) · `,`
   (↑ emoji) · space · `.` (↑ `?`, ↗ `!`, ↓ `:`) · Sector's arrow key ·
-  Enter.
+  Enter. Since build 67, **?123 and Shift trade places** on every layout
+  (Shift bottom-left, ?123 left of the third letter row), and on the
+  symbols pages the key back sits where ?123 was.
 - **?123** opens the first symbols page, like Gboard's: digits;
   `@ # € _ & - + ( ) /` (€ ↗ $); `=\<` `* " ' : ; ! ?` ⌫.
 - **=\<** opens the second page: `~ \` | • √ π ÷ × ¶ ∆`;
@@ -106,7 +109,7 @@ their letters. Upstream's layouts are listed after ours as
 | **Backspace** | ⌫, or ⌦ in forward mode (its label shows which) | ← **apply** Verse's look as picked (✦) · ↑ switch ⌫ / ⌦ · ↓ cut the selection (goes to the clipboard history) |
 | **Arrow key** (next to space) | Sector's step in the ←→ direction (label ⇢ / ⇠) | arrows (upstream) |
 | **Shift** | shift | ← **apply** View's format as picked (¶) · ↑ Caps Lock · → Compose (e.g. `a` `'` → á) |
-| **?123** (our layouts) | symbols | ↖ undo (Ctrl+Z) · ↗ redo (Ctrl+Shift+Z) |
+| **?123** (our layouts) | symbols | ↖ undo (Ctrl+Z) · ↗ redo (Ctrl+Shift+Z) · ↓ **Ctrl** |
 | **Ctrl** (legacy layouts) | ctrl | ↖ undo · ↗ redo |
 
 Upstream's layout switching on space ↑/↓ moved to the comfort bar's

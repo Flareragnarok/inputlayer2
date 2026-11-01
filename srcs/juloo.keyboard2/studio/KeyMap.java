@@ -192,6 +192,23 @@ public final class KeyMap
     return r;
   }
 
+  /** Fields of a [keymap] module (a copy of [j]) with keys [a] and [b] of
+      [layout] swapping what they hold: [names_a] and [names_b] are what
+      they show now ([names_of]). */
+  public static JSONObject swap(JSONObject j, String layout, String a,
+      String[] names_a, String b, String[] names_b) throws JSONException
+  {
+    JSONObject r = j;
+    for (int d = 0; d < KEY_INDEX.length; d++)
+    {
+      if (names_a[d].equals(names_b[d]))
+        continue;
+      r = set(r, layout, a, d, names_b[d]);
+      r = set(r, layout, b, d, names_a[d]);
+    }
+    return new JSONObject(r.toString());
+  }
+
   /** Whether direction [dir] of key [id] in [layout] is changed. */
   public boolean is_changed(String layout, String id, int dir)
   {
