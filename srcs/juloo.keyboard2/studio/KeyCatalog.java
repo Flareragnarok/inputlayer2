@@ -5,6 +5,7 @@ import android.content.res.TypedArray;
 import android.content.res.XmlResourceParser;
 import java.text.Collator;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -31,8 +32,12 @@ public final class KeyCatalog
     public final String glyph;
     public final String group;
     final int rank;
+    /** Position in a group kept in its own order, [-1] if sorted. */
+    final int order;
 
-    Entry(String n, String gl, String gr, int r) { name = n; glyph = gl; group = gr; rank = r; }
+    Entry(String n, String gl, String gr, int r) { this(n, gl, gr, r, -1); }
+    Entry(String n, String gl, String gr, int r, int o)
+    { name = n; glyph = gl; group = gr; rank = r; order = o; }
 
     /** What the list shows. */
     public String label()
@@ -43,7 +48,14 @@ public final class KeyCatalog
   }
 
   static final String SYMBOLS = "Digits & symbols";
+  static final String MUSIC = "Music";
+  static final String EMOJI = "Emoji";
   static final String SPECIAL = "Special keys";
+
+  /** Notes and signs, in this order. */
+  static final String[] MUSIC_KEYS = {
+    "♩", "♪", "♫", "♬", "♭", "♮", "♯", "𝄞", "𝄢", "𝄡", "𝄪", "𝄫",
+    "𝅝", "𝅗𝅥", "𝅘𝅥", "𝅘𝅥𝅮", "𝅘𝅥𝅯", "𝄐", "𝄽", "𝄾", "🎵", "🎶", "🎼" };
 
   private KeyCatalog() {}
 
@@ -56,7 +68,12 @@ public final class KeyCatalog
     {
       Set<String> names = new LinkedHashSet<String>(layout_key_names(res));
       Collections.addAll(names, KeyNames.SPECIAL);
-      _cache = build(names);
+      juloo.keyboard2.Emoji.init(res);
+      List<String> emojis = new ArrayList<String>();
+      for (int g = 0; g < juloo.keyboard2.Emoji.getNumGroups(); g++)
+        for (juloo.keyboard2.Emoji e : juloo.keyboard2.Emoji.getEmojisByGroup(g))
+          emojis.add(e.kv().getString());
+      _cache = build(names, Arrays.asList(MUSIC_KEYS), emojis);
     }
     return _cache;
   }
@@ -64,14 +81,25 @@ public final class KeyCatalog
   /** Entries for [names], one per distinct key, sorted. */
   static List<Entry> build(Collection<String> names)
   {
+    return build(names, new ArrayList<String>(), new ArrayList<String>());
+  }
+
+  /** Same, with the notes in [music] and the emojis in [emojis] in groups of
+      their own, kept in their order. */
+  static List<Entry> build(Collection<String> names, List<String> music,
+      List<String> emojis)
+  {
     List<Entry> out = new ArrayList<Entry>();
     Set<KeyValue> seen = new HashSet<KeyValue>();
+    add_in_order(out, seen, music, MUSIC);
+    add_in_order(out, seen, emojis, EMOJI);
     for (String n : names)
     {
       KeyValue kv = KeyMap.key_of_name(n);
       if (kv == null || kv.getKind() == KeyValue.Kind.Placeholder || !seen.add(kv))
         continue;
-      String glyph = kv.getString();
+      // Icons are in the keyboard's own font, boxes anywhere else: the name.
+      String glyph = kv.hasFlagsAny(KeyValue.FLAG_KEY_FONT) ? n : kv.getString();
       String group = group_of(kv);
       out.add(new Entry(n, glyph.isEmpty() ? n : glyph, group, rank_of(group)));
     }
@@ -81,6 +109,8 @@ public final class KeyCatalog
       {
         if (a.rank != b.rank)
           return a.rank - b.rank;
+        if (a.order >= 0)
+          return a.order - b.order; // Music, emojis: their own order.
         int c = a.group.compareTo(b.group);
         if (c != 0)
           return c;
@@ -91,6 +121,18 @@ public final class KeyCatalog
       }
     });
     return out;
+  }
+
+  static void add_in_order(List<Entry> out, Set<KeyValue> seen,
+      List<String> texts, String group)
+  {
+    for (String t : texts)
+    {
+      String n = KeyMap.name_for_text(t);
+      KeyValue kv = (n == null) ? null : KeyMap.key_of_name(n);
+      if (kv != null && seen.add(kv))
+        out.add(new Entry(n, t, group, rank_of(group), out.size()));
+    }
   }
 
   static String group_of(KeyValue kv)
@@ -118,8 +160,10 @@ public final class KeyCatalog
       case "Latin": return 0;
       case "Greek": return 1;
       case "Cyrillic": return 2;
-      case SYMBOLS: return 4;
-      case SPECIAL: return 5;
+      case MUSIC: return 4;
+      case SYMBOLS: return 5;
+      case EMOJI: return 6;
+      case SPECIAL: return 7;
       default: return 3;
     }
   }

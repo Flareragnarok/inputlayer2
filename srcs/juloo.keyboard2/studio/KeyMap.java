@@ -140,6 +140,21 @@ public final class KeyMap
     return s;
   }
 
+  /** A name for a key that types [text] (any text: emoji, ♪, a kaomoji),
+      [null] if [text] can't be written as a key. */
+  public static String name_for_text(String text)
+  {
+    if (text == null || text.isEmpty())
+      return null;
+    // Plain text is a string key, unless it has a ':' or is a key's name.
+    if (text.indexOf(':') < 0 && KeyValue.getSpecialKeyByName(text) == null)
+      return text;
+    // Quoted; the quote is the only escape there.
+    if (text.indexOf('\\') >= 0)
+      return null;
+    return ":str:'" + text.replace("'", "\\'") + "'";
+  }
+
   /** The names of the 9 directions of [k], "" where empty. */
   public static String[] names_of(KeyboardData.Key k)
   {

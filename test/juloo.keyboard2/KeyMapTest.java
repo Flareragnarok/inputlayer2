@@ -93,4 +93,23 @@ public class KeyMapTest
     assertEquals("config", d[NE]);
     assertEquals("", d[S]);
   }
+
+  /** Any text on a key: emoji, notes, kaomoji (with ':' and quotes). */
+  @Test
+  public void text_keys() throws Exception
+  {
+    String[] ts = { "♪", "🎶", "😶‍🌫️", "♪~(´ε` )", "a:b", "it's: ok", "enter", "hello" };
+    for (String t : ts)
+    {
+      String n = KeyMap.name_for_text(t);
+      assertNotNull(t, n);
+      KeyValue kv = KeyValue.getKeyByName(n);
+      assertEquals(t, t, kv.getString());
+    }
+    assertNull(KeyMap.name_for_text(""));
+    // On a key, through a keymap.
+    JSONObject j = KeyMap.set(new JSONObject(), "IL", "w", S, KeyMap.name_for_text("♪~(´ε` )"));
+    KeyboardData kw = KeyMap.of_json(j).apply(layout("IL"));
+    assertEquals("♪~(´ε` )", at(kw, 1).keys[8].getString());
+  }
 }

@@ -56,9 +56,11 @@ cut ↖, paste ↗, select all ↙). While it's on (the keyboard is outlined in
 green, the key shows ⇄ ✓), tapping a key opens it in Studio instead of
 typing. The editor shows the key's tap and 8 swipes; pick one, then
 **Add key…** / **Replace with…** (a list of every key of every language's
-layout and every special key, grouped Latin, Greek, Cyrillic, other
-scripts, digits and symbols, special keys, alphabetical inside; with a
-search), **Remove**, or **Back to the layout's own**. Changes apply to the
+layout, every special key, music notes and all emojis, grouped Latin,
+Greek, Cyrillic, other scripts, Music, digits and symbols, Emoji, special
+keys; alphabetical inside, emojis in the emoji pane's order; with a
+search), **Type text or emoji…** (any text on the key: 🎶, ♪~(´ε` ), a
+word), **Remove**, or **Back to the layout's own**. Changes apply to the
 layout shown only, and are kept in a `keymap` module ("mine"). Back or ⇄
 again leaves layout mode. Example: ⚙ from Q's corner to Enter's ↓: open
 Enter, ↓, Add key, search "config"; then open Q, the ⚙ corner, Remove.

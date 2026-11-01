@@ -60,7 +60,7 @@ public final class KeyEditor
     if (name.isEmpty())
       return "—";
     KeyValue kv = KeyMap.key_of_name(name);
-    String g = (kv == null) ? name : kv.getString();
+    String g = (kv == null || kv.hasFlagsAny(KeyValue.FLAG_KEY_FONT)) ? name : kv.getString();
     return (g.equals(name) || g.isEmpty()) ? name : g + "  (" + name + ")";
   }
 
@@ -88,6 +88,8 @@ public final class KeyEditor
     final List<Runnable> acts = new ArrayList<Runnable>();
     labels.add(empty ? "Add key…" : "Replace with…");
     acts.add(new Runnable() { public void run() { pick(d); } });
+    labels.add("Type text or emoji…");
+    acts.add(new Runnable() { public void run() { type_text(d); } });
     if (!empty)
     {
       labels.add("Remove");
@@ -125,7 +127,7 @@ public final class KeyEditor
     LinearLayout box = new LinearLayout(_act);
     box.setOrientation(LinearLayout.VERTICAL);
     final EditText filter = new EditText(_act);
-    filter.setHint("Search: letter, name or script (e.g. ё, config, greek)");
+    filter.setHint("Search: letter, name or group (ё, config, greek, music, emoji)");
     filter.setSingleLine(true);
     final ListView list = new ListView(_act);
     list.setAdapter(adapter);
@@ -158,6 +160,38 @@ public final class KeyEditor
       }
     });
     dlg.show();
+  }
+
+  /** Any text on the key: an emoji, ♪, a kaomoji, a word. */
+  void type_text(final int d)
+  {
+    final EditText t = new EditText(_act);
+    t.setHint("e.g. ♪  🎶  ♪~(´ε` )");
+    KeyValue cur = "".equals(_names[d]) || _names[d] == null ? null
+      : KeyMap.key_of_name(_names[d]);
+    if (cur != null && cur.getKind() == KeyValue.Kind.String)
+      t.setText(cur.getString());
+    new AlertDialog.Builder(_act)
+      .setTitle("Text for " + DIR_LABELS[d])
+      .setView(t)
+      .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface di, int i)
+        {
+          String n = KeyMap.name_for_text(t.getText().toString());
+          if (n == null)
+          {
+            Toast.makeText(_act, "Can't put that text on a key (empty, or a \\ with a :)",
+                Toast.LENGTH_LONG).show();
+            direction(d);
+          }
+          else
+            save(d, n);
+        }
+      })
+      .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface di, int i) { direction(d); }
+      })
+      .show();
   }
 
   static List<String> labels(List<KeyCatalog.Entry> es)

@@ -37,6 +37,21 @@ public class KeyCatalogTest
   }
 
   @Test
+  public void music_and_emoji_keep_their_order()
+  {
+    List<KeyCatalog.Entry> es = KeyCatalog.build(Arrays.asList("a", "♪", "enter"),
+        Arrays.asList("♫", "♪"), Arrays.asList("😀", "🎶", "😀"));
+    List<String> glyphs = new ArrayList<String>();
+    for (KeyCatalog.Entry e : es)
+      glyphs.add(e.glyph);
+    // ♪ from a layout stays in Music; the second 😀 is the same key.
+    assertEquals(Arrays.asList("a", "♫", "♪", "😀", "🎶", "enter"), glyphs);
+    assertEquals(KeyCatalog.MUSIC, es.get(1).group);
+    assertEquals(KeyCatalog.EMOJI, es.get(3).group);
+    assertEquals(2, KeyCatalog.filter(es, "emoji").size());
+  }
+
+  @Test
   public void same_key_once()
   {
     // "\\?" and "?" are the same key.
