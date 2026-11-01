@@ -173,9 +173,10 @@ public class EditStrip extends LinearLayout
   boolean _replaying = false;
   /** Cursor at the last update, to tell ⌫ from ⌦. */
   int _prev_cursor = 0;
-  /** Look applied by the Verse action being done, for recording it. */
-  String _step_style = null;
-  boolean _step_case = false;
+  /** Where Scope ↑ left the cursor and the text's length then: until
+      either changes, the pushed text isn't the unit at the cursor. */
+  int _pushed_at = -1;
+  int _pushed_len = -1;
   /** Opening marker, for the selection bar's preview. */
   String _typing_open = "";
   /** Verse's item applied to the typed text, [null] for none. */
@@ -347,21 +348,21 @@ public class EditStrip extends LinearLayout
         push_typing();
         return;
       case "appearance_default":
-        // Plain letters, and the default nest.
-        restore_appearance();
+        // Plain letters, in the default nest.
         _verse_nest = DEFAULT_VERSE_NEST;
         _verse_item = -1;
+        follow_verse();
         rebuild();
         return;
       case "format_default":
-        // Format removed, and the app's own syntax.
-        restore_format();
+        // Plain, in the app's own syntax.
         default_syntax();
         rebuild();
         return;
       case "appearance_nest":
         _verse_nest = (_verse_nest + 1) % UnicodeStyles.nests().size();
         _verse_item = -1;
+        follow_verse();
         rebuild();
         return;
       case "format_nest":
@@ -736,13 +737,16 @@ public class EditStrip extends LinearLayout
   }
 
   /** Scope ↑: the typed text is done; the cursor goes after the closing
-      marker. */
+      marker, nothing selected, and the text is left as it is (see
+      [_pushed_at]). */
   void push_typing()
   {
     if (!_typing)
       return;
     InputConnection ic = _listener.input();
     int after = _typing_end + _typing_close.length();
+    _pushed_at = after;
+    _pushed_len = _typing_len;
     stop_typing();
     if (ic != null)
       ic.setSelection(after, after);
@@ -1216,46 +1220,41 @@ public class EditStrip extends LinearLayout
     return nest[0].equals("Case") ? case_label(item) : UnicodeStyles.label(item);
   }
 
-  /** Next item of the nest: after the target's current style in this nest,
-      the first one (last one going down) otherwise. Case items cycle on
-      their own, a text's case not being a style. */
+  /** Tap: the next item of the nest is picked (the previous one going
+      down). Picks change no text: Backspace ← applies them. */
   void cycle_appearance()
   {
-    final String[] nest = verse_nest();
-    final int n = nest.length - 1;
-    final boolean is_case = nest[0].equals("Case");
-    transform_target(new Transform() {
-      public String apply(String s)
-      {
-        int k = -1;
-        if (is_case)
-          k = _verse_item;
-        else
-        {
-          String st = UnicodeStyles.style_of(s);
-          for (int i = 1; i < nest.length; i++)
-            if (nest[i].equals(st))
-              k = i - 1;
-        }
-        int next = (k < 0) ? (_up ? 0 : n - 1) : (k + (_up ? 1 : n - 1)) % n;
-        _verse_item = next;
-        String item = nest[1 + next];
-        _step_style = item;
-        _step_case = is_case;
-        return is_case ? UnicodeStyles.change_case(s, item) : UnicodeStyles.apply(s, item);
-      }
-    });
+    String[] nest = verse_nest();
+    int n = nest.length - 1;
+    int k = Math.max(0, _verse_item);
+    _verse_item = (k + (_up ? 1 : n - 1)) % n;
+    follow_verse();
     rebuild();
   }
 
-  /** Back to plain letters; the case stays as it is. */
+  /** Verse ↑: plain letters picked, in this nest if it has them (the case
+      stays as it is). */
   void restore_appearance()
   {
-    _step_style = UnicodeStyles.PLAIN;
-    _step_case = false;
-    transform_target(new Transform() {
-      public String apply(String s) { return UnicodeStyles.apply(s, UnicodeStyles.PLAIN); }
-    });
+    if (!lock_in_verse(UnicodeStyles.PLAIN))
+    {
+      _verse_nest = DEFAULT_VERSE_NEST;
+      _verse_item = -1;
+      follow_verse();
+      rebuild();
+    }
+  }
+
+  /** Typing in format follows Verse's pick: the letters typed from now on
+      get the new look. */
+  void follow_verse()
+  {
+    if (!_typing)
+      return;
+    String[] n = verse_nest();
+    String style = n[1 + Math.min(Math.max(0, _verse_item), n.length - 2)];
+    _typing_case = n[0].equals("Case");
+    _typing_style = style.equals(UnicodeStyles.PLAIN) ? null : style;
   }
 
   void appearance_menu()
@@ -1265,34 +1264,19 @@ public class EditStrip extends LinearLayout
     SubMenu cases = m.addSubMenu("Aa  Case");
     for (final String c : UnicodeStyles.CASES)
       add(cases, case_label(c), new Runnable() {
-        public void run()
-        {
-          _step_style = c;
-          _step_case = true;
-          transform_target(new Transform() {
-            public String apply(String s) { return UnicodeStyles.change_case(s, c); }
-          });
-          lock_in_verse(c);
-        }
+        public void run() { lock_in_verse(c); }
       });
     for (final String st : UnicodeStyles.styles())
       add(m, UnicodeStyles.label(st), new Runnable() {
-        public void run()
-        {
-          _step_style = st;
-          _step_case = false;
-          transform_target(new Transform() {
-            public String apply(String s) { return UnicodeStyles.apply(s, st); }
-          });
-          lock_in_verse(st);
-        }
+        public void run() { lock_in_verse(st); }
       });
     p.show();
   }
 
   /** A look picked from the list becomes Verse's nest and item, so that
-      the next tap and typing in format go on from it. */
-  void lock_in_verse(String item)
+      the next tap, Backspace ← and typing in format go on from it.
+      [false] if no nest has it. */
+  boolean lock_in_verse(String item)
   {
     List<String[]> ns = UnicodeStyles.nests();
     for (int i = 0; i < ns.size(); i++)
@@ -1303,9 +1287,11 @@ public class EditStrip extends LinearLayout
         {
           _verse_nest = i;
           _verse_item = j - 1;
+          follow_verse();
           rebuild();
-          return;
+          return true;
         }
+    return false;
   }
 
   static String case_label(String c)
@@ -1352,6 +1338,8 @@ public class EditStrip extends LinearLayout
     return TextFormats.cycle_list(syntax(), _custom_formats);
   }
 
+  /** Tap: the next format of the syntax is picked, plain between the
+      last and the first. Picks change no text: Backspace ← applies them. */
   void cycle_format()
   {
     List<String[]> fs = formats();
@@ -1361,37 +1349,18 @@ public class EditStrip extends LinearLayout
       cycle_appearance();
       return;
     }
-    Field f = read();
-    if (f == null)
-      return;
-    int[] r = target(f);
-    if (r == null)
-      r = new int[]{ f.sel_start, f.sel_start };
-    TextFormats.Edit e = TextFormats.cycle(f.text, r, fs, _up);
-    // Recorded as: remove the format, then wrap in the new one.
-    rec_vert("unwrap");
-    for (String[] fm : fs)
-      if (e.name != null && fm[0].equals(e.name))
-        rec_vert("wrap:" + fm[1] + "|" + fm[2]);
-    replace(f, e.start, e.end, e.text, e.sel_start, e.sel_end);
-    _view_item = e.name;
+    int i = -1;
+    for (int k = 0; k < fs.size(); k++)
+      if (fs.get(k)[0].equals(_view_item))
+        i = k;
+    int j = (i < 0) ? (_up ? 0 : fs.size() - 1) : (_up ? i + 1 : i - 1);
+    _view_item = (j < 0 || j >= fs.size()) ? null : fs.get(j)[0];
     rebuild();
   }
 
+  /** View ↑: plain picked. */
   void restore_format()
   {
-    Field f = read();
-    if (f == null)
-      return;
-    int[] r = target(f);
-    if (r == null)
-      return;
-    TextFormats.Edit e = TextFormats.unwrap(f.text, r, formats());
-    if (e != null)
-    {
-      rec_vert("unwrap");
-      replace(f, e.start, e.end, e.text, e.sel_start, e.sel_end);
-    }
     _view_item = null;
     rebuild();
   }
@@ -1427,7 +1396,6 @@ public class EditStrip extends LinearLayout
       add(m, fm[0], new Runnable() {
         public void run()
         {
-          format_target(new String[]{ fm[1], fm[2] });
           _view_item = fm[0];
           rebuild();
         }
@@ -1435,42 +1403,56 @@ public class EditStrip extends LinearLayout
     p.show();
   }
 
-  void format_target(String[] markers)
-  {
-    Field f = read();
-    if (f == null)
-      return;
-    int[] r = target(f);
-    if (r == null)
-      // Nothing to wrap: insert the markers around the cursor.
-      r = new int[]{ f.sel_start, f.sel_start };
-    TextFormats.Edit e = TextFormats.toggle(f.text, r, markers);
-    rec_vert("wrap:" + markers[0] + "|" + markers[1]);
-    replace(f, e.start, e.end, e.text, e.sel_start, e.sel_end);
-  }
-
   /* Editing */
 
-  interface Transform { String apply(String s); }
-
-  /** Apply [t] to the selection, or to the scope's unit at the cursor, and
-      select the result. */
-  void transform_target(Transform t)
+  /** Backspace ←: View's format and Verse's look, as picked, applied to
+      the selection or the scope's unit at the cursor. A format already
+      around it is replaced; the text inside the markers stays selected, so
+      applying again after other picks replaces them in turn. */
+  public void apply_picks()
   {
     Field f = read();
     if (f == null)
       return;
     int[] r = target(f);
     if (r == null)
+    {
+      toast("Nothing to apply to: select some text");
       return;
-    String n = t.apply(f.text.substring(r[0], r[1]));
-    if (_step_style != null)
-      rec_vert((_step_case ? "case:" : "look:") + _step_style);
-    _step_style = null;
-    replace(f, r[0], r[1], n, r[0], r[0] + n.length());
+    }
+    List<String[]> fs = formats();
+    int[] outer = { r[0], r[1] }, inner = { r[0], r[1] };
+    boolean had = TextFormats.current(f.text, r, fs, outer, inner) >= 0;
+    String[] n = verse_nest();
+    String style = n[1 + Math.min(Math.max(0, _verse_item), n.length - 2)];
+    boolean is_case = n[0].equals("Case");
+    String body = f.text.substring(inner[0], inner[1]);
+    body = is_case ? UnicodeStyles.change_case(body, style) : UnicodeStyles.apply(body, style);
+    String[] vf = view_format();
+    String open = (vf == null) ? "" : vf[1], close = (vf == null) ? "" : vf[2];
+    String t;
+    int ss, se;
+    if (close.isEmpty() && !open.isEmpty())
+    {
+      // Line markers ("> ", "# ") start each line.
+      t = TextFormats.toggle_lines(0, 0, body, open).text;
+      ss = 0;
+      se = t.length();
+    }
+    else
+    {
+      t = open + body + close;
+      ss = open.length();
+      se = ss + body.length();
+    }
+    // Recorded as: remove the format, the look, then wrap in the new one.
+    if (had)
+      rec_vert("unwrap");
+    rec_vert((is_case ? "case:" : "look:") + style);
+    if (vf != null)
+      rec_vert("wrap:" + open + "|" + close);
+    replace(f, outer[0], outer[1], t, outer[0] + ss, outer[0] + se);
   }
-
-
 
   /** The selection [sel] (of unit [unit]) after a step forward or back:
       inclusive keeps it and adds the next or previous unit, exclusive moves
@@ -1523,6 +1505,9 @@ public class EditStrip extends LinearLayout
     }
     if (has_selection(f))
       return new int[]{ f.sel_start, f.sel_end };
+    // Text Scope ↑ just pushed is done: it isn't the unit at the cursor.
+    if (f.base + f.sel_start == _pushed_at && f.text.length() == _pushed_len)
+      return null;
     return _scope.unit_at(f.text, f.sel_start);
   }
 

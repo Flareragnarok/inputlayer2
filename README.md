@@ -56,7 +56,7 @@ the key's edges).
 | Key | Tap | Swipes added by Input Layer |
 |---|---|---|
 | **Space** | space | ↓ reset all nests · ← save the nests as a nest config · ↑ next nest config · → cursor right (upstream) |
-| **Backspace** | ⌫, or ⌦ in forward mode (its label shows which) | ↑ switch ⌫ / ⌦ · ↓ cut the selection (goes to the clipboard history) |
+| **Backspace** | ⌫, or ⌦ in forward mode (its label shows which) | ← **apply** View's format and Verse's look as picked (✦) · ↑ switch ⌫ / ⌦ · ↓ cut the selection (goes to the clipboard history) |
 | **Arrow key** (next to space) | Sector's step in the ←→ direction (label ⇢ / ⇠) | arrows (upstream) |
 | **Shift** | shift | ↑ Caps Lock · → Compose (e.g. `a` `'` → á) |
 | **Ctrl** | ctrl | ↖ undo (Ctrl+Z) · ↗ redo (Ctrl+Shift+Z) |
@@ -91,9 +91,9 @@ state at the bottom.
 | **Scope** | next scope (Word, Sentence, Line, Paragraph, All, then custom selections) | next nest (Text, Custom) | list | **start typing in format** | **push it** |
 | **Spec** | apply the current Spec | next Spec | list | save the recorded Spec | Spec editor |
 | **Sector** | cycle the mode: **excl → incl → desel** (shown at the bottom) | move by a unit (the selection if any, else the cursor) | same, backward | – | select the unit at the cursor, or deselect |
-| **View** (format) | next format of the app's syntax, plain in between | next syntax (remembered per app) | list | remove the format, back to the app's syntax | remove the format |
+| **View** (format) | pick the next format of the app's syntax, plain in between | next syntax (remembered per app) | list (picks) | pick plain, back to the app's syntax | pick plain |
 | **Vert** | apply the current Vert | next Vert | list | save the recorded Vert | Vert editor |
-| **Verse** (look) | next look of the nest | next nest | list (locks the pick in) | plain letters, back to the Serif nest | plain letters |
+| **Verse** (look) | pick the next look of the nest | next nest | list (picks) | pick plain letters, back to the Serif nest | pick plain letters |
 | **↑↓** | flip the cycling direction (View, Verse) | | | | |
 
 **Sector's step** (the arrow key's tap): with nothing selected, selects
@@ -119,28 +119,36 @@ snake_case, camelCase, aLtErNaTiNg), **Serif** (𝐛𝐨𝐥𝐝, 𝑖𝑡𝑎�
 convert from plain letters, so they switch freely; snake_case and
 camelCase convert into each other, Title splits them back into words.
 
-View and Verse act on the selection, or the scope's unit at the cursor,
-and select the result so the next tap cycles on.
+**View and Verse only pick**: their keys never change the text. **Backspace
+←** applies both picks to the selection, or to the scope's unit at the
+cursor when nothing is selected: any format already around it is
+replaced, Verse's look goes on the letters, and the text inside the markers
+stays selected, so new picks and another ← replace them in turn.
 
 **Nest configs**: the state of Scope, View and Verse (nests and items) is
 saved with space ←, cycled with space ↑, reset with space ↓.
 
 ## Typing in format (scope write)
 
-**Scope ↓** starts it, **Scope ↑** pushes it (the cursor goes after the
-closing marker); moving the cursor out of the text also ends it.
+**Scope ↓** starts it, **Scope ↑** pushes it: the cursor goes after the
+closing marker, nothing is selected, and the pushed text is done. Until
+the cursor moves or something is typed, Backspace ← doesn't treat it as
+the unit at the cursor (select it to change it again). Moving the cursor
+out of the text also ends it.
 
 - View's format goes around the text, Verse's look is applied to each
   letter as it is typed (cases look at what came before: `_` for spaces
   in snake_case, a dropped space capitalizes in camelCase...).
 - With a selection, the selection is the text: it gets the format and
   look at once and typing continues inside it.
+- Picking another look on Verse meanwhile applies to the letters typed
+  from then on; a new View pick is for the next typing in format.
 - Sector only moves within the typed text meanwhile; changes made to
-  units with View or Verse stay.
+  units with Backspace ← stay.
 - The Scope key lights up; the selection bar previews the result (`✎ …`).
 - Its words become suggestions, as written.
 - Everything done is recorded: Sector, Scope and ←→ as Spec steps; typing,
-  ⌫/⌦, View and Verse as Vert operations (saved with Spec ↓ / Vert ↓).
+  ⌫/⌦ and Backspace ← as Vert operations (saved with Spec ↓ / Vert ↓).
 
 ## Spec and Vert
 
@@ -296,7 +304,8 @@ colours. Main steps (details per build in [ROADMAP.md](ROADMAP.md)):
    names (Scope, Spec, Sector, View, Vert, Verse, two arrows), nests,
    nest configs on the space bar, plain in every nest.
 5. **Typing in format** (21–34): typed letters get the look, ranges,
-   selections, Scope ↓ / ↑, unit changes kept, Scope lit.
+   selections, Scope ↓ / ↑, unit changes kept, Scope lit; from 48 View and
+   Verse only pick, Backspace ← applies, a pushed text is left alone.
 6. **Keys** (35–39): desel mode, the arrow key's tap for Sector, Shift's
    Caps Lock and Compose, backspace's ⌫/⌦ switch, undo/redo on Ctrl.
 7. **Macros** (31–43): first Spec (steps) and Vert (replacement), then
@@ -306,7 +315,9 @@ colours. Main steps (details per build in [ROADMAP.md](ROADMAP.md)):
    Mails, snake/camel/alternating cases, the pane in the suggestions'
    place, editing items with the keyboard, icon navigation.
 
-Decisions taken along the way: modules never contain code; categories by
+Decisions taken along the way: View and Verse pick, Backspace ← applies
+(the finished text of typing in format must not be restyled by a pick);
+modules never contain code; categories by
 content type, never by source app (Android doesn't tell it); pinning a
 selection was dropped as unintuitive; upstream's space-bar layout switch
 and left slider were given up for nest configs; the part-of-speech tagger

@@ -958,6 +958,10 @@ public class Keyboard2 extends InputMethodService
           _edit_strip.sector_step();
           break;
 
+        case STUDIO_APPLY:
+          _edit_strip.apply_picks();
+          break;
+
         case STUDIO_CUT:
           if (!_edit_strip.cut_pinned())
           {
