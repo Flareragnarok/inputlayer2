@@ -41,7 +41,7 @@ comfort bar's ↕ key):
 
 | Part | What it is |
 |---|---|
-| **Comfort bar** (26dp) | tiny keys: layout mode ⇄ (with copy/paste on its swipes), cursor, height ↕, language |
+| **Comfort bar** (26dp) | tiny keys, left to right: the **layout key** ⇄, cursor, height ↕, the **suggestions key** (language of the suggestions), the **language key** (DE / FR / RU…) |
 | **Selection bar** | only shown when it has something: the preview of typing in format |
 | **Suggestion bar** (28dp) | words only; see-through **Clipboard** icon bottom-left, **Memory** icon bottom-right; the Clipboard / Memory pane opens in its place, with its own bar on top |
 | **Keyboard** | Input Layer's own layouts (AZERTY, QWERTY), or upstream's under Legacy |
@@ -51,8 +51,21 @@ All small keys work like keyboard keys: **tap** for the main action,
 **swipe** toward one of 8 directions for the others (the faint labels on
 the key's edges).
 
-**Layout mode** with ⇄, the comfort bar's leftmost key (copy is now its ↑,
-cut ↖, paste ↗, select all ↙). While it's on (the keyboard is outlined in
+Names (owner, build 71): the **layout key** is the comfort bar's left end
+⇄, it customizes the layout; the **language key** is the right end, it
+switches languages and saved layouts; the **suggestions key** next to it
+sets the suggestions' language.
+
+The **layout key** ⇄: tap **edit mode** (below), ↑ copy, ↓ key repeat
+on/off (↻ on: backspace, arrows… repeat; ✎ off: holding a key edits it),
+↗ backspace split on/off (⌫⌦ / ⌫). Cut is backspace ↓, select all ⌦ ←.
+
+The **language key**: tap next language, ← previous, ↑ list; **↓ saves the
+key arrangement** as "Layout N" (a `keymap` module; edit mode goes on with
+the new one, the saved one stays as it was), **→ picks a saved layout** (or
+"No changes", the layouts' own).
+
+**Edit mode** with ⇄. While it's on (the keyboard is outlined in
 green, the key shows ⇄ ✓), tapping a key opens it in Studio instead of
 typing. The editor shows the key's tap and 8 swipes; pick one, then
 **Add key…** / **Replace with…** (a list of every key of every language's
@@ -72,11 +85,9 @@ again leaves layout mode. Example: ⚙ from Q's corner to Enter's ↓: open
 Enter, ↓, Add key, search "config"; then open Q, the ⚙ corner, Remove.
 
 **Holding a key opens it in the key editor** (build 69), the same as
-tapping it in layout mode; the key isn't typed. Nothing repeats while held.
-The **layout key** (comfort bar, right end: tap next layout, ← previous,
-↑ list, ↘ keyboard picker) switches this with **↓**: key repeat on (label ↻: backspace,
-arrows… repeat again as upstream) or off (label ✎: hold edits). Modifiers
-(Shift, Ctrl) still lock when held.
+tapping it in edit mode; the key isn't typed. Nothing repeats while held,
+unless key repeat is on (layout key ↓). Modifiers (Shift, Ctrl) still lock
+when held.
 
 **Resizing** with ↕: tap selects a part or a row, ↑ / ↓ resize it (hold to
 repeat), ← / → move it. **Back** undoes the last change, one gesture at a
@@ -107,7 +118,8 @@ their letters. Upstream's layouts are listed after ours as
   symbols pages the key back sits where ?123 was. Since build 68, ?123 is a
   quarter key wider and backspace as much tighter. Since build 70 a
   backspace 2 keys wide or more (QWERTZ) is split: ⌫ with its swipes, then
-  at the edge ⌦ forward delete, ↓ keyboard picker.
+  at the edge ⌦ forward delete, ↓ keyboard picker, ← select all (layout
+  key ↗ switches the split).
 - **?123** opens the first symbols page, like Gboard's: digits;
   `@ # € _ & - + ( ) /` (€ ↗ $); `=\<` `* " ' : ; ! ?` ⌫.
 - **=\<** opens the second page: `~ \` | • √ π ÷ × ¶ ∆`;
@@ -128,7 +140,7 @@ their letters. Upstream's layouts are listed after ours as
 | **Ctrl** (legacy layouts) | ctrl | ↖ undo · ↗ redo |
 
 Upstream's layout switching on space ↑/↓ moved to the comfort bar's
-language key; its left cursor slider is replaced (the arrow keys move the
+language key (right end); its left cursor slider is replaced (the arrow keys move the
 cursor); the forward delete on backspace ↗ is retired.
 
 ## Comfort bar
@@ -345,7 +357,7 @@ typing, style, vibration, clipboard duration…; in the phone's language,
 as upstream translates them). Studio has Input Layer's own (English
 only):
 
-- **Languages**: the layouts the comfort bar's layout key switches
+- **Languages**: the layouts the comfort bar's language key switches
   between: phone's language (automatic), Français (AZERTY), Deutsch
   (QWERTZ), English (QWERTY), Русский (ЙЦУКЕН), Ελληνικά. Ticks write the
   same list as Legacy settings → Layouts; layouts added there stay.
@@ -399,7 +411,8 @@ module is a JSON file with `module` (type), `name` and `version`.
 `changeheight`: sizes in dp (`0` hides a bar), `rows` height factors top
 to bottom (0.5–2), `order` of the containers. `comfortbar`: `c` is the tap, `n ne
 e se s sw w nw` the swipes; actions `left right up down select_all copy
-cut paste undo redo clipboard dictionary layout toggle_repeat keyboard_picker
+cut paste undo redo clipboard dictionary layout toggle_repeat split_backspace
+layouts_save layouts_pick keyboard_picker
 select_container height_up height_down height_undo height_revert move_up
 move_down layout_mode studio
 switch:<type>`. `keymap`: `layouts` → layout name → key (its tap's name) →

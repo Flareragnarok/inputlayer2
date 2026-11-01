@@ -169,9 +169,21 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     {
       boolean on = !_config.keyrepeat_enabled;
       _prefs.edit().putBoolean("keyrepeat_enabled", on).apply();
-      android.widget.Toast.makeText(getContext(), on ? "Key repeat on"
-          : "Key repeat off: hold a key to edit it", android.widget.Toast.LENGTH_SHORT).show();
+      toast(on ? "Key repeat on" : "Key repeat off: hold a key to edit it");
     }
+    else if (action.equals("split_backspace"))
+    {
+      boolean on = !_config.studio.split_backspace;
+      _prefs.edit().putBoolean(StudioConfig.KEY_SPLIT_BACKSPACE, on).apply();
+      toast(on ? "Backspace split: ⌫ ⌦" : "Backspace whole");
+    }
+    else if (action.equals("layouts_save"))
+    {
+      try { toast("Saved as " + SavedLayouts.save_current(new ModuleStore(_prefs))); }
+      catch (Exception e) { Logs.exn("Save layout", e); }
+    }
+    else if (action.equals("layouts_pick"))
+      layouts_pick();
     else if (action.equals("layout_mode"))
     {
       _listener.toggle_layout_mode();
@@ -207,6 +219,10 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       case "height_up": return new ComfortKey.Label("+", false);
       case "height_down": return new ComfortKey.Label("−", false);
       case "height_undo": return new ComfortKey.Label("↶", false);
+      case "split_backspace":
+        return new ComfortKey.Label(_config.studio.split_backspace ? "⌫⌦" : "⌫", false);
+      case "layouts_save": return new ComfortKey.Label("⤓", false);
+      case "layouts_pick": return new ComfortKey.Label("▤", false);
       case "toggle_repeat":
         return new ComfortKey.Label(_config.keyrepeat_enabled ? "↻" : "✎", false);
       case "layout_mode":
@@ -497,6 +513,40 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
   }
 
   /** The layouts switched between, to pick one. */
+  void toast(String msg)
+  {
+    android.widget.Toast.makeText(getContext(), msg, android.widget.Toast.LENGTH_SHORT).show();
+  }
+
+  /** The saved layouts (key arrangements), the one in use ticked. */
+  void layouts_pick()
+  {
+    final ModuleStore store = new ModuleStore(_prefs);
+    Module active = store.active("keymap");
+    String cur = (active == null) ? null : active.name;
+    android.widget.PopupMenu p = new android.widget.PopupMenu(getContext(), this);
+    p.getMenu().add(((cur == null) ? "✓ " : "") + "No changes (the layouts' own)")
+      .setOnMenuItemClickListener(new android.view.MenuItem.OnMenuItemClickListener() {
+        public boolean onMenuItemClick(android.view.MenuItem it)
+        {
+          SavedLayouts.pick(store, null);
+          return true;
+        }
+      });
+    for (final Module m : SavedLayouts.list(store))
+      p.getMenu().add((m.name.equals(cur) ? "✓ " : "") + m.name)
+        .setOnMenuItemClickListener(new android.view.MenuItem.OnMenuItemClickListener() {
+          public boolean onMenuItemClick(android.view.MenuItem it)
+          {
+            SavedLayouts.pick(store, m.name);
+            return true;
+          }
+        });
+    if (SavedLayouts.list(store).isEmpty())
+      toast("No saved layout yet: swipe ↓ on this key to save one");
+    p.show();
+  }
+
   void layout_menu()
   {
     android.widget.PopupMenu p = new android.widget.PopupMenu(getContext(), this);

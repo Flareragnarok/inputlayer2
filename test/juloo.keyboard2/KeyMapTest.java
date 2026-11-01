@@ -215,6 +215,7 @@ public class KeyMapTest
     assertEquals(1.125f, left.width, 1e-6f);
     assertEquals(KeyValue.getKeyByName("delete"), right.keys[0]);
     assertEquals(KeyValue.getKeyByName("change_method"), right.keys[8]);
+    assertEquals(KeyValue.getKeyByName("selectAll"), right.keys[5]);
     assertNull(right.keys[2]);
     assertEquals(3.25f, s.rows.get(0).keysWidth, 1e-6f);
     // A narrow backspace stays whole.

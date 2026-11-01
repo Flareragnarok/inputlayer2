@@ -17,19 +17,20 @@ public final class StudioConfig
 
   /** Keys shown when no [comfortbar] module is active. */
   public static final List<ComfortKeySpec> DEFAULT_KEYS = Arrays.asList(
-      // Left end: layout mode (tap a key to change it in Studio).
-      ComfortKeySpec.of("c", "layout_mode", "n", "copy", "nw", "cut", "ne", "paste",
-          "sw", "select_all"),
+      // Left end, the layout key: edit mode, ↓ key repeat on/off, ↗ split
+      // backspace on/off. Cut is backspace ↓, select all ⌦ ←.
+      ComfortKeySpec.of("c", "layout_mode", "n", "copy", "s", "toggle_repeat",
+          "ne", "split_backspace"),
       ComfortKeySpec.of("w", "left", "e", "right", "n", "up", "s", "down"),
       // ↖ undoes the last height change (like Back), ↙ all since shown.
       ComfortKeySpec.of("c", "select_container", "n", "height_up", "s", "height_down",
           "w", "move_up", "e", "move_down", "nw", "height_undo", "sw", "height_revert"),
       ComfortKeySpec.of("c", "dictionary"),
       // Right end: the layout shown; tap next, ← previous, ↑ list.
-      // ↓ switches key repeat (off: holding a key opens its editor), ↘ the
-      // keyboard picker.
+      // Right end, the language key: tap next language, ← previous, ↑ list;
+      // ↓ saves the key arrangement as a layout, → picks a saved one.
       ComfortKeySpec.of("c", "layout", "w", "layout_prev", "n", "layout_menu",
-          "s", "toggle_repeat", "se", "keyboard_picker"));
+          "s", "layouts_save", "e", "layouts_pick"));
 
   /** [-1] when not set. */
   public int keyboard_percent_portrait = -1;
@@ -53,6 +54,9 @@ public final class StudioConfig
   public List<ComfortKeySpec> keys = DEFAULT_KEYS;
   /** Key changes made in layout mode, [null] when none. */
   public KeyMap keymap = null;
+  public static final String KEY_SPLIT_BACKSPACE = "studio_split_backspace";
+  /** A wide backspace is cut in two (the layout key's ↗). */
+  public boolean split_backspace = true;
 
   public static StudioConfig load(SharedPreferences prefs)
   {
@@ -61,6 +65,7 @@ public final class StudioConfig
     Module h = store.active("changeheight");
     if (h != null)
       c.read_heights(h.json);
+    c.split_backspace = prefs.getBoolean(KEY_SPLIT_BACKSPACE, true);
     Module km = store.active("keymap");
     if (km != null)
       c.keymap = KeyMap.of_json(km.json);
