@@ -19,6 +19,9 @@ final class ComfortKey extends View implements Runnable
   interface Host
   {
     void perform(String action);
+    /** A finger went down on a key: the actions until it lifts are one
+        gesture (one undo step). */
+    void gesture_started();
     /** Label and whether it uses the keyboard's icon font. */
     Label label_of(String action);
     float swipe_dist_px();
@@ -61,6 +64,8 @@ final class ComfortKey extends View implements Runnable
   /** Direction under the finger, [-1] when it is an unset direction. */
   int _dir = 0;
   boolean _repeated;
+  /** The finger is on the key. */
+  boolean _held = false;
 
   ComfortKey(Context ctx, ComfortKeySpec spec, Host host, Typeface key_font)
   {
@@ -68,9 +73,7 @@ final class ComfortKey extends View implements Runnable
     _spec = spec;
     _host = host;
     _key_font = key_font;
-    for (int i = 0; i < _labels.length; i++)
-      if (spec.get(i) != null)
-        _labels[i] = host.label_of(spec.get(i));
+    relabel();
     TypedValue tv = new TypedValue();
     _label_color = 0xff888888;
     if (ctx.getTheme().resolveAttribute(R.attr.colorLabel, tv, true))
@@ -83,6 +86,24 @@ final class ComfortKey extends View implements Runnable
       radius = tv.getDimension(getResources().getDisplayMetrics());
     _radius = radius;
     _paint.setTextAlign(Paint.Align.CENTER);
+  }
+
+  /** Labels can depend on state (the selected container, the layout). */
+  void relabel()
+  {
+    for (int i = 0; i < _labels.length; i++)
+      _labels[i] = (_spec.get(i) == null) ? null : _host.label_of(_spec.get(i));
+    invalidate();
+  }
+
+  /** A key removed while held never sees the finger lift: stop repeating. */
+  @Override
+  protected void onDetachedFromWindow()
+  {
+    super.onDetachedFromWindow();
+    _handler.removeCallbacks(this);
+    _held = false;
+    setPressed(false);
   }
 
   @Override
@@ -170,6 +191,8 @@ final class ComfortKey extends View implements Runnable
         _down_y = ev.getY();
         _dir = 0;
         _repeated = false;
+        _held = true;
+        _host.gesture_started();
         setPressed(true);
         _handler.postDelayed(this, _host.repeat_delay());
         invalidate();
@@ -183,6 +206,7 @@ final class ComfortKey extends View implements Runnable
         }
         return true;
       case MotionEvent.ACTION_UP:
+        _held = false;
         _handler.removeCallbacks(this);
         setPressed(false);
         if (!_repeated && _dir >= 0 && _spec.get(_dir) != null)
@@ -190,6 +214,7 @@ final class ComfortKey extends View implements Runnable
         invalidate();
         return true;
       case MotionEvent.ACTION_CANCEL:
+        _held = false;
         _handler.removeCallbacks(this);
         setPressed(false);
         invalidate();
@@ -231,10 +256,13 @@ final class ComfortKey extends View implements Runnable
   public void run()
   {
     String a = (_dir >= 0) ? _spec.get(_dir) : null;
-    if (a == null || !ComfortBar.repeats(a))
+    if (!_held || a == null || !ComfortBar.repeats(a))
       return;
     _repeated = true;
     _host.perform(a);
-    _handler.postDelayed(this, _host.repeat_interval());
+    // [perform] may have lifted or removed the key (build 61's endless
+    // growth: a removed key repeated forever).
+    if (_held && isAttachedToWindow())
+      _handler.postDelayed(this, _host.repeat_interval());
   }
 }

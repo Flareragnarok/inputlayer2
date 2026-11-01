@@ -51,6 +51,14 @@ All small keys work like keyboard keys: **tap** for the main action,
 **swipe** toward one of 8 directions for the others (the faint labels on
 the key's edges).
 
+**Resizing** with ↕: tap selects a part or a row, ↑ / ↓ resize it (hold to
+repeat), ← / → move it. **Back** undoes the last change, one gesture at a
+time, and then leaves the selection; long Back or ↕ ↙ undoes everything since
+the keyboard was shown, ↕ ↖ one step. Sizes stay within sane ranges (rows
+0.5–2×), and stored sizes out of range are repaired when the keyboard
+starts, from their last sane value or the default (build 62; see ROADMAP's
+Bug log).
+
 ## Input Layer's layouts
 
 **Input Layer AZERTY**, **QWERTZ** and **QWERTY** (`srcs/layouts/il_*.xml`)
@@ -356,10 +364,11 @@ module is a JSON file with `module` (type), `name` and `version`.
 ```
 
 `changeheight`: sizes in dp (`0` hides a bar), `rows` height factors top
-to bottom, `order` of the containers. `comfortbar`: `c` is the tap, `n ne
+to bottom (0.5–2), `order` of the containers. `comfortbar`: `c` is the tap, `n ne
 e se s sw w nw` the swipes; actions `left right up down select_all copy
 cut paste undo redo clipboard dictionary layout keyboard_picker
-select_container height_up height_down move_up move_down studio
+select_container height_up height_down height_undo height_revert move_up
+move_down studio
 switch:<type>`. `snippets` and `theme` are reserved, not used yet.
 
 ## Building and releasing

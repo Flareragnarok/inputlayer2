@@ -170,6 +170,10 @@ public class Keyboard2 extends InputMethodService
     _handler = new Handler(getMainLooper());
     _foldStateTracker = new FoldStateTracker(this);
     _dictionaries = Dictionaries.instance(this);
+    // Studio: heights out of range (build 61's endless growth) are repaired
+    // before they are read, keeping everything else.
+    try { juloo.keyboard2.studio.Heights.check(prefs); }
+    catch (Throwable e) { Log.e("Keyboard2", "Heights.check", e); }
     Config.initGlobalConfig(prefs, getResources(),
         _foldStateTracker.isUnfolded(), _dictionaries);
     _config = Config.globalConfig();
@@ -812,7 +816,61 @@ public class Keyboard2 extends InputMethodService
     super.onFinishInputView(finishingInput);
     if (_user_words != null)
       _user_words.flush();
+    // Height changes are kept; their sane values become the ones to fall
+    // back to.
+    _comfort_bar.commit();
+    try
+    {
+      juloo.keyboard2.studio.Heights.check(
+          DirectBootAwarePreferences.get_shared_preferences(this));
+    }
+    catch (Throwable e) { Log.e("Keyboard2", "Heights.check", e); }
     _keyboard_layout_view.reset();
+  }
+
+  /** Studio: Back undoes the last height change (long Back: all since the
+      keyboard was shown), then leaves the container selection, before it
+      hides the keyboard. */
+  private boolean _back_ours = false;
+
+  @Override
+  public boolean onKeyDown(int keyCode, KeyEvent event)
+  {
+    if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0
+        && isInputViewShown() && _comfort_bar.wants_back())
+    {
+      _back_ours = true;
+      event.startTracking();
+      return true;
+    }
+    if (keyCode == KeyEvent.KEYCODE_BACK && _back_ours)
+      return true;
+    return super.onKeyDown(keyCode, event);
+  }
+
+  @Override
+  public boolean onKeyLongPress(int keyCode, KeyEvent event)
+  {
+    if (keyCode == KeyEvent.KEYCODE_BACK && _back_ours)
+    {
+      _comfort_bar.revert_all();
+      return true;
+    }
+    return super.onKeyLongPress(keyCode, event);
+  }
+
+  @Override
+  public boolean onKeyUp(int keyCode, KeyEvent event)
+  {
+    if (keyCode == KeyEvent.KEYCODE_BACK && _back_ours)
+    {
+      _back_ours = false;
+      // Canceled after a long press, already handled.
+      if (!event.isCanceled())
+        _comfort_bar.back();
+      return true;
+    }
+    return super.onKeyUp(keyCode, event);
   }
 
   @Override

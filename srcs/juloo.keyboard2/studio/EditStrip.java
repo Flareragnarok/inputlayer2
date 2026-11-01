@@ -323,6 +323,8 @@ public class EditStrip extends LinearLayout
 
   /* ComfortKey.Host */
 
+  public void gesture_started() {}
+
   public void perform(String action)
   {
     switch (action)

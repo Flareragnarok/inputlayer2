@@ -8,7 +8,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 61).
+Last updated: 2026-11-01 (build 62).
 
 ## Done
 
@@ -75,6 +75,7 @@ Last updated: 2026-11-01 (build 61).
 | 59 | **Crash reports** in Studio: crashes and survived errors are kept on the phone (error, place, build; never typed text), the last 10, with Copy and Clear. |
 | 60 | **Beta and stable builds**: every push is published as a beta (GitHub pre-release). The updater offers only stable builds unless *Beta builds* is on; *Mark build N stable* opens the release on GitHub. Builds 56–59 were marked beta; 55 is the latest stable. |
 | 61 | **Layout key** at the right end of the comfort bar: shows the layout (FR, DE, RU, EL…), tap next, ← previous, ↑ list. **Studio → Languages** ticks the layouts to switch between (automatic, French AZERTY, German QWERTZ, English QWERTY, Russian, Greek). Every layout, upstream's included, gets Input Layer's bottom row (no Ctrl / Fn / Compose). |
+| 62 | **Fix: endless row growth** from the height key (see Bug log). **Back undoes** height changes and moves, one gesture at a time; long Back (or ↕ ↙) undoes all since the keyboard was shown; ↕ ↖ undoes one. Heights are clamped to sane ranges and **repaired on start** without touching other data. |
 
 Infrastructure:
 
@@ -139,6 +140,52 @@ Infrastructure:
 - Modules are settings only, never code: a keyboard sees everything typed,
   passwords included, so it never runs code from a file.
 
+## Bug log
+
+### Build 62: a keyboard row grows without end (builds 2–61)
+
+**Symptom** (owner, 2026-11-01): while adjusting heights, the asdf row kept
+growing, and grew again every time the keyboard opened. Input Layer was
+unusable.
+
+**Cause.** It was not a measure/layout loop: `Theme` derives the row height
+from the screen size and the settings, never from a view's measured height.
+It was a **repeat timer that outlived its key**:
+
+1. The height key's `+` / `−` repeat while held (`ComfortKey.run`).
+2. Every repeat saves the `changeheight` module. The preference change
+   refreshes the config, and `ComfortBar.refresh` threw away and rebuilt all
+   its keys, the held one included.
+3. The removed key never saw the finger lift, and `run()` re-posted itself
+   *after* performing the action, even when the key had been removed. The
+   timer kept firing for as long as the keyboard process lived, hidden or
+   not, saving a bigger row each time (up to the old clamp of 3×).
+4. When the keyboard was shown again, the selection was reset to "none", so
+   the same stray timer then grew the whole keyboard (up to 100 %). The
+   timer also undid any attempt to shrink things back.
+
+**Fix.**
+
+- `ComfortKey` repeats only while the finger is on it and the key is
+  attached; it stops on detach, and re-posts only if both still hold.
+- `ComfortBar.refresh` relabels the keys instead of rebuilding them when they
+  are the same, so a held key keeps working smoothly.
+- `Heights` (new) holds all the height math. A step reads the stored module
+  only, applies once, and saves nothing at the edge of a range.
+  Ranges: rows 0.5–2×, keyboard 10–60 % portrait / 20–65 % landscape,
+  bars 12–64 dp (or 0, hidden), bottom margin 0–48 dp.
+- **Repair** (`Heights.check`, on keyboard start, Studio start and keyboard
+  hide): each value of each `changeheight` module that is outside its range
+  goes back to the module's last sane copy (`studio_heights_last_good`), or
+  else to the default. Every other field and every other setting are kept;
+  no app data is cleared.
+- **Undo**: Back undoes the last height change or move (a held key counts as
+  one step), then leaves the container selection, and only then hides the
+  keyboard. Long Back, or ↕ ↙, undoes everything since the keyboard was
+  shown. ↕ ↖ undoes one step. Hiding the keyboard keeps the changes.
+- Tests: `HeightsTest` (steps settle at the range ends, repair to the last
+  good value or the default, other fields kept, undo snapshots).
+
 ## Module reference (current)
 
 Every module is a JSON file with `module` (its type), `name` and `version`.
@@ -153,7 +200,8 @@ Every module is a JSON file with `module` (its type), `name` and `version`.
 `edit_strip_dp` and `selection_bar_dp` set the edit strip and selection
 bar (0 hides them); `order` lists the containers top to bottom (`comfort`,
 `selection`, `suggestions`, `keyboard`, `edit`). `rows` are height factors, top to bottom (the height key changes them one
-row at a time). `comfort_bar_dp: 0` hides the comfort bar.
+row at a time), 0.5 to 2. Values out of range are repaired on start (see
+the Bug log, build 62). `comfort_bar_dp: 0` hides the comfort bar.
 
 ```json
 { "module": "comfortbar", "name": "mine", "version": 1,

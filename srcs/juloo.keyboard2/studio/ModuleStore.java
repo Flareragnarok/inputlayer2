@@ -121,6 +121,47 @@ public final class ModuleStore
     e.apply();
   }
 
+  /** The saved modules of one type and which one is active, to be put back
+      with [restore]. */
+  public static final class Snapshot
+  {
+    final String type;
+    /** [null] when there were none. */
+    final String modules;
+    final String active;
+
+    Snapshot(String t, String m, String a) { type = t; modules = m; active = a; }
+  }
+
+  public Snapshot snapshot(String type)
+  {
+    JSONObject of_type = load().optJSONObject(type);
+    return new Snapshot(type, (of_type == null) ? null : of_type.toString(),
+        _prefs.getString(active_key(type), null));
+  }
+
+  /** Put the modules of [s]'s type back as they were, in a single
+      preference change. The other types are not touched. */
+  public void restore(Snapshot s)
+  {
+    JSONObject all = load();
+    try
+    {
+      if (s.modules == null)
+        all.remove(s.type);
+      else
+        all.put(s.type, new JSONObject(s.modules));
+    }
+    catch (JSONException _e) { return; }
+    SharedPreferences.Editor e = _prefs.edit();
+    e.putString(KEY_MODULES, all.toString());
+    if (s.active == null)
+      e.remove(active_key(s.type));
+    else
+      e.putString(active_key(s.type), s.active);
+    e.apply();
+  }
+
   JSONObject load()
   {
     try

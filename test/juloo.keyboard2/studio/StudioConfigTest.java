@@ -42,7 +42,7 @@ public class StudioConfigTest
     assertEquals(30f, c.comfort_bar_dp, 0f);
     assertEquals(0.8f, c.row_factor(0), 0.001f);
     assertEquals(1f, c.row_factor(2), 0f); // Not a number
-    assertEquals(3f, c.row_factor(3), 0f); // Clamped
+    assertEquals(Heights.ROW_MAX, c.row_factor(3), 0f); // Clamped
     assertEquals(1f, c.row_factor(10), 0f); // Past the list
   }
 
@@ -52,7 +52,7 @@ public class StudioConfigTest
   {
     StudioConfig c = with("changeheight",
         "\"bar_dp\":2,\"keyboard_percent\":{\"portrait\":500},\"comfort_bar_dp\":0");
-    assertEquals(StudioConfig.KEYBOARD_PERCENT_MAX, c.keyboard_percent(false, 35));
+    assertEquals(Heights.PORTRAIT_MAX, c.keyboard_percent(false, 35));
     assertEquals(50, c.keyboard_percent(true, 50)); // Not set
     assertEquals(12f, c.bar_dp, 0f);
     assertEquals(0f, c.comfort_bar_dp, 0f);

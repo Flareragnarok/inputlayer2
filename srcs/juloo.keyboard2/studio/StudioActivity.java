@@ -77,6 +77,10 @@ public class StudioActivity extends Activity
     CrashLog.install(this);
     _prefs = DirectBootAwarePreferences.get_shared_preferences(this);
     _store = new ModuleStore(_prefs);
+    // Heights out of range are repaired (keeping everything else); guarded
+    // like everything on the way to the updater.
+    try { Heights.check(_prefs); }
+    catch (Throwable e) { android.util.Log.e("Studio", "Heights.check", e); }
     _installed_build = getResources().getInteger(R.integer.studio_build);
     setTitle(R.string.studio_title);
     setContentView(build_view());

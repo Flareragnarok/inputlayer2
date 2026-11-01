@@ -40,8 +40,6 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     void select_layout(int i);
   }
 
-  static final int HEIGHT_STEP = 2;
-
   /** Containers the height key resizes, in the order it selects them. Only
       whole containers, never the elements inside them. */
   public static final int TARGET_COMFORT_BAR = 0;
@@ -52,8 +50,6 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
   static final String[] TARGET_LABELS = { "bar", "sugg", "keys", "edit", "sel" };
   /** Targets from here on are keyboard rows, top to bottom. */
   public static final int TARGET_ROWS = 5;
-  /** Step of a row's height factor. */
-  static final float ROW_STEP = 0.1f;
   /** Names of the targets in [StudioConfig.order]. */
   static final String[] TARGET_NAMES = { "comfort", "suggestions", "keyboard", "edit", "selection" };
 
@@ -96,9 +92,34 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     ViewGroup.LayoutParams p = getLayoutParams();
     p.height = (int)(dp * density());
     setLayoutParams(p);
+    // Rebuilding would remove the key under the finger in the middle of a
+    // gesture (height keys save on every repeat): only relabel when the keys
+    // are the same.
+    if (dp == _built_dp && same_keys(config.studio.keys, _built_keys)
+        && _keys.getChildCount() == _built_keys.size())
+    {
+      for (int i = 0; i < _keys.getChildCount(); i++)
+        ((ComfortKey)_keys.getChildAt(i)).relabel();
+      return;
+    }
+    _built_dp = dp;
+    _built_keys = config.studio.keys;
     _keys.removeAllViews();
     for (ComfortKeySpec s : config.studio.keys)
       _keys.addView(make_key(s), key_params());
+  }
+
+  List<ComfortKeySpec> _built_keys = null;
+  float _built_dp = -1;
+
+  static boolean same_keys(List<ComfortKeySpec> a, List<ComfortKeySpec> b)
+  {
+    if (a == null || b == null || a.size() != b.size())
+      return false;
+    for (int i = 0; i < a.size(); i++)
+      if (!java.util.Arrays.equals(a.get(i).actions, b.get(i).actions))
+        return false;
+    return true;
   }
 
   View make_key(ComfortKeySpec s)
@@ -138,9 +159,13 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     else if (action.equals("move_up") || action.equals("move_down"))
       move(action.equals("move_up") ? -1 : 1);
     else if (action.equals("height_up"))
-      change_height(HEIGHT_STEP);
+      change_height(true);
     else if (action.equals("height_down"))
-      change_height(-HEIGHT_STEP);
+      change_height(false);
+    else if (action.equals("height_undo"))
+      back();
+    else if (action.equals("height_revert"))
+      revert_all();
     else if (action.startsWith("switch:"))
       cycle_module(action.substring("switch:".length()));
     else if (action.equals("studio"))
@@ -166,6 +191,8 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       case "move_down": return new ComfortKey.Label("⇣", false);
       case "height_up": return new ComfortKey.Label("+", false);
       case "height_down": return new ComfortKey.Label("−", false);
+      case "height_undo": return new ComfortKey.Label("↶", false);
+      case "height_revert": return new ComfortKey.Label("⟲", false);
       case "studio": return new ComfortKey.Label("⚙", false);
       // Tap: the suggestions' language, like upstream's button on the
       // suggestion bar.
@@ -272,8 +299,10 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
   }
 
   /** Resize the selected container (the keyboard if none), stored in the
-      active [changeheight] module or in a new one named "quick". */
-  void change_height(int delta)
+      active [changeheight] module or in a new one named "quick". The new
+      value comes from the module only ([Heights.step]), and nothing is
+      saved at the edge of a range. */
+  void change_height(boolean bigger)
   {
     ModuleStore store = new ModuleStore(_prefs);
     Module m = store.active("changeheight");
@@ -281,41 +310,79 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       m = store.get("changeheight", "quick");
     try
     {
-      JSONObject j = (m == null) ? new JSONObject() : new JSONObject(m.json.toString());
-      switch (_target)
-      {
-        case TARGET_COMFORT_BAR:
-          j.put("comfort_bar_dp", clamp(_config.studio.comfort_bar_dp + delta, 12, 96));
-          break;
-        case TARGET_SUGGESTIONS:
-          j.put("bar_dp", clamp(_config.studio.bar_dp + delta, 12, 96));
-          break;
-        case TARGET_EDIT_STRIP:
-          j.put("edit_strip_dp", clamp(_config.studio.edit_strip_dp + delta, 12, 96));
-          break;
-        case TARGET_SELECTION_BAR:
-          j.put("selection_bar_dp", clamp(_config.studio.selection_bar_dp + delta, 12, 96));
-          break;
-        case -1: case TARGET_KEYBOARD:
-          JSONObject kp = j.optJSONObject("keyboard_percent");
-          if (kp == null)
-            kp = new JSONObject();
-          kp.put(_config.orientation_landscape ? "landscape" : "portrait",
-              (int)clamp(_config.keyboard_height_percent + delta,
-                StudioConfig.KEYBOARD_PERCENT_MIN, StudioConfig.KEYBOARD_PERCENT_MAX));
-          j.put("keyboard_percent", kp);
-          break;
-        default:
-          j.put("rows", resized_rows(_target - TARGET_ROWS, delta > 0));
-          break;
-      }
-      Module nm = (m == null) ? Module.create("changeheight", "quick", j) : new Module(j);
+      JSONObject j = (m == null) ? new JSONObject() : m.json;
+      JSONObject r = Heights.step(j, _target, bigger, _listener.keyboard_rows(),
+          _config.orientation_landscape, _config.keyboard_height_percent);
+      if (r == null)
+        return;
+      remember_undo(store);
+      Module nm = (m == null) ? Module.create("changeheight", "quick", r) : new Module(r);
       store.save(nm, true);
     }
     catch (Exception e)
     {
       Logs.exn("Comfort bar height", e);
     }
+  }
+
+  /* Undo. Every height change and move since the keyboard was shown can be
+     undone with Back, one gesture at a time (a held key is one gesture). */
+
+  static final int MAX_UNDO = 100;
+  final java.util.ArrayDeque<ModuleStore.Snapshot> _undo =
+    new java.util.ArrayDeque<ModuleStore.Snapshot>();
+  /** Whether the gesture in progress already has its undo step. */
+  boolean _gesture_saved = false;
+
+  public void gesture_started()
+  {
+    _gesture_saved = false;
+  }
+
+  void remember_undo(ModuleStore store)
+  {
+    if (_gesture_saved)
+      return;
+    _gesture_saved = true;
+    _undo.push(store.snapshot("changeheight"));
+    if (_undo.size() > MAX_UNDO)
+      _undo.removeLast();
+  }
+
+  /** Whether Back is ours: there is something to undo, or a container is
+      selected. */
+  public boolean wants_back()
+  {
+    return !_undo.isEmpty() || _target >= 0;
+  }
+
+  /** Back: undo the last height change, or else leave the container
+      selection. */
+  public void back()
+  {
+    if (!_undo.isEmpty())
+    {
+      _gesture_saved = false;
+      new ModuleStore(_prefs).restore(_undo.pop());
+    }
+    else
+      reset_target();
+  }
+
+  /** Long Back: undo every change since the keyboard was shown. */
+  public void revert_all()
+  {
+    if (!_undo.isEmpty())
+      new ModuleStore(_prefs).restore(_undo.getLast());
+    _undo.clear();
+    _gesture_saved = false;
+  }
+
+  /** The keyboard is hidden: the changes are kept, Back is free again. */
+  public void commit()
+  {
+    _undo.clear();
+    _gesture_saved = false;
   }
 
   String target_label()
@@ -346,6 +413,7 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     {
       JSONObject o = (m == null) ? new JSONObject() : new JSONObject(m.json.toString());
       o.put("order", new org.json.JSONArray(order));
+      remember_undo(store);
       Module nm = (m == null) ? Module.create("changeheight", "quick", o) : new Module(o);
       store.save(nm, true);
     }
@@ -353,28 +421,6 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     {
       Logs.exn("Comfort bar move", e);
     }
-  }
-
-  /** The rows' height factors with row [row] one step bigger (or
-      smaller), the others as they are. */
-  org.json.JSONArray resized_rows(int row, boolean bigger) throws org.json.JSONException
-  {
-    int n = Math.max(row + 1, _listener.keyboard_rows());
-    org.json.JSONArray a = new org.json.JSONArray();
-    for (int i = 0; i < n; i++)
-    {
-      float f = _config.studio.row_factor(i);
-      if (i == row)
-        f = clamp(f + (bigger ? ROW_STEP : -ROW_STEP), 0.3f, 3f);
-      // Rounded, so the module stays readable.
-      a.put(Math.round(f * 100) / 100.0);
-    }
-    return a;
-  }
-
-  static float clamp(float v, float min, float max)
-  {
-    return Math.max(min, Math.min(max, v));
   }
 
   /** Next saved module of [type], then none, then the first again. */

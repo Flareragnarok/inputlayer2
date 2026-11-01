@@ -11,8 +11,6 @@ import org.json.JSONObject;
     config. Values that are not set keep upstream's behavior. */
 public final class StudioConfig
 {
-  public static final int KEYBOARD_PERCENT_MIN = 10;
-  public static final int KEYBOARD_PERCENT_MAX = 100;
   public static final float DEFAULT_COMFORT_BAR_DP = 26f;
   /** Upstream makes the suggestion bar a full key row high, too big. */
   public static final float DEFAULT_BAR_DP = 28f;
@@ -21,8 +19,9 @@ public final class StudioConfig
   public static final List<ComfortKeySpec> DEFAULT_KEYS = Arrays.asList(
       ComfortKeySpec.of("c", "copy", "nw", "cut", "ne", "paste", "sw", "select_all"),
       ComfortKeySpec.of("w", "left", "e", "right", "n", "up", "s", "down"),
+      // ↖ undoes the last height change (like Back), ↙ all since shown.
       ComfortKeySpec.of("c", "select_container", "n", "height_up", "s", "height_down",
-          "w", "move_up", "e", "move_down"),
+          "w", "move_up", "e", "move_down", "nw", "height_undo", "sw", "height_revert"),
       ComfortKeySpec.of("c", "dictionary", "se", "keyboard_picker"),
       // Right end: the layout shown; tap next, ← previous, ↑ list.
       ComfortKeySpec.of("c", "layout", "w", "layout_prev", "n", "layout_menu",
@@ -67,21 +66,23 @@ public final class StudioConfig
     JSONObject kp = j.optJSONObject("keyboard_percent");
     if (kp != null)
     {
-      keyboard_percent_portrait = clamp_percent(kp.optInt("portrait", -1));
-      keyboard_percent_landscape = clamp_percent(kp.optInt("landscape", -1));
+      keyboard_percent_portrait = clamp_percent(false, kp.optInt("portrait", -1));
+      keyboard_percent_landscape = clamp_percent(true, kp.optInt("landscape", -1));
     }
-    float b = clamp_dp(j.optDouble("bar_dp", Double.NaN), 12, 96);
+    // Ranges are in [Heights]; values past them are repaired on start.
+    float b = clamp_dp(j.optDouble("bar_dp", Double.NaN), Heights.BAR_MIN, Heights.BAR_MAX);
     if (!Float.isNaN(b))
       bar_dp = b;
-    margin_bottom_dp = clamp_dp(j.optDouble("margin_bottom_dp", Double.NaN), 0, 64);
+    margin_bottom_dp = clamp_dp(j.optDouble("margin_bottom_dp", Double.NaN),
+        Heights.MARGIN_MIN, Heights.MARGIN_MAX);
     // 0 hides the comfort bar.
-    float cb = clamp_dp(j.optDouble("comfort_bar_dp", Double.NaN), 0, 96);
+    float cb = clamp_dp(j.optDouble("comfort_bar_dp", Double.NaN), 0, Heights.BAR_MAX);
     if (!Float.isNaN(cb))
       comfort_bar_dp = (cb < 12) ? 0 : cb;
-    float es = clamp_dp(j.optDouble("edit_strip_dp", Double.NaN), 0, 96);
+    float es = clamp_dp(j.optDouble("edit_strip_dp", Double.NaN), 0, Heights.BAR_MAX);
     if (!Float.isNaN(es))
       edit_strip_dp = (es < 12) ? 0 : es;
-    float sb = clamp_dp(j.optDouble("selection_bar_dp", Double.NaN), 0, 96);
+    float sb = clamp_dp(j.optDouble("selection_bar_dp", Double.NaN), 0, Heights.BAR_MAX);
     if (!Float.isNaN(sb))
       selection_bar_dp = (sb < 12) ? 0 : sb;
     JSONArray os = j.optJSONArray("order");
@@ -90,12 +91,7 @@ public final class StudioConfig
     JSONArray rs = j.optJSONArray("rows");
     if (rs != null && rs.length() > 0)
     {
-      rows = new float[rs.length()];
-      for (int i = 0; i < rows.length; i++)
-      {
-        float f = (float)rs.optDouble(i, 1.0);
-        rows[i] = Float.isNaN(f) ? 1f : Math.max(0.3f, Math.min(3f, f));
-      }
+      rows = Heights.row_factors(rs, rs.length());
     }
   }
 
@@ -163,11 +159,9 @@ public final class StudioConfig
     return (rows == null || i >= rows.length) ? 1f : rows[i];
   }
 
-  static int clamp_percent(int p)
+  static int clamp_percent(boolean landscape, int p)
   {
-    if (p < 0)
-      return -1;
-    return Math.max(KEYBOARD_PERCENT_MIN, Math.min(KEYBOARD_PERCENT_MAX, p));
+    return (p < 0) ? -1 : Heights.clamp_percent(landscape, p);
   }
 
   static float clamp_dp(double v, float min, float max)
