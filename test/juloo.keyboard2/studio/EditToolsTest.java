@@ -78,33 +78,6 @@ public class EditToolsTest
   }
 
   @Test
-  public void write_steps()
-  throws Exception
-  {
-    String t = "one two three";
-    TextScope w = TextScope.WORD;
-    assertEquals(0, WriteSteps.unit_index(w, t, 1));
-    assertEquals(1, WriteSteps.unit_index(w, t, 4));
-    assertEquals(1, WriteSteps.unit_index(w, t, 3));        // Space: the next unit
-    assertEquals(2, WriteSteps.unit_index(w, t, 12));
-    assertEquals(-1, WriteSteps.unit_index(w, t, 13));
-    org.json.JSONArray steps = new org.json.JSONArray(
-        "[{\"kind\":\"look\",\"scope\":\"Word\",\"unit\":1,\"style\":\"italic\"},"
-        + "{\"kind\":\"format\",\"scope\":\"Word\",\"unit\":2,\"open\":\"**\",\"close\":\"**\"},"
-        + "{\"kind\":\"look\",\"scope\":\"Word\",\"unit\":0,\"style\":\"upper\",\"case\":true},"
-        + "{\"kind\":\"look\",\"scope\":\"Word\",\"unit\":9,\"style\":\"bold\"}]");
-    java.util.List<String[]> fs = TextFormats.cycle_list(TextFormats.syntax("Markdown"),
-        new java.util.ArrayList<String[]>());
-    // Replayed on another text with as many words: the same units change.
-    String r = WriteSteps.replay("red big apple", steps, TextScope.BUILTIN, fs);
-    assertEquals("RED " + UnicodeStyles.apply("big", "italic") + " **apple**", r);
-    // Removing a format.
-    org.json.JSONArray un = new org.json.JSONArray(
-        "[{\"kind\":\"format\",\"scope\":\"Word\",\"unit\":1,\"open\":\"\",\"close\":\"\"}]");
-    assertEquals("a b c", WriteSteps.replay("a **b** c", un, TextScope.BUILTIN, fs));
-  }
-
-  @Test
   public void styled_words()
   {
     String t = "a " + UnicodeStyles.apply("bold", "bold") + " z";

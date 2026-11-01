@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import juloo.keyboard2.DirectBootAwarePreferences;
 import juloo.keyboard2.Logs;
@@ -40,6 +41,9 @@ import juloo.keyboard2.Utils;
 public class StudioActivity extends Activity
 {
   static final String KEY_UPDATE_REPO = "studio_update_repo";
+  /** Open the Spec / Vert editor on this type ("spec", "vert") and name. */
+  public static final String EXTRA_EDIT_TYPE = "studio_edit_type";
+  public static final String EXTRA_EDIT_NAME = "studio_edit_name";
   static final String ACTION_INSTALL_STATUS = "juloo.keyboard2.studio.INSTALL_STATUS";
   static final int REQUEST_EXPORT = 1;
   static final int REQUEST_IMPORT = 2;
@@ -53,6 +57,13 @@ public class StudioActivity extends Activity
   LinearLayout _releases;
   LinearLayout _modules;
   LinearLayout _categories;
+  ScrollView _scroll;
+  TextView _editor_top;
+  Spinner _editor_pick;
+  LinearLayout _editor_ops;
+  LinearLayout _editor_add;
+  /** "type/name" of the Spec or Vert in the editor. */
+  String _editing = null;
   /** Module waiting for the export file to be picked. */
   Module _exporting;
 
@@ -68,6 +79,7 @@ public class StudioActivity extends Activity
     refresh_modules();
     refresh_categories();
     handle_install_status(getIntent());
+    open_editor_from(getIntent());
   }
 
   @Override
@@ -75,6 +87,7 @@ public class StudioActivity extends Activity
   {
     super.onNewIntent(intent);
     handle_install_status(intent);
+    open_editor_from(intent);
   }
 
   View build_view()
@@ -101,6 +114,8 @@ public class StudioActivity extends Activity
     root.addView(_update_status);
     _releases = vertical();
     root.addView(_releases);
+
+    build_editor(root);
 
     root.addView(heading(R.string.studio_tools));
     root.addView(text(getString(R.string.studio_tools_desc)));
@@ -187,6 +202,7 @@ public class StudioActivity extends Activity
     }));
 
     ScrollView sv = new ScrollView(this);
+    _scroll = sv;
     sv.setFitsSystemWindows(true);
     sv.addView(root);
     return sv;
@@ -354,6 +370,259 @@ public class StudioActivity extends Activity
         }
       }
     }));
+  }
+
+  /* Spec and Vert editor */
+
+  /** Operation kinds offered when adding, with whether they take a value. */
+  static final String[][] SPEC_KINDS = {
+    { "step", "" }, { "unit", "" }, { "move:next", "" }, { "move:prev", "" },
+    { "dir:fwd", "" }, { "dir:back", "" }, { "mode:excl", "" }, { "mode:incl", "" },
+    { "mode:desel", "" }, { "scope", "Word, Sentence, Line, Paragraph, All or a custom one" } };
+  static final String[][] VERT_KINDS = {
+    { "insert", "text to type" }, { "back", "how many, before the cursor" },
+    { "del", "how many, after the cursor" }, { "clear", "" },
+    { "wrap", "before|after, e.g. **|**" }, { "unwrap", "" },
+    { "look", "bold, italic, mono, script, fraktur, double, small_caps, circled, ..." },
+    { "case", "upper, lower, title, toggle, snake, camel, alternate" } };
+
+  void build_editor(LinearLayout root)
+  {
+    _editor_top = heading(R.string.studio_editor);
+    root.addView(_editor_top);
+    root.addView(text(getString(R.string.studio_editor_desc)));
+    _editor_pick = new Spinner(this);
+    root.addView(_editor_pick);
+    _editor_ops = vertical();
+    root.addView(_editor_ops);
+    _editor_add = vertical();
+    root.addView(_editor_add);
+    LinearLayout row = new LinearLayout(this);
+    row.addView(button(R.string.studio_new_spec, new View.OnClickListener() {
+      public void onClick(View v) { new_macro("spec"); }
+    }));
+    row.addView(button(R.string.studio_new_vert, new View.OnClickListener() {
+      public void onClick(View v) { new_macro("vert"); }
+    }));
+    row.addView(button(R.string.studio_delete, new View.OnClickListener() {
+      public void onClick(View v)
+      {
+        Module m = editing();
+        if (m == null)
+          return;
+        _store.delete(m.type, m.name);
+        _editing = null;
+        refresh_editor();
+        refresh_modules();
+      }
+    }));
+    root.addView(row);
+  }
+
+  List<Module> editable()
+  {
+    List<Module> l = new ArrayList<Module>(_store.list("spec"));
+    l.addAll(_store.list("vert"));
+    return l;
+  }
+
+  Module editing()
+  {
+    for (Module m : editable())
+      if (_editing != null && (m.type + "/" + m.name).equals(_editing))
+        return m;
+    return null;
+  }
+
+  void refresh_editor()
+  {
+    final List<Module> ms = editable();
+    if (editing() == null && !ms.isEmpty())
+      _editing = ms.get(0).type + "/" + ms.get(0).name;
+    List<String> labels = new ArrayList<String>();
+    int sel = 0;
+    for (int i = 0; i < ms.size(); i++)
+    {
+      Module m = ms.get(i);
+      labels.add((m.type.equals("spec") ? "Spec · " : "Vert · ") + m.name);
+      if ((m.type + "/" + m.name).equals(_editing))
+        sel = i;
+    }
+    ArrayAdapter<String> ad = new ArrayAdapter<String>(this,
+        android.R.layout.simple_spinner_item, labels);
+    ad.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    _editor_pick.setOnItemSelectedListener(null);
+    _editor_pick.setAdapter(ad);
+    _editor_pick.setSelection(sel, false);
+    _editor_pick.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+      public void onItemSelected(AdapterView<?> parent, View v, int pos, long id)
+      {
+        String key = ms.get(pos).type + "/" + ms.get(pos).name;
+        if (!key.equals(_editing))
+        {
+          _editing = key;
+          refresh_editor();
+        }
+      }
+      public void onNothingSelected(AdapterView<?> parent) {}
+    });
+    _editor_ops.removeAllViews();
+    _editor_add.removeAllViews();
+    Module m = editing();
+    if (m == null)
+    {
+      _editor_ops.addView(text(getString(R.string.studio_editor_empty)));
+      return;
+    }
+    final List<String> ops = ops_of(m);
+    for (int i = 0; i < ops.size(); i++)
+    {
+      final int idx = i;
+      LinearLayout r = new LinearLayout(this);
+      r.addView(text((i + 1) + ". " + Ops.describe(ops.get(i))),
+          new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+      r.addView(small_button("↑", new View.OnClickListener() {
+        public void onClick(View v) { if (idx > 0) { swap(ops, idx, idx - 1); save_ops(ops); } }
+      }));
+      r.addView(small_button("↓", new View.OnClickListener() {
+        public void onClick(View v) { if (idx + 1 < ops.size()) { swap(ops, idx, idx + 1); save_ops(ops); } }
+      }));
+      r.addView(small_button("✕", new View.OnClickListener() {
+        public void onClick(View v) { ops.remove(idx); save_ops(ops); }
+      }));
+      _editor_ops.addView(r);
+    }
+    if (ops.isEmpty())
+      _editor_ops.addView(text(getString(R.string.studio_editor_no_ops)));
+    // Adding an operation: its kind and, for some, a value.
+    final String[][] kinds = m.type.equals("spec") ? SPEC_KINDS : VERT_KINDS;
+    List<String> kl = new ArrayList<String>();
+    for (String[] k : kinds)
+      kl.add(Ops.describe(k[0].contains(":") ? k[0] : k[0] + ":…"));
+    final Spinner kind = new Spinner(this);
+    ArrayAdapter<String> ka = new ArrayAdapter<String>(this,
+        android.R.layout.simple_spinner_item, kl);
+    ka.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    kind.setAdapter(ka);
+    final EditText value = new EditText(this);
+    value.setSingleLine(true);
+    value.setHint(kinds[0][1]);
+    kind.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+      public void onItemSelected(AdapterView<?> parent, View v, int pos, long id)
+      {
+        value.setHint(kinds[pos][1]);
+        value.setEnabled(!kinds[pos][1].isEmpty());
+      }
+      public void onNothingSelected(AdapterView<?> parent) {}
+    });
+    _editor_add.addView(kind);
+    _editor_add.addView(value);
+    _editor_add.addView(button(R.string.studio_add_op, new View.OnClickListener() {
+      public void onClick(View v)
+      {
+        String[] k = kinds[kind.getSelectedItemPosition()];
+        String op = k[0];
+        if (!k[1].isEmpty())
+        {
+          String val = value.getText().toString();
+          if (val.isEmpty())
+          {
+            toast(getString(R.string.studio_add_op_value));
+            return;
+          }
+          op = k[0] + ":" + val;
+        }
+        ops.add(op);
+        value.setText("");
+        save_ops(ops);
+      }
+    }));
+  }
+
+  static void swap(List<String> l, int a, int b)
+  {
+    String t = l.get(a);
+    l.set(a, l.get(b));
+    l.set(b, t);
+  }
+
+  static List<String> ops_of(Module m)
+  {
+    List<String> l = new ArrayList<String>();
+    JSONArray a = m.json.optJSONArray("ops");
+    for (int i = 0; a != null && i < a.length(); i++)
+      l.add(a.optString(i, ""));
+    return l;
+  }
+
+  void save_ops(List<String> ops)
+  {
+    Module m = editing();
+    if (m == null)
+      return;
+    try
+    {
+      JSONObject j = new JSONObject(m.json.toString());
+      j.put("ops", new JSONArray(ops));
+      j.put("summary", Ops.summary(ops));
+      _store.save(new Module(j));
+    }
+    catch (Exception e)
+    {
+      toast(e.getMessage());
+    }
+    refresh_editor();
+    refresh_modules();
+  }
+
+  void new_macro(String type)
+  {
+    try
+    {
+      String name = (type.equals("spec") ? "Spec " : "Vert ") + (_store.list(type).size() + 1);
+      JSONObject j = new JSONObject();
+      j.put("ops", new JSONArray());
+      j.put("summary", "");
+      _store.save(Module.create(type, name, j));
+      _editing = type + "/" + name;
+      refresh_editor();
+      refresh_modules();
+    }
+    catch (Exception e)
+    {
+      toast(e.getMessage());
+    }
+  }
+
+  Button small_button(String label, View.OnClickListener l)
+  {
+    Button b = button(label, l);
+    b.setMinWidth(0);
+    b.setMinimumWidth(0);
+    b.setPadding(dp(8), 0, dp(8), 0);
+    return b;
+  }
+
+  /** Spec ↑ / Vert ↑ on the keyboard: the editor on that one. */
+  void open_editor_from(Intent i)
+  {
+    String type = (i == null) ? null : i.getStringExtra(EXTRA_EDIT_TYPE);
+    if (type == null)
+    {
+      refresh_editor();
+      return;
+    }
+    String name = i.getStringExtra(EXTRA_EDIT_NAME);
+    if (name == null)
+      new_macro(type);
+    else
+    {
+      _editing = type + "/" + name;
+      refresh_editor();
+    }
+    _scroll.post(new Runnable() {
+      public void run() { _scroll.scrollTo(0, _editor_top.getTop()); }
+    });
   }
 
   /* Memory categories */

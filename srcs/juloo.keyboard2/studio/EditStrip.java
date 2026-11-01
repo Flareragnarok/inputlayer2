@@ -60,6 +60,8 @@ public class EditStrip extends LinearLayout
     int sel_start();
     int sel_end();
     void open_studio();
+    /** Studio's Spec / Vert editor on [name] ([null]: a new one). */
+    void open_editor(String type, String name);
     /** The pinned selection changed, [null] when unpinned. */
     void pinned(String text);
     /** What typing in format produces, shown in the selection bar; [null]
@@ -163,8 +165,14 @@ public class EditStrip extends LinearLayout
   int _typing_len = 0;
   /** Text length expected after the keyboard's own edit, [-1] for none. */
   int _own_edit_len = -1;
-  /** Steps made to units during typing in format, for Spec. */
-  JSONArray _write_steps = new JSONArray();
+  /** Recorded during typing in format: selection steps (Spec) and
+      operations (Vert), see [Ops]. */
+  List<String> _spec_ops = new ArrayList<String>();
+  List<String> _vert_ops = new ArrayList<String>();
+  /** A Spec is being run: its steps aren't recorded again. */
+  boolean _replaying = false;
+  /** Cursor at the last update, to tell ⌫ from ⌦. */
+  int _prev_cursor = 0;
   /** Look applied by the Verse action being done, for recording it. */
   String _step_style = null;
   boolean _step_case = false;
@@ -179,9 +187,7 @@ public class EditStrip extends LinearLayout
   /** Current macros, by name ([null]: the first saved). */
   String _spec_name = null;
   String _vert_name = null;
-  /** The last typing in format: its steps (format, look) and what was
-      typed, for saving it with Spec or Vert. [null] before the first. */
-  JSONObject _last_write = null;
+
   View _appearance_key;
   View _format_key;
   /** Navigation bar height on Android 15+, kept clear below the keys. */
@@ -257,6 +263,7 @@ public class EditStrip extends LinearLayout
   /** Custom selections, formats and fonts, from their modules. */
   void load_custom()
   {
+    migrate_macros();
     ModuleStore store = new ModuleStore(_prefs);
     List<TextScope> scopes = new ArrayList<TextScope>(TextScope.BUILTIN);
     for (Module m : store.list("selection"))
@@ -321,11 +328,13 @@ public class EditStrip extends LinearLayout
     {
       case "scope":
         _scope = TextScope.cycle(scope_nest_items(), _scope, _forward);
+        rec_spec("scope:" + _scope.label);
         rebuild();
         return;
       case "scope_nest":
         _scope_nest = (_scope_nest + 1) % scope_nest_count();
         _scope = scope_nest_items().get(0);
+        rec_spec("scope:" + _scope.label);
         rebuild();
         return;
       case "scope_menu":
@@ -360,6 +369,7 @@ public class EditStrip extends LinearLayout
         return;
       case "selection_direction":
         _forward = !_forward;
+        rec_spec("dir:" + (_forward ? "fwd" : "back"));
         selection_forward = _forward;
         rebuild();
         // The arrow key's tap shows the direction.
@@ -377,10 +387,19 @@ public class EditStrip extends LinearLayout
       case "vert_next": next_macro("vert"); return;
       case "vert_menu": macro_menu("vert", _vert_key); return;
       case "vert_save": save_macro("vert"); return;
+      // Spec ↑ / Vert ↑: the editor, on the current one.
       case "custom_selection":
-      case "custom_format":
-        _listener.open_studio();
+      {
+        Module m = current_macro("spec");
+        _listener.open_editor("spec", (m == null) ? null : m.name);
         return;
+      }
+      case "custom_format":
+      {
+        Module m = current_macro("vert");
+        _listener.open_editor("vert", (m == null) ? null : m.name);
+        return;
+      }
       case "appearance": cycle_appearance(); return;
       case "appearance_menu": appearance_menu(); return;
       case "appearance_restore": restore_appearance(); return;
@@ -403,6 +422,7 @@ public class EditStrip extends LinearLayout
     switch (action)
     {
       case "select":
+        rec_spec("step");
         // First the unit at the cursor, then the next ones: inclusive adds
         // them to the selection, exclusive moves to them.
         if (!has_selection(f))
@@ -414,6 +434,7 @@ public class EditStrip extends LinearLayout
       // (and inclusive or exclusive). Without, the cursor moves.
       case "cursor_next":
       {
+        rec_spec("move:next");
         if (has_selection(f))
         {
           r = step(f.text, sel, unit, true);
@@ -429,6 +450,7 @@ public class EditStrip extends LinearLayout
       }
       case "cursor_prev":
       {
+        rec_spec("move:prev");
         if (has_selection(f))
         {
           r = step(f.text, sel, unit, false);
@@ -443,6 +465,7 @@ public class EditStrip extends LinearLayout
         break;
       }
       case "select_toggle":
+        rec_spec("unit");
         r = has_selection(f) ? new int[]{ f.sel_end, f.sel_end }
           : adjust(f.text, _scope.unit_at(f.text, f.sel_start));
         break;
@@ -471,6 +494,7 @@ public class EditStrip extends LinearLayout
           if (has_selection(f))
             r = _scope.inclusive(f.text, sel);
         }
+        rec_spec("mode:" + mode_name());
         rebuild();
         break;
     }
@@ -681,26 +705,21 @@ public class EditStrip extends LinearLayout
     ic.setSelection(end, end);
     ic.endBatchEdit();
     _typing = true;
-    _write_steps = new JSONArray();
+    _spec_ops = new ArrayList<String>();
+    _vert_ops = new ArrayList<String>();
+    // Its start is recorded too: the look, then the markers.
+    if (style != null)
+      rec_vert((_typing_case ? "case:" : "look:") + style);
+    if (!open.isEmpty() || !close.isEmpty())
+      rec_vert("wrap:" + open + "|" + close);
     _typing_open = open;
     _typing_close = close;
     _typing_start = s + open.length();
     _typing_end = end;
+    _prev_cursor = end;
     _typing_len = fl.text.length() - (fl.sel_end - fl.sel_start)
       + open.length() + body.length() + close.length();
     _listener.preview(open + body + close);
-    try
-    {
-      _last_write = new JSONObject();
-      _last_write.put("format", (f == null) ? "" : f[0]);
-      _last_write.put("open", open);
-      _last_write.put("close", close);
-      _last_write.put("style", (style == null) ? "" : style);
-      _last_write.put("case", _typing_case);
-      _last_write.put("summary", typing_summary());
-      _last_write.put("typed", UnicodeStyles.to_plain(body));
-    }
-    catch (Exception _e) {}
     rebuild();
     toast("Typing in " + typing_summary() + ": Scope ↑ pushes it");
   }
@@ -714,15 +733,6 @@ public class EditStrip extends LinearLayout
     if (f != null && v != null)
       return f + " · " + v;
     return (f != null) ? f : (v != null ? v : "plain");
-  }
-
-  /** The keys' result in letters (the look removed), for Vert. */
-  void record_typed(String body)
-  {
-    if (_last_write == null)
-      return;
-    try { _last_write.put("typed", UnicodeStyles.to_plain(body)); }
-    catch (Exception _e) {}
   }
 
   /** Scope ↑: the typed text is done; the cursor goes after the closing
@@ -788,18 +798,23 @@ public class EditStrip extends LinearLayout
       return;
     String body = f.text.substring(ts, te);
     String close = _typing_close;
-    record_typed(body);
     _listener.preview(_typing_open + body + close);
     // Only the letters just typed get Verse's look: changes made to units
     // of the text stay.
     int ins_end = cursor - f.base, ins_start = ins_end - delta;
-    if (own || delta <= 0 || _typing_style == null || has_selection(f)
-        || ins_start < ts || ins_end > te)
+    // Removed text, for Vert: before the cursor (it moved back) or after.
+    if (!own && delta < 0)
+      rec_vert(((cursor == _prev_cursor + delta) ? "back:" : "del:") + (-delta));
+    _prev_cursor = cursor;
+    if (own || delta <= 0 || has_selection(f) || ins_start < ts || ins_end > te)
       return;
     String ins = f.text.substring(ins_start, ins_end);
-    String conv = convert_typed(ins, f.text.substring(ts, ins_start));
+    String conv = (_typing_style == null) ? ins
+      : convert_typed(ins, f.text.substring(ts, ins_start));
+    rec_vert("insert:" + conv);
     if (conv.equals(ins))
       return;
+    _prev_cursor = f.base + ins_start + conv.length();
     f.ic.beginBatchEdit();
     f.ic.setSelection(f.base + ins_start, f.base + ins_end);
     f.ic.commitText(conv, 1);
@@ -896,15 +911,16 @@ public class EditStrip extends LinearLayout
     android.widget.Toast.makeText(getContext(), msg, android.widget.Toast.LENGTH_SHORT).show();
   }
 
-  /* Macros: Spec (steps) and Vert (key replacements) */
+  /* Specs (lenses: selection steps) and Verts (operations on the scope a
+     Spec gives), recorded as atomic operations ([Ops]) during typing in
+     format, simplified when saved, edited in Studio. */
 
-  /** Saved macros of [type] ("spec" or "vert"), by name. */
   List<Module> macros(String type)
   {
     return new ModuleStore(_prefs).list(type);
   }
 
-  /** The current macro of [type]: the one picked last, or the first. */
+  /** The current one of [type]: picked last, or the first. */
   Module current_macro(String type)
   {
     List<Module> ms = macros(type);
@@ -929,12 +945,12 @@ public class EditStrip extends LinearLayout
     List<Module> ms = macros(type);
     if (ms.isEmpty())
     {
-      toast(type.equals("spec") ? "No steps saved: swipe down on Spec after typing in format"
-          : "No replacement saved: swipe down on Vert after typing in format");
+      toast(type.equals("spec") ? "No Spec yet: record one in typing in format, swipe down on Spec"
+          : "No Vert yet: record one in typing in format, swipe down on Vert");
       return;
     }
     Module cur = current_macro(type);
-    int i = ms.indexOf(cur);
+    int i = 0;
     for (int j = 0; j < ms.size(); j++)
       if (ms.get(j).name.equals(cur.name))
         i = j;
@@ -955,43 +971,35 @@ public class EditStrip extends LinearLayout
     p.show();
   }
 
-  /** Spec ↓: the steps of the last typing in format (format and look, not
-      the typed text). Vert ↓: its key replacements (the typed letters). */
+  static List<String> ops_of(Module m)
+  {
+    List<String> l = new ArrayList<String>();
+    JSONArray a = (m == null) ? null : m.json.optJSONArray("ops");
+    for (int i = 0; a != null && i < a.length(); i++)
+      l.add(a.optString(i, ""));
+    return l;
+  }
+
+  /** Spec ↓ / Vert ↓: what the last typing in format recorded, simplified. */
   void save_macro(String type)
   {
-    if (_last_write == null)
+    boolean spec = type.equals("spec");
+    List<String> ops = spec ? Ops.simplify_spec(_spec_ops) : Ops.simplify_vert(_vert_ops);
+    if (ops.isEmpty())
     {
-      toast("Type in format first (Scope ↑), then save it");
+      toast(spec ? "No selection steps recorded: in typing in format, use Sector, Scope, ←→"
+          : "Nothing recorded: in typing in format, type, delete, use View or Verse");
       return;
     }
     try
     {
       JSONObject j = new JSONObject();
-      String summary;
-      if (type.equals("spec"))
-      {
-        j.put("format", _last_write.optString("format", ""));
-        j.put("open", _last_write.optString("open", ""));
-        j.put("close", _last_write.optString("close", ""));
-        j.put("style", _last_write.optString("style", ""));
-        j.put("case", _last_write.optBoolean("case", false));
-        j.put("steps", _write_steps);
-        summary = _last_write.optString("summary", "")
-          + (_write_steps.length() > 0 ? " + " + _write_steps.length() + " steps" : "");
-      }
-      else
-      {
-        String typed = _last_write.optString("typed", "");
-        j.put("replace", typed);
-        summary = "→ " + typed;
-      }
-      j.put("summary", summary);
-      List<Module> ms = macros(type);
-      String name = (type.equals("spec") ? "Spec " : "Vert ") + (ms.size() + 1);
-      Module m = Module.create(type, name, j);
-      new ModuleStore(_prefs).save(m);
+      j.put("ops", new JSONArray(ops));
+      j.put("summary", Ops.summary(ops));
+      String name = (spec ? "Spec " : "Vert ") + (macros(type).size() + 1);
+      new ModuleStore(_prefs).save(Module.create(type, name, j));
       pick_macro(type, name);
-      toast("Saved " + name + ": " + summary);
+      toast("Saved " + name + ": " + Ops.summary(ops));
     }
     catch (Exception e)
     {
@@ -999,51 +1007,159 @@ public class EditStrip extends LinearLayout
     }
   }
 
-  /** Apply the current macro of [type]: during typing in format to the
-      typed text, otherwise to the selection (or Scope's unit at the
-      cursor). */
   void apply_macro(String type)
   {
     Module m = current_macro(type);
     if (m == null)
     {
-      next_macro(type); // Says what to do.
+      next_macro(type); // Says how to make one.
       return;
     }
+    if (type.equals("spec"))
+      apply_spec(ops_of(m));
+    else
+      apply_vert(ops_of(m));
+  }
+
+  /** Run a Spec's selection steps from the cursor or selection, the way
+      Sector does them; the settings (scope, mode, direction) are only used
+      for the run. */
+  void apply_spec(List<String> ops)
+  {
+    TextScope scope = _scope;
+    int nest = _scope_nest;
+    boolean forward = _forward, inclusive = _inclusive, deselect = _deselect;
+    _replaying = true;
+    try
+    {
+      for (String op : ops)
+      {
+        String p = Ops.param(op);
+        switch (Ops.kind(op))
+        {
+          case "scope":
+            for (TextScope s : _scopes)
+              if (s.label.equals(p))
+                _scope = s;
+            break;
+          case "mode":
+            _inclusive = p.equals("incl");
+            _deselect = p.equals("desel");
+            break;
+          case "dir": _forward = !p.equals("back"); break;
+          case "step": perform("select"); break;
+          case "unit": perform("select_toggle"); break;
+          case "move": perform(p.equals("prev") ? "cursor_prev" : "cursor_next"); break;
+          default: break;
+        }
+      }
+    }
+    finally
+    {
+      _replaying = false;
+      _scope = scope;
+      _scope_nest = nest;
+      _forward = forward;
+      _inclusive = inclusive;
+      _deselect = deselect;
+    }
+  }
+
+  /** Run a Vert's operations on the selection (or at the cursor), as
+      recorded: the field gets the result as one edit. */
+  void apply_vert(List<String> ops)
+  {
     Field f = read();
     if (f == null)
       return;
-    int[] r = _typing ? new int[]{ _typing_start - f.base, _typing_end - f.base } : target(f);
-    if (r == null || r[0] < 0 || r[1] > f.text.length())
+    VertRun r = VertRun.run(f.text, f.sel_start, f.sel_end, ops, formats());
+    if (r.text.equals(f.text) && r.start == f.sel_start && r.end == f.sel_end)
       return;
-    String body = f.text.substring(r[0], r[1]);
-    String n;
-    if (type.equals("spec"))
-    {
-      String style = m.json.optString("style", "");
-      String looked = style.isEmpty() ? body
-        : (m.json.optBoolean("case", false) ? UnicodeStyles.change_case(body, style)
-            : UnicodeStyles.apply(body, style));
-      JSONArray steps = m.json.optJSONArray("steps");
-      if (steps != null)
-        looked = WriteSteps.replay(looked, steps, _scopes, formats());
-      n = m.json.optString("open", "") + looked + m.json.optString("close", "");
-    }
-    else
-      n = m.json.optString("replace", "");
+    // The smallest part that changed.
+    int a = 0, n = f.text.length(), m = r.text.length();
+    while (a < n && a < m && f.text.charAt(a) == r.text.charAt(a))
+      a++;
+    int b = 0;
+    while (b < n - a && b < m - a
+        && f.text.charAt(n - 1 - b) == r.text.charAt(m - 1 - b))
+      b++;
     if (_typing)
     {
-      // The typed text becomes the result; typing goes on after it.
-      _own_edit_len = f.text.length() + n.length() - body.length();
-      f.ic.beginBatchEdit();
-      f.ic.setSelection(f.base + r[0], f.base + r[1]);
-      f.ic.commitText(n, 1);
-      f.ic.endBatchEdit();
-      _typing_end = _typing_start + n.length();
-      _typing_len += n.length() - body.length();
+      _own_edit_len = r.text.length();
+      _typing_end += m - n;
+      _typing_len = m;
     }
-    else
-      replace(f, r[0], r[1], n, r[0], r[0] + n.length());
+    f.ic.beginBatchEdit();
+    f.ic.setSelection(f.base + a, f.base + n - b);
+    f.ic.commitText(r.text.substring(a, m - b), 1);
+    f.ic.setSelection(f.base + r.start, f.base + r.end);
+    f.ic.endBatchEdit();
+  }
+
+  /** Old Specs (format and look) become Verts, old Verts (a replacement
+      text) get their operations: clear, then type it. */
+  void migrate_macros()
+  {
+    ModuleStore store = new ModuleStore(_prefs);
+    try
+    {
+      for (Module m : store.list("spec"))
+      {
+        if (m.json.has("ops"))
+          continue;
+        List<String> ops = new ArrayList<String>();
+        String style = m.json.optString("style", "");
+        if (!style.isEmpty())
+          ops.add((m.json.optBoolean("case", false) ? "case:" : "look:") + style);
+        String open = m.json.optString("open", ""), close = m.json.optString("close", "");
+        if (!open.isEmpty() || !close.isEmpty())
+          ops.add("wrap:" + open + "|" + close);
+        if (!ops.isEmpty())
+        {
+          JSONObject j = new JSONObject();
+          j.put("ops", new JSONArray(ops));
+          j.put("summary", Ops.summary(ops));
+          // Saved before the old Spec goes.
+          store.save(Module.create("vert", "From " + m.name, j));
+        }
+        store.delete("spec", m.name);
+      }
+      for (Module m : store.list("vert"))
+      {
+        if (m.json.has("ops"))
+          continue;
+        List<String> ops = new ArrayList<String>();
+        ops.add("clear");
+        String t = m.json.optString("replace", "");
+        if (!t.isEmpty())
+          ops.add("insert:" + t);
+        JSONObject j = new JSONObject(m.json.toString());
+        j.put("ops", new JSONArray(ops));
+        j.put("summary", Ops.summary(ops));
+        store.save(new Module(j));
+      }
+    }
+    catch (Exception e)
+    {
+      juloo.keyboard2.Logs.exn("Studio macro migration", e);
+    }
+  }
+
+  void rec_spec(String op)
+  {
+    if (_typing && !_replaying)
+      _spec_ops.add(op);
+  }
+
+  void rec_vert(String op)
+  {
+    if (_typing && !_replaying)
+      _vert_ops.add(op);
+  }
+
+  String mode_name()
+  {
+    return _deselect ? "desel" : (_inclusive ? "incl" : "excl");
   }
 
   /* Scope */
@@ -1077,6 +1193,7 @@ public class EditStrip extends LinearLayout
         {
           _scope = s;
           _scope_nest = TextScope.BUILTIN.contains(s) ? 0 : 1;
+          rec_spec("scope:" + s.label);
           rebuild();
         }
       });
@@ -1251,14 +1368,11 @@ public class EditStrip extends LinearLayout
     if (r == null)
       r = new int[]{ f.sel_start, f.sel_start };
     TextFormats.Edit e = TextFormats.cycle(f.text, r, fs, _up);
-    if (_typing)
-    {
-      // Recorded as: remove the unit's format, then wrap in the new one.
-      record_step(f, r[0], "format", null, false, "", "");
-      for (String[] fm : fs)
-        if (e.name != null && fm[0].equals(e.name))
-          record_step(f, r[0], "format", null, false, fm[1], fm[2]);
-    }
+    // Recorded as: remove the format, then wrap in the new one.
+    rec_vert("unwrap");
+    for (String[] fm : fs)
+      if (e.name != null && fm[0].equals(e.name))
+        rec_vert("wrap:" + fm[1] + "|" + fm[2]);
     replace(f, e.start, e.end, e.text, e.sel_start, e.sel_end);
     _view_item = e.name;
     rebuild();
@@ -1274,7 +1388,10 @@ public class EditStrip extends LinearLayout
       return;
     TextFormats.Edit e = TextFormats.unwrap(f.text, r, formats());
     if (e != null)
+    {
+      rec_vert("unwrap");
       replace(f, e.start, e.end, e.text, e.sel_start, e.sel_end);
+    }
     _view_item = null;
     rebuild();
   }
@@ -1328,6 +1445,7 @@ public class EditStrip extends LinearLayout
       // Nothing to wrap: insert the markers around the cursor.
       r = new int[]{ f.sel_start, f.sel_start };
     TextFormats.Edit e = TextFormats.toggle(f.text, r, markers);
+    rec_vert("wrap:" + markers[0] + "|" + markers[1]);
     replace(f, e.start, e.end, e.text, e.sel_start, e.sel_end);
   }
 
@@ -1346,42 +1464,13 @@ public class EditStrip extends LinearLayout
     if (r == null)
       return;
     String n = t.apply(f.text.substring(r[0], r[1]));
-    if (_typing && _step_style != null)
-      record_step(f, r[0], "look", _step_style, _step_case, null, null);
+    if (_step_style != null)
+      rec_vert((_step_case ? "case:" : "look:") + _step_style);
     _step_style = null;
     replace(f, r[0], r[1], n, r[0], r[0] + n.length());
   }
 
-  /** Record a change to the unit at [pos] of the typed text, for Spec. */
-  void record_step(Field f, int pos, String kind, String style, boolean is_case,
-      String open, String close)
-  {
-    int ts = _typing_start - f.base, te = _typing_end - f.base;
-    if (ts < 0 || te > f.text.length() || pos < ts || pos > te)
-      return;
-    int unit = WriteSteps.unit_index(_scope, f.text.substring(ts, te), pos - ts);
-    if (unit < 0)
-      return;
-    try
-    {
-      JSONObject s = new JSONObject();
-      s.put("kind", kind);
-      s.put("scope", _scope.label);
-      s.put("unit", unit);
-      if (kind.equals("look"))
-      {
-        s.put("style", style);
-        s.put("case", is_case);
-      }
-      else
-      {
-        s.put("open", open);
-        s.put("close", close);
-      }
-      _write_steps.put(s);
-    }
-    catch (Exception _e) {}
-  }
+
 
   /** The selection [sel] (of unit [unit]) after a step forward or back:
       inclusive keeps it and adds the next or previous unit, exclusive moves

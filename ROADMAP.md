@@ -5,7 +5,7 @@ done, what comes next and what is still undecided. It is updated with the
 builds; the newest build is always at
 [releases/latest](https://github.com/Flareragnarok/inputlayer2/releases/latest).
 
-Last updated: 2026-11-01 (build 42).
+Last updated: 2026-11-01 (build 43).
 
 ## Done
 
@@ -53,6 +53,7 @@ Last updated: 2026-11-01 (build 42).
 | 40 | Suggestions learn from typing: finished words are counted, the user's words come first (most used first) before the dictionary's, words not in the dictionary are suggested once typed twice, words written in typing in format are suggested as written, and with nothing typed yet the bar shows the usual next words. Private storage, never from password fields; off switch and "forget" in Studio. |
 | 41 | Mails: copied email addresses (and mailto: links) are kept in a Mails category of Memory and can be filtered in the Clipboard tab. |
 | 42 | Verse's Case nest: snake_case, camelCase and aLtErNaTiNg, also while typing in format (a space becomes _ or is dropped with the next letter capital). snake_case and camelCase convert into each other; Title splits them back into words. |
+| 43 | Spec and Vert reworked. A Spec is a lens: atomic selection steps (scope, mode, direction, step, unit, move) giving the scope a Vert works on. A Vert operates on that scope once, faithfully: typing, ⌫/⌦, clear, wrap/unwrap, look, case (insertions even on an empty selection; transformations of nothing do nothing). Both are recorded in typing in format and simplified when saved (back-and-forth steps cancel), and edited step by step in Studio (Spec ↑ / Vert ↑). Old Specs became Verts. |
 
 Infrastructure:
 
@@ -97,7 +98,8 @@ Infrastructure:
   Universal Dependencies (English first, ~95% right, runs on the phone,
   no internet), maybe run on the desktop to update suggestions. Not now
   (decided 2026-11-01).
-- Spec and Vert need a rework: how, to define.
+- Memory and clipboard items editable with the keyboard itself (typing
+  into the pane instead of the app), with Specs and Verts — next.
 - Corner icons disappear when suggestions are turned off. Move them to the
   comfort bar in that case?
 - Comfort bar in the split layout (tablets, landscape): untested.

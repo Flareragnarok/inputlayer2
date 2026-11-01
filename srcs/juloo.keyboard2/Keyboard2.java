@@ -209,6 +209,15 @@ public class Keyboard2 extends InputMethodService
       public int sel_start() { return _studio_sel_start; }
       public int sel_end() { return _studio_sel_end; }
       public void open_studio() { start_activity(StudioActivity.class); }
+      public void open_editor(String type, String name)
+      {
+        Intent i = new Intent(Keyboard2.this, StudioActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        i.putExtra(StudioActivity.EXTRA_EDIT_TYPE, type);
+        if (name != null)
+          i.putExtra(StudioActivity.EXTRA_EDIT_NAME, name);
+        startActivity(i);
+      }
       public void pinned(String text)
       {
         _selection_bar.set_pinned(text);
