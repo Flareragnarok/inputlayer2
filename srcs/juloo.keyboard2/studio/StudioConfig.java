@@ -24,11 +24,12 @@ public final class StudioConfig
       // ↖ undoes the last height change (like Back), ↙ all since shown.
       ComfortKeySpec.of("c", "select_container", "n", "height_up", "s", "height_down",
           "w", "move_up", "e", "move_down", "nw", "height_undo", "sw", "height_revert"),
-      ComfortKeySpec.of("c", "dictionary", "se", "keyboard_picker"),
+      ComfortKeySpec.of("c", "dictionary"),
       // Right end: the layout shown; tap next, ← previous, ↑ list.
-      // ↓ switches key repeat (off: holding a key opens its editor).
+      // ↓ switches key repeat (off: holding a key opens its editor), ↘ the
+      // keyboard picker.
       ComfortKeySpec.of("c", "layout", "w", "layout_prev", "n", "layout_menu",
-          "s", "toggle_repeat"));
+          "s", "toggle_repeat", "se", "keyboard_picker"));
 
   /** [-1] when not set. */
   public int keyboard_percent_portrait = -1;

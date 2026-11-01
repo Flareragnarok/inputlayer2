@@ -74,7 +74,7 @@ Enter, ↓, Add key, search "config"; then open Q, the ⚙ corner, Remove.
 **Holding a key opens it in the key editor** (build 69), the same as
 tapping it in layout mode; the key isn't typed. Nothing repeats while held.
 The **layout key** (comfort bar, right end: tap next layout, ← previous,
-↑ list) switches this with **↓**: key repeat on (label ↻: backspace,
+↑ list, ↘ keyboard picker) switches this with **↓**: key repeat on (label ↻: backspace,
 arrows… repeat again as upstream) or off (label ✎: hold edits). Modifiers
 (Shift, Ctrl) still lock when held.
 
@@ -105,7 +105,9 @@ their letters. Upstream's layouts are listed after ours as
   Enter. Since build 67, **?123 and Shift trade places** on every layout
   (Shift bottom-left, ?123 left of the third letter row), and on the
   symbols pages the key back sits where ?123 was. Since build 68, ?123 is a
-  quarter key wider and backspace as much tighter.
+  quarter key wider and backspace as much tighter. Since build 70 a
+  backspace 2 keys wide or more (QWERTZ) is split: ⌫ with its swipes, then
+  at the edge ⌦ forward delete, ↓ keyboard picker.
 - **?123** opens the first symbols page, like Gboard's: digits;
   `@ # € _ & - + ( ) /` (€ ↗ $); `=\<` `* " ' : ; ! ?` ⌫.
 - **=\<** opens the second page: `~ \` | • √ π ÷ × ¶ ∆`;

@@ -197,4 +197,31 @@ public class KeyMapTest
     assertEquals(2.25f, w.rows.get(0).keys.get(2).width, 1e-6f);
     assertEquals(5f, w.rows.get(0).keysWidth, 1e-6f);
   }
+
+  /** Owner's default (build 70): a wide backspace is cut in two, forward
+      delete at the edge with the keyboard picker on its down. */
+  @Test
+  public void backspace_split()
+  {
+    KeyboardData.Row r = new KeyboardData.Row(new ArrayList<KeyboardData.Key>(
+          Arrays.asList(key("z", null), key("backspace", "delete_word").withWidth(2.25f))), 1f, 0f);
+    KeyboardData kw = new KeyboardData(new ArrayList<KeyboardData.Row>(Arrays.asList(r)),
+        3.25f, null, "latin", null, "IL", false, false, false);
+    KeyboardData s = LayoutModifier.split_backspace(kw);
+    assertEquals(3, s.rows.get(0).keys.size());
+    KeyboardData.Key left = s.rows.get(0).keys.get(1), right = s.rows.get(0).keys.get(2);
+    assertEquals(KeyValue.getKeyByName("backspace"), left.keys[0]);
+    assertEquals(KeyValue.getKeyByName("delete_word"), left.keys[2]);
+    assertEquals(1.125f, left.width, 1e-6f);
+    assertEquals(KeyValue.getKeyByName("delete"), right.keys[0]);
+    assertEquals(KeyValue.getKeyByName("change_method"), right.keys[8]);
+    assertNull(right.keys[2]);
+    assertEquals(3.25f, s.rows.get(0).keysWidth, 1e-6f);
+    // A narrow backspace stays whole.
+    KeyboardData.Row n = new KeyboardData.Row(new ArrayList<KeyboardData.Key>(
+          Arrays.asList(key("backspace", null).withWidth(1.25f))), 1f, 0f);
+    KeyboardData nk = new KeyboardData(new ArrayList<KeyboardData.Row>(Arrays.asList(n)),
+        1.25f, null, "latin", null, "IL", false, false, false);
+    assertSame(nk, LayoutModifier.split_backspace(nk));
+  }
 }

@@ -98,8 +98,8 @@ public final class LayoutModifier
       (layout mode). */
   static KeyboardData studio_keys(KeyboardData kw)
   {
-    kw = scale_rows(ctrl_undo(widen_symbols(swap_symbols_and_shift(
-            arrows_and_shift(space_nests(backspace_cut(kw)))))));
+    kw = scale_rows(ctrl_undo(split_backspace(widen_symbols(swap_symbols_and_shift(
+            arrows_and_shift(space_nests(backspace_cut(kw))))))));
     if (globalConfig.studio != null && globalConfig.studio.keymap != null)
       kw = globalConfig.studio.keymap.apply(kw);
     return kw;
@@ -254,6 +254,39 @@ public final class LayoutModifier
       rows.add(r.with_keys(ks));
     }
     return kw.with_rows(rows);
+  }
+
+  /** Studio (owner, build 70): a backspace at least 2 keys wide is cut in
+      two. The left half is backspace with all its swipes; the right half, at
+      the edge, is forward delete, ↓ the keyboard picker. */
+  static KeyboardData split_backspace(KeyboardData kw)
+  {
+    KeyValue backspace = KeyValue.getKeyByName("backspace");
+    KeyValue delete = KeyValue.getKeyByName("delete");
+    KeyValue picker = KeyValue.getKeyByName("change_method");
+    ArrayList<KeyboardData.Row> rows = new ArrayList<KeyboardData.Row>();
+    boolean changed = false;
+    for (KeyboardData.Row r : kw.rows)
+    {
+      ArrayList<KeyboardData.Key> ks = new ArrayList<KeyboardData.Key>();
+      for (KeyboardData.Key k : r.keys)
+      {
+        if (!backspace.equals(k.keys[0]) || k.width < 2f)
+        {
+          ks.add(k);
+          continue;
+        }
+        float w = k.width / 2;
+        ks.add(k.withWidth(w));
+        KeyboardData.Key h = k.withWidthAndShift(w, 0f);
+        for (int i = 0; i < h.keys.length; i++)
+          h = h.withKeyValue(i, (i == 0) ? delete : (i == 8) ? picker : null);
+        ks.add(h);
+        changed = true;
+      }
+      rows.add(changed ? r.with_keys(ks) : r);
+    }
+    return changed ? kw.with_rows(rows) : kw;
   }
 
   /** Studio (owner, build 67): ?123 and Shift trade places, on every
