@@ -787,7 +787,7 @@ public class StudioActivity extends Activity
 
   /* Languages */
 
-  /** Layouts offered in Studio, in the order the quicksettings' layout key
+  /** Layouts offered in Studio, in the order the quicksbar's layout key
       cycles through them: { layout name ("system" for the phone's
       language), label }. */
   static final String[][] LANGUAGE_LAYOUTS = {

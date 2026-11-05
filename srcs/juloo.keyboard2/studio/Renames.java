@@ -6,62 +6,78 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/** Names the owner changed, for what is already saved under the old ones
-    (il-007: "rename every mention of comfort bar to quicksettings",
-    2026-11-06). Saved modules, the active module per type and the heights'
-    last good copies are rewritten once; a module document read later (an
-    imported file) is renamed as it is read. Nothing is lost: the old names
-    are only ever read, never written. */
+/** Names the owner changed, for what is already saved under the old ones.
+    The bar above the suggestions was the "comfort bar" until build 79,
+    "quicksettings" in build 80 (il-007), and is the "quicksbar" since
+    build 81; its buttons are "quicks" (owner, 2026-11-06). Saved modules,
+    the active module per type and the heights' last good copies are
+    rewritten once; a module document read later (an imported file) is
+    renamed as it is read. The old names are only ever read, never written. */
 public final class Renames
 {
-  /** Set once the saved settings use the new names. */
-  static final String DONE_KEY = "studio_renamed_quicksettings";
+  /** Set once the saved settings use the newest names. A new rename gets a
+      new key, so phones that ran an earlier one run this one too. */
+  static final String DONE_KEY = "studio_renamed_quicksbar";
 
-  static final String OLD_TYPE = "comfort" + "bar";
-  static final String OLD_DP = "comfort" + "_bar_dp";
-  static final String OLD_CONTAINER = "comfort";
+  static final String TYPE = "quicksbar", DP = "quicksbar_dp", CONTAINER = "quicksbar";
+  /** Earlier names, oldest first. */
+  static final String[] OLD_TYPES = { "comfort" + "bar", "quick" + "settings" };
+  static final String[] OLD_DPS = { "comfort" + "_bar_dp", "quick" + "settings_dp" };
+  static final String[] OLD_CONTAINERS = { "comfort", "quick" + "settings" };
 
   private Renames() {}
 
-  /** [doc] (a module document) under the new names. Returns whether it changed. */
+  static boolean is_in(String s, String[] l)
+  {
+    for (String x : l)
+      if (x.equals(s))
+        return true;
+    return false;
+  }
+
+  /** [doc] (a module document) under the newest names. Returns whether it changed. */
   public static boolean doc(JSONObject doc) throws JSONException
   {
     boolean changed = false;
-    if (OLD_TYPE.equals(doc.optString("module")))
+    if (is_in(doc.optString("module"), OLD_TYPES))
     {
-      doc.put("module", "quicksettings");
+      doc.put("module", TYPE);
       changed = true;
     }
-    if (doc.has(OLD_DP))
-    {
-      if (!doc.has("quicksettings_dp"))
-        doc.put("quicksettings_dp", doc.get(OLD_DP));
-      doc.remove(OLD_DP);
-      changed = true;
-    }
+    // The newest value wins: walk from the newest old name to the oldest.
+    for (int i = OLD_DPS.length - 1; i >= 0; i--)
+      if (doc.has(OLD_DPS[i]))
+      {
+        if (!doc.has(DP))
+          doc.put(DP, doc.get(OLD_DPS[i]));
+        doc.remove(OLD_DPS[i]);
+        changed = true;
+      }
     JSONArray order = doc.optJSONArray("order");
     if (order != null)
       for (int i = 0; i < order.length(); i++)
-        if (OLD_CONTAINER.equals(order.optString(i)))
+        if (is_in(order.optString(i), OLD_CONTAINERS))
         {
-          order.put(i, "quicksettings");
+          order.put(i, CONTAINER);
           changed = true;
         }
     return changed;
   }
 
-  /** The [studio_modules] object under the new names (in place). */
+  /** The [studio_modules] object under the newest names (in place). */
   static boolean modules(JSONObject all) throws JSONException
   {
     boolean changed = false;
-    JSONObject old = all.optJSONObject(OLD_TYPE);
-    if (old != null)
+    for (int i = OLD_TYPES.length - 1; i >= 0; i--)
     {
-      JSONObject now = all.optJSONObject("quicksettings");
+      JSONObject old = all.optJSONObject(OLD_TYPES[i]);
+      if (old == null)
+        continue;
+      JSONObject now = all.optJSONObject(TYPE);
       if (now == null)
       {
         now = new JSONObject();
-        all.put("quicksettings", now);
+        all.put(TYPE, now);
       }
       for (Iterator<String> it = old.keys(); it.hasNext(); )
       {
@@ -69,7 +85,7 @@ public final class Renames
         if (!now.has(n))
           now.put(n, old.get(n));
       }
-      all.remove(OLD_TYPE);
+      all.remove(OLD_TYPES[i]);
       changed = true;
     }
     for (Iterator<String> t = all.keys(); t.hasNext(); )
@@ -102,12 +118,22 @@ public final class Renames
         if (modules(all))
           e.putString(ModuleStore.KEY_MODULES, all.toString());
       }
-      String old_active = ModuleStore.active_key(OLD_TYPE);
-      String active = prefs.getString(old_active, null);
-      if (active != null)
+      // The newest active one wins.
+      for (int i = OLD_TYPES.length - 1; i >= 0; i--)
       {
-        if (prefs.getString(ModuleStore.active_key("quicksettings"), null) == null)
-          e.putString(ModuleStore.active_key("quicksettings"), active);
+        String old_active = ModuleStore.active_key(OLD_TYPES[i]);
+        String active = prefs.getString(old_active, null);
+        if (active == null)
+          continue;
+        if (prefs.getString(ModuleStore.active_key(TYPE), null) == null)
+        {
+          e.putString(ModuleStore.active_key(TYPE), active);
+          // older names must not override this one
+          for (int j = i - 1; j >= 0; j--)
+            e.remove(ModuleStore.active_key(OLD_TYPES[j]));
+          e.remove(old_active);
+          break;
+        }
         e.remove(old_active);
       }
       String good = prefs.getString(Heights.KEY_LAST_GOOD, null);

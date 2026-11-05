@@ -46,7 +46,7 @@ public class BehavioursTest
     assertEquals("only once", 1, reverted.size());
   }
 
-  @Test public void quicksettings_repeat_is_the_same_switch()
+  @Test public void quicksbar_repeat_is_the_same_switch()
   {
     b.switched("toggle_repeat", Spec.parse("once"));
     b.edited();

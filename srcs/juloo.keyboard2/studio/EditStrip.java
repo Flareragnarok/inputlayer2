@@ -48,7 +48,7 @@ import juloo.keyboard2.Theme;
     View and Verse act on the selection, or on the scope's unit at the
     cursor, and select the result so that the next tap cycles on. */
 public class EditStrip extends LinearLayout
-  implements QuicksettingsKey.Host, Keyboard2View.BottomInsetTaker
+  implements Quick.Host, Keyboard2View.BottomInsetTaker
 {
   public interface Listener
   {
@@ -82,36 +82,36 @@ public class EditStrip extends LinearLayout
       current item at the bottom. Tap cycles the items, swipe right the
       nests, swipe left lists everything, swipe down goes back to the
       default nest. Scope's down instead starts typing in View's format. */
-  static final QuicksettingsKeySpec SCOPE_KEY =
-    QuicksettingsKeySpec.of("c", "scope", "e", "scope_nest", "w", "scope_menu",
+  static final QuickSpec SCOPE_KEY =
+    QuickSpec.of("c", "scope", "e", "scope_nest", "w", "scope_menu",
         "s", "scope_type", "n", "scope_push");
   /** Tap cycles the selection mode (excl, incl, desel); the step in the
       ←→ direction is on the arrow key's tap, next to the space bar; left
       and right move the cursor (or the selection) by a unit; up selects
       the unit at the cursor or deselects. */
-  static final QuicksettingsKeySpec SELECTOR_KEY =
-    QuicksettingsKeySpec.of("c", "inclusive_toggle", "w", "cursor_prev", "e", "cursor_next",
+  static final QuickSpec SELECTOR_KEY =
+    QuickSpec.of("c", "inclusive_toggle", "w", "cursor_prev", "e", "cursor_next",
         "n", "select_toggle");
   /** Spec and Vert: tap applies the current macro, right picks the next,
       left lists them, down saves the last typing in format as one (Spec:
       its steps, Vert: its key replacements), up opens the definitions. */
-  static final QuicksettingsKeySpec CUSTOM_SELECTION_KEY =
-    QuicksettingsKeySpec.of("c", "spec_apply", "e", "spec_next", "w", "spec_menu",
+  static final QuickSpec CUSTOM_SELECTION_KEY =
+    QuickSpec.of("c", "spec_apply", "e", "spec_next", "w", "spec_menu",
         "s", "spec_save", "n", "custom_selection");
-  static final QuicksettingsKeySpec SELECTION_DIRECTION_KEY = QuicksettingsKeySpec.of("c", "selection_direction");
-  static final QuicksettingsKeySpec CYCLE_DIRECTION_KEY = QuicksettingsKeySpec.of("c", "cycle_direction");
-  static final QuicksettingsKeySpec APPEARANCE_KEY =
-    QuicksettingsKeySpec.of("c", "appearance", "e", "appearance_nest",
+  static final QuickSpec SELECTION_DIRECTION_KEY = QuickSpec.of("c", "selection_direction");
+  static final QuickSpec CYCLE_DIRECTION_KEY = QuickSpec.of("c", "cycle_direction");
+  static final QuickSpec APPEARANCE_KEY =
+    QuickSpec.of("c", "appearance", "e", "appearance_nest",
         "w", "appearance_menu", "s", "appearance_default", "n", "appearance_restore");
-  static final QuicksettingsKeySpec FORMAT_KEY =
-    QuicksettingsKeySpec.of("c", "format", "e", "format_nest", "w", "format_menu",
+  static final QuickSpec FORMAT_KEY =
+    QuickSpec.of("c", "format", "e", "format_nest", "w", "format_menu",
         "s", "format_default", "n", "format_restore");
 
   static final String KEY_NEST_CONFIGS = "studio_nest_configs";
   static final String KEY_NEST_CONFIG_INDEX = "studio_nest_config_index";
   static final int DEFAULT_VERSE_NEST = 1;
-  static final QuicksettingsKeySpec CUSTOM_FORMAT_KEY =
-    QuicksettingsKeySpec.of("c", "vert_apply", "e", "vert_next", "w", "vert_menu",
+  static final QuickSpec CUSTOM_FORMAT_KEY =
+    QuickSpec.of("c", "vert_apply", "e", "vert_next", "w", "vert_menu",
         "s", "vert_save", "n", "custom_format");
 
   Listener _listener;
@@ -232,30 +232,30 @@ public class EditStrip extends LinearLayout
     _scope_key = make_key(SCOPE_KEY, 1.6f);
     // Like Sector: its name on top, the scope at the bottom; lit while
     // typing in format, which it starts and pushes.
-    ((QuicksettingsKey)_scope_key).set_lines("Scope", _scope.label);
-    ((QuicksettingsKey)_scope_key)._highlight = _typing;
+    ((Quick)_scope_key).set_lines("Scope", _scope.label);
+    ((Quick)_scope_key)._highlight = _typing;
     addView(_scope_key);
     _spec_key = make_key(CUSTOM_SELECTION_KEY, 1.4f);
     Module spec = current_macro("spec");
-    ((QuicksettingsKey)_spec_key).set_lines("Spec", (spec == null) ? "—" : spec.name);
+    ((Quick)_spec_key).set_lines("Spec", (spec == null) ? "—" : spec.name);
     addView(_spec_key);
     View sector = make_key(SELECTOR_KEY, 1.5f);
     // The selection mode at the bottom; tapping Sector switches it.
-    ((QuicksettingsKey)sector).set_lines("Sector", _deselect ? "desel" : (_inclusive ? "incl" : "excl"));
+    ((Quick)sector).set_lines("Sector", _deselect ? "desel" : (_inclusive ? "incl" : "excl"));
     addView(sector);
     _format_key = make_key(FORMAT_KEY, 1.6f);
-    ((QuicksettingsKey)_format_key).set_lines(syntax().name,
+    ((Quick)_format_key).set_lines(syntax().name,
         (_typing ? "✎ " : "") + ((_view_item == null) ? "plain" : _view_item));
     _appearance_key = make_key(APPEARANCE_KEY, 1.6f);
     String[] vn = verse_nest();
-    ((QuicksettingsKey)_appearance_key).set_lines(vn[0],
+    ((Quick)_appearance_key).set_lines(vn[0],
         ((_typing && _typing_style != null) ? "✎ " : "")
         + verse_item_label(vn, Math.max(0, _verse_item)));
     // View formats, Vert defines formats and fonts, Verse changes the look.
     addView(_format_key);
     _vert_key = make_key(CUSTOM_FORMAT_KEY, 1.4f);
     Module vert = current_macro("vert");
-    ((QuicksettingsKey)_vert_key).set_lines("Vert", (vert == null) ? "—" : vert.name);
+    ((Quick)_vert_key).set_lines("Vert", (vert == null) ? "—" : vert.name);
     addView(_vert_key);
     addView(_appearance_key);
     addView(make_key(CYCLE_DIRECTION_KEY, 1.0f));
@@ -297,9 +297,9 @@ public class EditStrip extends LinearLayout
     UnicodeStyles.set_fonts(fonts);
   }
 
-  View make_key(QuicksettingsKeySpec s, float width)
+  View make_key(QuickSpec s, float width)
   {
-    View k = new QuicksettingsKey(getContext(), s, this, Theme.getKeyFont(getContext()));
+    View k = new Quick(getContext(), s, this, Theme.getKeyFont(getContext()));
     int h = (int)(_config.studio.edit_strip_dp * density());
     LayoutParams p = new LayoutParams((int)(h * width), h - dp(4));
     p.setMargins(dp(3), dp(2), dp(3), dp(2));
@@ -321,7 +321,7 @@ public class EditStrip extends LinearLayout
       refresh(_config);
   }
 
-  /* QuicksettingsKey.Host */
+  /* Quick.Host */
 
   public void gesture_started() {}
 
@@ -505,37 +505,37 @@ public class EditStrip extends LinearLayout
       f.ic.setSelection(f.base + r[0], f.base + r[1]);
   }
 
-  public QuicksettingsKey.Label label_of(String action)
+  public Quick.Label label_of(String action)
   {
     switch (action)
     {
-      case "scope": return new QuicksettingsKey.Label("Scope", false);
-      case "scope_menu": return new QuicksettingsKey.Label("☰", false);
-      case "select": return new QuicksettingsKey.Label("Sector", false);
-      case "cursor_prev": return new QuicksettingsKey.Label("◂", false);
-      case "cursor_next": return new QuicksettingsKey.Label("▸", false);
-      case "select_toggle": return new QuicksettingsKey.Label("[ ]", false);
-      case "inclusive_toggle": return new QuicksettingsKey.Label("⊂", false);
-      case "scope_push": return new QuicksettingsKey.Label("⤒", false);
-      case "custom_selection": case "custom_format": return new QuicksettingsKey.Label("⚙", false);
-      case "spec_apply": case "vert_apply": return new QuicksettingsKey.Label("", false);
-      case "spec_next": case "vert_next": return new QuicksettingsKey.Label("›", false);
-      case "spec_menu": case "vert_menu": return new QuicksettingsKey.Label("☰", false);
-      case "spec_save": case "vert_save": return new QuicksettingsKey.Label("⤓", false);
-      case "selection_direction": return new QuicksettingsKey.Label(_forward ? "→" : "←", false);
-      case "cycle_direction": return new QuicksettingsKey.Label(_up ? "↑" : "↓", false);
-      case "appearance": return new QuicksettingsKey.Label("Verse", false);
-      case "appearance_menu": return new QuicksettingsKey.Label("☰", false);
+      case "scope": return new Quick.Label("Scope", false);
+      case "scope_menu": return new Quick.Label("☰", false);
+      case "select": return new Quick.Label("Sector", false);
+      case "cursor_prev": return new Quick.Label("◂", false);
+      case "cursor_next": return new Quick.Label("▸", false);
+      case "select_toggle": return new Quick.Label("[ ]", false);
+      case "inclusive_toggle": return new Quick.Label("⊂", false);
+      case "scope_push": return new Quick.Label("⤒", false);
+      case "custom_selection": case "custom_format": return new Quick.Label("⚙", false);
+      case "spec_apply": case "vert_apply": return new Quick.Label("", false);
+      case "spec_next": case "vert_next": return new Quick.Label("›", false);
+      case "spec_menu": case "vert_menu": return new Quick.Label("☰", false);
+      case "spec_save": case "vert_save": return new Quick.Label("⤓", false);
+      case "selection_direction": return new Quick.Label(_forward ? "→" : "←", false);
+      case "cycle_direction": return new Quick.Label(_up ? "↑" : "↓", false);
+      case "appearance": return new Quick.Label("Verse", false);
+      case "appearance_menu": return new Quick.Label("☰", false);
       case "appearance_nest": case "format_nest": case "scope_nest":
-        return new QuicksettingsKey.Label("›", false);
+        return new Quick.Label("›", false);
       case "appearance_default": case "format_default":
-        return new QuicksettingsKey.Label("⌂", false);
-      case "scope_type": return new QuicksettingsKey.Label("✎", false);
-      case "appearance_restore": return new QuicksettingsKey.Label("⟲", false);
-      case "format_restore": return new QuicksettingsKey.Label("⟲", false);
-      case "format": return new QuicksettingsKey.Label("View", false);
-      case "format_menu": return new QuicksettingsKey.Label("☰", false);
-      default: return new QuicksettingsKey.Label("?", false);
+        return new Quick.Label("⌂", false);
+      case "scope_type": return new Quick.Label("✎", false);
+      case "appearance_restore": return new Quick.Label("⟲", false);
+      case "format_restore": return new Quick.Label("⟲", false);
+      case "format": return new Quick.Label("View", false);
+      case "format_menu": return new Quick.Label("☰", false);
+      default: return new Quick.Label("?", false);
     }
   }
 

@@ -2,10 +2,10 @@ package juloo.keyboard2.studio;
 
 import org.json.JSONObject;
 
-/** What a quicksettings key does: an action for a tap and for each of the 8
+/** What a quick does: an action for a tap and for each of the 8
     swipe directions, like the keys of the keyboard. Actions are names of
-    built-in actions, see [Quicksettings.perform]. */
-public final class QuicksettingsKeySpec
+    built-in actions, see [Quicksbar.perform]. */
+public final class QuickSpec
 {
   /** "c" is the tap, the others clockwise from the top. */
   public static final String[] DIRECTIONS =
@@ -33,18 +33,18 @@ public final class QuicksettingsKeySpec
   }
 
   /** Pairs of direction and action. */
-  public static QuicksettingsKeySpec of(String... dir_actions)
+  public static QuickSpec of(String... dir_actions)
   {
-    QuicksettingsKeySpec s = new QuicksettingsKeySpec();
+    QuickSpec s = new QuickSpec();
     for (int i = 0; i + 1 < dir_actions.length; i += 2)
       s.actions[index_of(dir_actions[i])] = dir_actions[i + 1];
     return s;
   }
 
   /** [null] if no direction has an action. */
-  static QuicksettingsKeySpec of_json(JSONObject j)
+  static QuickSpec of_json(JSONObject j)
   {
-    QuicksettingsKeySpec s = new QuicksettingsKeySpec();
+    QuickSpec s = new QuickSpec();
     for (int i = 0; i < DIRECTIONS.length; i++)
     {
       String a = j.optString(DIRECTIONS[i], "");

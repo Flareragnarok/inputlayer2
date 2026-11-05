@@ -24,7 +24,7 @@ import java.util.List;
 import juloo.keyboard2.DirectBootAwarePreferences;
 import org.json.JSONObject;
 
-/** Studio → Keys (il-005): every special key and quicksettings action, with a
+/** Studio → Keys (il-005): every special key and quicksbar action, with a
     search, and the behaviours of the keys that switch something. A
     behaviour chosen here is that key's default everywhere it is placed;
     the variant names (`…~once`) put a behaviour on one place only. */
@@ -36,8 +36,8 @@ public class KeysActivity extends Activity
   ArrayAdapter<String> _adapter;
   EditText _query;
 
-  /** Quicksettings actions with behaviours, as entries of their own. */
-  static final String QUICKSETTINGS = "Quicksettings";
+  /** Quicksbar actions with behaviours, as entries of their own. */
+  static final String QUICKSBAR = "Quicksbar";
 
   @Override public void onCreate(Bundle b)
   {
@@ -74,13 +74,13 @@ public class KeysActivity extends Activity
   }
 
   /** The special keys (variants left out: they show in a key's details)
-      and the quicksettings actions that switch something. */
+      and the quicksbar actions that switch something. */
   List<KeyCatalog.Entry> entries()
   {
     List<KeyCatalog.Entry> out = new ArrayList<KeyCatalog.Entry>();
     for (Behaviours.Capable c : Behaviours.capable())
-      if (c.quicksettings)
-        out.add(new KeyCatalog.Entry(c.name, c.name, QUICKSETTINGS, 0));
+      if (c.quicksbar)
+        out.add(new KeyCatalog.Entry(c.name, c.name, QUICKSBAR, 0));
     for (KeyCatalog.Entry e : KeyCatalog.with_layouts(KeyCatalog.all(getResources()), new ModuleStore(_prefs)))
       if ((e.group.equals(KeyCatalog.SPECIAL) || e.group.equals(KeyCatalog.LAYOUTS)) && e.name.indexOf(Behaviours.SEP) < 0)
         out.add(e);
@@ -165,7 +165,7 @@ public class KeysActivity extends Activity
       });
     TextView msg = new TextView(this);
     msg.setText(c.what + "\n\nDefault behaviour, wherever this key is placed. To give one place its own behaviour, place a variant: "
-        + variants + (c.quicksettings ? " (as a quicksettings action)." : " (edit mode → Replace with…, or the layout editor)."));
+        + variants + (c.quicksbar ? " (as a quicksbar action)." : " (edit mode → Replace with…, or the layout editor)."));
     msg.setPadding(dp(24), dp(8), dp(24), 0);
     msg.setTextIsSelectable(true);
     LinearLayout wrap = new LinearLayout(this);

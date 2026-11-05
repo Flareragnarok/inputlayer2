@@ -23,7 +23,7 @@ public class StudioConfigTest
     assertEquals(35, c.keyboard_percent(false, 35));
     assertEquals(StudioConfig.DEFAULT_BAR_DP, c.bar_dp, 0f);
     assertTrue(Float.isNaN(c.margin_bottom_dp));
-    assertEquals(StudioConfig.DEFAULT_QUICKSETTINGS_DP, c.quicksettings_dp, 0f);
+    assertEquals(StudioConfig.DEFAULT_QUICKSBAR_DP, c.quicksbar_dp, 0f);
     assertEquals(1f, c.row_factor(0), 0f);
     assertEquals(StudioConfig.DEFAULT_KEYS, c.keys);
   }
@@ -34,12 +34,12 @@ public class StudioConfigTest
   {
     StudioConfig c = with("changeheight",
         "\"bar_dp\":26,\"keyboard_percent\":{\"portrait\":30,\"landscape\":45},"
-        + "\"rows\":[0.8,1.0,\"x\",9],\"margin_bottom_dp\":4,\"quicksettings_dp\":30");
+        + "\"rows\":[0.8,1.0,\"x\",9],\"margin_bottom_dp\":4,\"quicksbar_dp\":30");
     assertEquals(30, c.keyboard_percent(false, 35));
     assertEquals(45, c.keyboard_percent(true, 50));
     assertEquals(26f, c.bar_dp, 0f);
     assertEquals(4f, c.margin_bottom_dp, 0f);
-    assertEquals(30f, c.quicksettings_dp, 0f);
+    assertEquals(30f, c.quicksbar_dp, 0f);
     assertEquals(0.8f, c.row_factor(0), 0.001f);
     assertEquals(1f, c.row_factor(2), 0f); // Not a number
     assertEquals(Heights.ROW_MAX, c.row_factor(3), 0f); // Clamped
@@ -51,11 +51,11 @@ public class StudioConfigTest
   throws Exception
   {
     StudioConfig c = with("changeheight",
-        "\"bar_dp\":2,\"keyboard_percent\":{\"portrait\":500},\"quicksettings_dp\":0");
+        "\"bar_dp\":2,\"keyboard_percent\":{\"portrait\":500},\"quicksbar_dp\":0");
     assertEquals(Heights.PORTRAIT_MAX, c.keyboard_percent(false, 35));
     assertEquals(50, c.keyboard_percent(true, 50)); // Not set
     assertEquals(12f, c.bar_dp, 0f);
-    assertEquals(0f, c.quicksettings_dp, 0f);
+    assertEquals(0f, c.quicksbar_dp, 0f);
   }
 
   @Test
@@ -63,29 +63,29 @@ public class StudioConfigTest
   throws Exception
   {
     assertEquals(StudioConfig.DEFAULT_ORDER, StudioConfig.load(new FakePrefs()).order);
-    StudioConfig c = with("changeheight", "\"order\":[\"keyboard\",\"quicksettings\",\"bogus\",\"keyboard\"]");
-    assertEquals(java.util.Arrays.asList("keyboard", "quicksettings", "selection", "suggestions", "edit"), c.order);
+    StudioConfig c = with("changeheight", "\"order\":[\"keyboard\",\"quicksbar\",\"bogus\",\"keyboard\"]");
+    assertEquals(java.util.Arrays.asList("keyboard", "quicksbar", "selection", "suggestions", "edit"), c.order);
   }
 
   @Test
-  public void quicksettings_keys()
+  public void quicksbar_keys()
   throws Exception
   {
-    StudioConfig c = with("quicksettings",
+    StudioConfig c = with("quicksbar",
         "\"keys\":[{\"c\":\"copy\",\"sw\":\"cut\",\"x\":\"paste\"},{},{\"e\":\"redo\"}]");
     assertEquals(2, c.keys.size());
     assertEquals("copy", c.keys.get(0).get(0));
-    assertEquals("cut", c.keys.get(0).get(QuicksettingsKeySpec.index_of("sw")));
-    assertNull(c.keys.get(0).get(QuicksettingsKeySpec.index_of("ne")));
+    assertEquals("cut", c.keys.get(0).get(QuickSpec.index_of("sw")));
+    assertNull(c.keys.get(0).get(QuickSpec.index_of("ne")));
     assertNull(c.keys.get(1).get(0));
-    assertEquals("redo", c.keys.get(1).get(QuicksettingsKeySpec.index_of("e")));
+    assertEquals("redo", c.keys.get(1).get(QuickSpec.index_of("e")));
   }
 
   @Test
-  public void quicksettings_applets_still_read()
+  public void quicksbar_applets_still_read()
   throws Exception
   {
-    StudioConfig c = with("quicksettings", "\"applets\":[\"copy\",\"\",\"height\"]");
+    StudioConfig c = with("quicksbar", "\"applets\":[\"copy\",\"\",\"height\"]");
     assertEquals(2, c.keys.size());
     assertEquals("copy", c.keys.get(0).get(0));
     assertEquals("height_up", c.keys.get(1).get(0));
@@ -98,11 +98,11 @@ public class StudioConfigTest
       "cut", "paste", "undo", "redo", "layout", "keyboard_picker", "clipboard",
       "app:com.termux" };
     for (String a : actions)
-      assertNotNull(a, KeyValue.getKeyByName(Quicksettings.key_name(a)));
-    for (QuicksettingsKeySpec s : StudioConfig.DEFAULT_KEYS)
+      assertNotNull(a, KeyValue.getKeyByName(Quicksbar.key_name(a)));
+    for (QuickSpec s : StudioConfig.DEFAULT_KEYS)
       for (String a : s.actions)
-        if (a != null && Quicksettings.key_name(a) != null)
-          assertNotNull(a, KeyValue.getKeyByName(Quicksettings.key_name(a)));
+        if (a != null && Quicksbar.key_name(a) != null)
+          assertNotNull(a, KeyValue.getKeyByName(Quicksbar.key_name(a)));
     for (String name : new String[]{ "change_dictionary", "switch_forward", "change_method", "switch_clipboard" })
       assertNotNull(name, KeyValue.getKeyByName(name));
   }

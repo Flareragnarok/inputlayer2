@@ -11,30 +11,30 @@ import org.json.JSONObject;
     config. Values that are not set keep upstream's behavior. */
 public final class StudioConfig
 {
-  public static final float DEFAULT_QUICKSETTINGS_DP = 26f;
+  public static final float DEFAULT_QUICKSBAR_DP = 26f;
   /** Upstream makes the suggestion bar a full key row high, too big. */
   public static final float DEFAULT_BAR_DP = 28f;
 
-  /** Keys shown when no [quicksettings] module is active, left to right
+  /** Keys shown when no [quicksbar] module is active, left to right
       (owner's names, build 73): layout key, suggestions key, cursor key
       (center), language key, edit key. */
-  public static final List<QuicksettingsKeySpec> DEFAULT_KEYS = Arrays.asList(
+  public static final List<QuickSpec> DEFAULT_KEYS = Arrays.asList(
       // Layout key: edit mode, ↑ copy, ↓ key repeat on/off, ↗ split
       // backspace on/off. Cut is backspace ↓, select all ⌦ ←.
-      QuicksettingsKeySpec.of("c", "layout_mode", "n", "copy", "s", "toggle_repeat",
+      QuickSpec.of("c", "layout_mode", "n", "copy", "s", "toggle_repeat",
           "ne", "split_backspace"),
       // Suggestions key: the suggestions' language.
-      QuicksettingsKeySpec.of("c", "dictionary"),
+      QuickSpec.of("c", "dictionary"),
       // Cursor key.
-      QuicksettingsKeySpec.of("w", "left", "e", "right", "n", "up", "s", "down"),
+      QuickSpec.of("w", "left", "e", "right", "n", "up", "s", "down"),
       // Language key: tap next language, ← previous, ↑ list; ↓ saves the key
       // arrangement as a layout, → picks a saved one.
-      QuicksettingsKeySpec.of("c", "layout", "w", "layout_prev", "n", "layout_menu",
+      QuickSpec.of("c", "layout", "w", "layout_prev", "n", "layout_menu",
           "s", "layouts_save", "e", "layouts_pick"),
       // Edit key (right end): tap cycles the layer of focus (whole, bars,
       // rows, keys); tap an element to select it; ↑ ↓ size, ← → order,
       // ↗ more, ↖ undo (like Back), ↙ undo all since shown.
-      QuicksettingsKeySpec.of("c", "select_container", "n", "height_up", "s", "height_down",
+      QuickSpec.of("c", "select_container", "n", "height_up", "s", "height_down",
           "w", "move_up", "e", "move_down", "nw", "height_undo", "sw", "height_revert",
           "ne", "edit_menu"));
 
@@ -44,20 +44,20 @@ public final class StudioConfig
   public float bar_dp = DEFAULT_BAR_DP;
   /** [NaN] when not set. */
   public float margin_bottom_dp = Float.NaN;
-  public float quicksettings_dp = DEFAULT_QUICKSETTINGS_DP;
+  public float quicksbar_dp = DEFAULT_QUICKSBAR_DP;
   public static final float DEFAULT_EDIT_STRIP_DP = 28f;
   public static final float DEFAULT_SELECTION_BAR_DP = 26f;
   /** The selection bar, [0] hides it. */
   public float selection_bar_dp = DEFAULT_SELECTION_BAR_DP;
   /** Containers top to bottom; the height key moves them. */
   public static final List<String> DEFAULT_ORDER =
-    Arrays.asList("quicksettings", "selection", "suggestions", "keyboard", "edit");
+    Arrays.asList("quicksbar", "selection", "suggestions", "keyboard", "edit");
   public List<String> order = DEFAULT_ORDER;
   /** The edit strip under the space bar, [0] hides it. */
   public float edit_strip_dp = DEFAULT_EDIT_STRIP_DP;
   /** Height factor for each row, top to bottom. [null] when not set. */
   public float[] rows = null;
-  public List<QuicksettingsKeySpec> keys = DEFAULT_KEYS;
+  public List<QuickSpec> keys = DEFAULT_KEYS;
   /** Key changes made in layout mode, [null] when none. */
   public KeyMap keymap = null;
   public static final String KEY_SPLIT_BACKSPACE = "studio_split_backspace";
@@ -75,9 +75,9 @@ public final class StudioConfig
     Module km = store.active("keymap");
     if (km != null)
       c.keymap = KeyMap.of_json(km.json);
-    Module b = store.active("quicksettings");
+    Module b = store.active("quicksbar");
     if (b != null)
-      c.read_quicksettings(b.json);
+      c.read_quicksbar(b.json);
     return c;
   }
 
@@ -95,10 +95,10 @@ public final class StudioConfig
       bar_dp = b;
     margin_bottom_dp = clamp_dp(j.optDouble("margin_bottom_dp", Double.NaN),
         Heights.MARGIN_MIN, Heights.MARGIN_MAX);
-    // 0 hides the quicksettings.
-    float cb = clamp_dp(j.optDouble("quicksettings_dp", Double.NaN), 0, Heights.BAR_MAX);
+    // 0 hides the quicksbar.
+    float cb = clamp_dp(j.optDouble("quicksbar_dp", Double.NaN), 0, Heights.BAR_MAX);
     if (!Float.isNaN(cb))
-      quicksettings_dp = (cb < 12) ? 0 : cb;
+      quicksbar_dp = (cb < 12) ? 0 : cb;
     float es = clamp_dp(j.optDouble("edit_strip_dp", Double.NaN), 0, Heights.BAR_MAX);
     if (!Float.isNaN(es))
       edit_strip_dp = (es < 12) ? 0 : es;
@@ -118,9 +118,9 @@ public final class StudioConfig
   /** [keys]: one object per key, mapping "c" (tap) and the directions "n",
       "ne", "e", "se", "s", "sw", "w", "nw" (swipes) to actions. The older
       [applets] list of single actions is still read. */
-  void read_quicksettings(JSONObject j)
+  void read_quicksbar(JSONObject j)
   {
-    List<QuicksettingsKeySpec> l = new ArrayList<QuicksettingsKeySpec>();
+    List<QuickSpec> l = new ArrayList<QuickSpec>();
     JSONArray ks = j.optJSONArray("keys");
     JSONArray as = j.optJSONArray("applets");
     if (ks != null)
@@ -128,7 +128,7 @@ public final class StudioConfig
       for (int i = 0; i < ks.length(); i++)
       {
         JSONObject k = ks.optJSONObject(i);
-        QuicksettingsKeySpec s = (k == null) ? null : QuicksettingsKeySpec.of_json(k);
+        QuickSpec s = (k == null) ? null : QuickSpec.of_json(k);
         if (s != null)
           l.add(s);
       }
@@ -139,9 +139,9 @@ public final class StudioConfig
       {
         String a = as.optString(i, "");
         if (a.equals("height"))
-          l.add(QuicksettingsKeySpec.of("c", "height_up", "s", "height_down"));
+          l.add(QuickSpec.of("c", "height_up", "s", "height_down"));
         else if (!a.isEmpty())
-          l.add(QuicksettingsKeySpec.of("c", a));
+          l.add(QuickSpec.of("c", a));
       }
     }
     else

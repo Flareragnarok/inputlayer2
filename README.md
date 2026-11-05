@@ -17,14 +17,15 @@ The owner's terms (build 73); code, docs and chats use these.
 
 | Term | What it is |
 |---|---|
-| **Quicksettings** | the bar of tiny keys at the top. Left to right: layout key, suggestions key, cursor key, language key, edit key |
+| **Quicksbar** | the bar of quicks at the top. Left to right: layout key, suggestions key, cursor key, language key, edit key |
+| **Quicks** | the quicksbar's buttons: a tap and up to eight swipes each (owner, 2026-11-06) |
 | **Layout key** ⇄ | customizes the layout: tap edit mode, ↑ copy, ↓ key repeat on/off, ↗ backspace split on/off |
 | **Suggestions key** | the suggestions' language |
 | **Cursor key** | in the center: ← → ↑ ↓ move the cursor |
 | **Language key** | DE / FR / RU…: tap next language, ← previous, ↑ list, ↓ save the key arrangement as a layout, → pick a saved layout |
 | **Edit key** ↕ | right end: tap cycles the **layer of focus** (whole keyboard → bars → components → items); tap an element to select it; ↑ ↓ size, ← → order, ↗ more, ↖ undo, ↙ undo all |
 | **Layers of focus** | **whole** keyboard (everything in proportion) · **bars** (one part) · **components** (a keyboard row, or a bar) · **items** (one key) |
-| **Parts** | the stacked areas the edit key works on: quicksettings, selection bar, suggestion bar, keyboard, edit strip |
+| **Parts** | the stacked areas the edit key works on: quicksbar, selection bar, suggestion bar, keyboard, edit strip |
 | **Edit mode** | the layout key's tap: tapping a key opens the key editor |
 | **Key editor** | Studio's screen for one key: tap, 8 swipes, width, split, swap. Also opened by holding a key |
 | **Saved layout** | a key arrangement, saved with language key ↓, picked with language key → |
@@ -32,7 +33,7 @@ The owner's terms (build 73); code, docs and chats use these.
 
 Contents: [Install](#install-and-update) ·
 [Layout](#the-layout) · [Keys](#gestures-on-the-keyboards-keys) ·
-[Quicksettings](#quicksettings) · [Edit strip](#edit-strip) ·
+[Quicksbar](#quicksbar) · [Edit strip](#edit-strip) ·
 [Typing in format](#typing-in-format-scope-write) ·
 [Spec and Vert](#spec-and-vert) · [Clipboard and Memory](#clipboard-and-memory) ·
 [Suggestions](#suggestions) · [Studio](#studio-screen) ·
@@ -60,7 +61,7 @@ edit key ↕):
 
 | Part | What it is |
 |---|---|
-| **Quicksettings** (26dp) | tiny keys, left to right: **layout key** ⇄, **suggestions key**, **cursor key**, **language key**, **edit key** ↕ (see Names) |
+| **Quicksbar** (26dp) | quicks, left to right: **layout key** ⇄, **suggestions key**, **cursor key**, **language key**, **edit key** ↕ (see Names) |
 | **Selection bar** | only shown when it has something: the preview of typing in format |
 | **Suggestion bar** (28dp) | words only; see-through **Clipboard** icon bottom-left, **Memory** icon bottom-right; the Clipboard / Memory pane opens in its place, with its own bar on top |
 | **Keyboard** | Input Layer's own layouts (AZERTY, QWERTY), or upstream's under Legacy |
@@ -70,7 +71,7 @@ All small keys work like keyboard keys: **tap** for the main action,
 **swipe** toward one of 8 directions for the others (the faint labels on
 the key's edges).
 
-Names (owner, build 71): the **layout key** is the quicksettings' left end
+Names (owner, build 71): the **layout key** is the quicksbar's left end
 ⇄, it customizes the layout; the **language key** is the right end, it
 switches languages and saved layouts; the **suggestions key** next to it
 sets the suggestions' language.
@@ -179,11 +180,11 @@ their letters. Upstream's layouts are listed after ours as
 | **?123** (our layouts) | symbols | ↖ undo (Ctrl+Z) · ↗ redo (Ctrl+Shift+Z) · ↓ **Ctrl** |
 | **Ctrl** (legacy layouts) | ctrl | ↖ undo · ↗ redo |
 
-Upstream's layout switching on space ↑/↓ moved to the quicksettings'
+Upstream's layout switching on space ↑/↓ moved to the quicksbar's
 language key (right end); its left cursor slider is replaced (the arrow keys move the
 cursor); the forward delete on backspace ↗ is retired.
 
-## Quicksettings
+## Quicksbar
 
 **Switching keys and their behaviours** (il-005): Studio → Keys and
 behaviours lists every special key with a search. Keys marked ⇆ switch
@@ -193,7 +194,7 @@ toggle, after one use (one key edit for repeat and edit mode, one delete for
 the backspace switches, one key typed for a page), at the end of the word,
 or after N seconds. A variant name puts a behaviour on one place only:
 `studio_toggle_repeat~once`, `il_symbols~word`, `switch_numeric~10s`
-(labels get ¹, ʷ, ⏱); quicksettings modules can use `toggle_repeat~once`.
+(labels get ¹, ʷ, ⏱); quicksbar modules can use `toggle_repeat~once`.
 
 **Layout editor** (il-006): Studio → Layout editor edits a whole
 keyboard: open the keyboard as you use it, a saved layout or a blank one;
@@ -211,7 +212,7 @@ saved layout plus a `layout:` key (toggle, or back after one key).
 pick the key → direction → "Open an app…", then optional extras for apps
 that take them (the Remote Client: `tab=roadmap`, `commands`, `doc`,
 `setup`, `status`). The key is named `app:<package>[?name=value&…]`, labelled
-↗ and the package's last part (↗term, ↗remo); quicksettings modules can use
+↗ and the package's last part (↗term, ↗remo); quicksbar modules can use
 the same name as an action. It opens the app as the launcher does (a running
 app comes back as it was). Nothing of another app lives in the keyboard.
 
@@ -221,10 +222,10 @@ app comes back as it was). Nothing of another app lives in the keyboard.
 | **Suggestions key** | the suggestions' language (`EN`; `⬇ EN` when its dictionary is missing, then it offers the download) | – |
 | **Cursor key** (center) | – | ← → ↑ ↓ move the cursor |
 | **Language key** | the layout shown, as a language (`FR`, `DE`, `RU`, `EL`…); tap: the next one | ← previous · ↑ list to pick from · ↓ save the key arrangement · → pick a saved layout |
-| **Edit key** ↕ (right end) | picks a part to change: quicksettings → suggestions → keyboard → edit strip → selection bar → each keyboard row → off (outlined in blue) | ↑ ↓ taller / shorter · ← → move it up / down in the stack (parts, not rows) · ↖ undo · ↙ undo all |
+| **Edit key** ↕ (right end) | picks a part to change: quicksbar → suggestions → keyboard → edit strip → selection bar → each keyboard row → off (outlined in blue) | ↑ ↓ taller / shorter · ← → move it up / down in the stack (parts, not rows) · ↖ undo · ↙ undo all |
 
-The keys can be chosen with a `quicksettings` module. Undo/redo left the
-quicksettings for Ctrl's corners (the editing actions it used did nothing in
+The keys can be chosen with a `quicksbar` module. Undo/redo left the
+quicksbar for Ctrl's corners (the editing actions it used did nothing in
 many apps).
 
 ## Edit strip
@@ -407,7 +408,7 @@ Memory and the clipboard history file live in the app's private
 
 ## Suggestions
 
-- 28dp bar, words only (the language switch is on the quicksettings).
+- 28dp bar, words only (the language switch is on the quicksbar).
 - **Learns your words**: finished words are counted; your frequent words
   come first, words not in the dictionary are suggested once typed twice,
   words written in typing in format are suggested as written (typing `ob`
@@ -427,7 +428,7 @@ typing, style, vibration, clipboard duration…; in the phone's language,
 as upstream translates them). Studio has Input Layer's own (English
 only):
 
-- **Languages**: the layouts the quicksettings' language key switches
+- **Languages**: the layouts the quicksbar's language key switches
   between: phone's language (automatic), Français (AZERTY), Deutsch
   (QWERTZ), English (QWERTY), Русский (ЙЦУКЕН), Ελληνικά. Ticks write the
   same list as Legacy settings → Layouts; layouts added there stay.
@@ -461,12 +462,12 @@ module is a JSON file with `module` (type), `name` and `version`.
 ```json
 { "module": "changeheight", "name": "compact", "version": 1,
   "keyboard_percent": { "portrait": 30, "landscape": 45 },
-  "bar_dp": 26, "quicksettings_dp": 26, "edit_strip_dp": 28,
+  "bar_dp": 26, "quicksbar_dp": 26, "edit_strip_dp": 28,
   "selection_bar_dp": 26, "margin_bottom_dp": 4,
   "rows": [0.8, 1.0, 1.0, 1.0, 1.2],
-  "order": ["quicksettings", "selection", "suggestions", "keyboard", "edit"] }
+  "order": ["quicksbar", "selection", "suggestions", "keyboard", "edit"] }
 
-{ "module": "quicksettings", "name": "mine", "version": 1,
+{ "module": "quicksbar", "name": "mine", "version": 1,
   "keys": [ { "c": "copy", "nw": "cut", "ne": "paste" },
             { "c": "dictionary", "sw": "layout" } ] }
 
@@ -479,7 +480,7 @@ module is a JSON file with `module` (type), `name` and `version`.
 ```
 
 `changeheight`: sizes in dp (`0` hides a bar), `rows` height factors top
-to bottom (0.5–2), `order` of the containers. `quicksettings`: `c` is the tap, `n ne
+to bottom (0.5–2), `order` of the containers. `quicksbar`: `c` is the tap, `n ne
 e se s sw w nw` the swipes; actions `left right up down select_all copy
 cut paste undo redo clipboard dictionary layout toggle_repeat split_backspace
 layouts_save layouts_pick keyboard_picker
@@ -519,7 +520,7 @@ colours. Main steps (details per build in [ROADMAP.md](ROADMAP.md)):
 1. **Foundation** (builds 1–5): own app id and name *Input Layer*
    (renamed from "Unexpected Keyboard Studio"), Studio screen, modules,
    in-app updates modelled on Obtainium, GitHub releases and restore.
-2. **Bars** (2–10): quicksettings (from applets to tiny keys with swipes,
+2. **Bars** (2–10): quicksbar (from applets to quicks with swipes,
    key-like look), changeheight modules, smaller suggestion bar, language
    moved off the suggestion bar, corner icons.
 3. **Clipboard and Memory** (11–13): two-tab pane, categories, automatic
@@ -565,7 +566,7 @@ is postponed.
 - **Renaming** Specs and Verts; **adding Memory categories** from the pane.
 - **Resize mode** by dragging a container's edge; keeping the total height
   when one row grows.
-- **Quicksettings editor** in the app; **theme** (colours) and **snippets**
+- **Quicksbar editor** in the app; **theme** (colours) and **snippets**
   modules.
 - **Language**: auto-detecting the language among installed dictionaries,
   mixing two languages' suggestions (deferred).
@@ -581,8 +582,8 @@ is postponed.
   the desktop, which languages).
 - What Sector's free ↓ swipe should do.
 - Corner icons disappear with the suggestion bar when suggestions are
-  off: move them to the quicksettings then?
-- The quicksettings and edit strip in the split layout (tablets, landscape)
+  off: move them to the quicksbar then?
+- The quicksbar and edit strip in the split layout (tablets, landscape)
   are untested.
 - Dictionaries come from upstream's dictionaries repository, which states
   no license: keep, or host our own word lists?

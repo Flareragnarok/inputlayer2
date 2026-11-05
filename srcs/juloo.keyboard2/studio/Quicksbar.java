@@ -17,16 +17,16 @@ import juloo.keyboard2.Logs;
 import juloo.keyboard2.Theme;
 import org.json.JSONObject;
 
-/** The quicksettings, above the suggestion bar: a few tiny keys, centered and
-    spaced apart, chosen by the active [quicksettings] module. Each key has a
+/** The quicksbar, above the suggestion bar: a few quicks, centered and
+    spaced apart, chosen by the active [quicksbar] module. Each key has a
     tap action and swipe actions.
     Actions are built in; modules only choose and place them. */
-public class Quicksettings extends FrameLayout implements QuicksettingsKey.Host
+public class Quicksbar extends FrameLayout implements Quick.Host
 {
   public interface Listener
   {
     /** Act as if key [kv] was typed. */
-    void quicksettings_key(KeyValue kv);
+    void quick_key(KeyValue kv);
     void open_studio();
     void open_dictionaries();
     /** il-005: a switching action ([spec] null: its default). */
@@ -57,7 +57,7 @@ public class Quicksettings extends FrameLayout implements QuicksettingsKey.Host
 
   /** Containers the height key resizes, in the order it selects them. Only
       whole containers, never the elements inside them. */
-  public static final int TARGET_QUICKSETTINGS = 0;
+  public static final int TARGET_QUICKSBAR = 0;
   public static final int TARGET_SUGGESTIONS = 1;
   public static final int TARGET_KEYBOARD = 2;
   public static final int TARGET_EDIT_STRIP = 3;
@@ -66,7 +66,7 @@ public class Quicksettings extends FrameLayout implements QuicksettingsKey.Host
   /** Targets from here on are keyboard rows, top to bottom. */
   public static final int TARGET_ROWS = 5;
   /** Names of the targets in [StudioConfig.order]. */
-  static final String[] TARGET_NAMES = { "quicksettings", "suggestions", "keyboard", "edit", "selection" };
+  static final String[] TARGET_NAMES = { "quicksbar", "suggestions", "keyboard", "edit", "selection" };
 
   /** Container selected by the height key, [-1] for none (height up/down
       then resize the keyboard). */
@@ -76,7 +76,7 @@ public class Quicksettings extends FrameLayout implements QuicksettingsKey.Host
   Config _config;
   LinearLayout _keys;
 
-  public Quicksettings(Context ctx, AttributeSet attrs)
+  public Quicksbar(Context ctx, AttributeSet attrs)
   {
     super(ctx, attrs);
   }
@@ -97,7 +97,7 @@ public class Quicksettings extends FrameLayout implements QuicksettingsKey.Host
   public void refresh(Config config)
   {
     _config = config;
-    float dp = config.studio.quicksettings_dp;
+    float dp = config.studio.quicksbar_dp;
     if (_listener == null || dp <= 0)
     {
       setVisibility(GONE);
@@ -114,20 +114,20 @@ public class Quicksettings extends FrameLayout implements QuicksettingsKey.Host
         && _keys.getChildCount() == _built_keys.size())
     {
       for (int i = 0; i < _keys.getChildCount(); i++)
-        ((QuicksettingsKey)_keys.getChildAt(i)).relabel();
+        ((Quick)_keys.getChildAt(i)).relabel();
       return;
     }
     _built_dp = dp;
     _built_keys = config.studio.keys;
     _keys.removeAllViews();
-    for (QuicksettingsKeySpec s : config.studio.keys)
+    for (QuickSpec s : config.studio.keys)
       _keys.addView(make_key(s), key_params());
   }
 
-  List<QuicksettingsKeySpec> _built_keys = null;
+  List<QuickSpec> _built_keys = null;
   float _built_dp = -1;
 
-  static boolean same_keys(List<QuicksettingsKeySpec> a, List<QuicksettingsKeySpec> b)
+  static boolean same_keys(List<QuickSpec> a, List<QuickSpec> b)
   {
     if (a == null || b == null || a.size() != b.size())
       return false;
@@ -146,26 +146,26 @@ public class Quicksettings extends FrameLayout implements QuicksettingsKey.Host
     for (int i = 0; i < _keys.getChildCount(); i++)
     {
       View v = _keys.getChildAt(i);
-      if (v instanceof QuicksettingsKey && "select_container".equals(((QuicksettingsKey)v)._spec.get(0)))
+      if (v instanceof Quick && "select_container".equals(((Quick)v)._spec.get(0)))
         return v;
     }
     return null;
   }
 
-  View make_key(QuicksettingsKeySpec s)
+  View make_key(QuickSpec s)
   {
-    return new QuicksettingsKey(getContext(), s, this, Theme.getKeyFont(getContext()));
+    return new Quick(getContext(), s, this, Theme.getKeyFont(getContext()));
   }
 
   LayoutParams key_params()
   {
-    int h = (int)(_config.studio.quicksettings_dp * density());
+    int h = (int)(_config.studio.quicksbar_dp * density());
     LayoutParams p = new LayoutParams((int)(h * 1.7f), h - dp(4));
     p.setMargins(dp(10), dp(2), dp(10), dp(2));
     return p;
   }
 
-  /* QuicksettingsKey.Host */
+  /* Quick.Host */
 
   public void perform(String action)
   {
@@ -173,7 +173,7 @@ public class Quicksettings extends FrameLayout implements QuicksettingsKey.Host
     // keyboard's behaviours ("toggle_repeat~once" places a variant).
     String base = Behaviours.base_of(action);
     Behaviours.Capable cap = Behaviours.capable(base);
-    if (cap != null && cap.quicksettings)
+    if (cap != null && cap.quicksbar)
     {
       _listener.behave(base, Behaviours.spec_of(action));
       if (base.equals("layout_mode"))
@@ -189,7 +189,7 @@ public class Quicksettings extends FrameLayout implements QuicksettingsKey.Host
       // The switcher also offers downloading. Without any language to
       // switch to, go to the download screen directly.
       if (_config.should_show_dictionary_switch)
-        _listener.quicksettings_key(KeyValue.getKeyByName("change_dictionary"));
+        _listener.quick_key(KeyValue.getKeyByName("change_dictionary"));
       else
         _listener.open_dictionaries();
     }
@@ -221,44 +221,44 @@ public class Quicksettings extends FrameLayout implements QuicksettingsKey.Host
       String name = key_name(action);
       KeyValue kv = (name == null) ? null : KeyValue.getKeyByName(name);
       if (kv != null)
-        _listener.quicksettings_key(kv);
+        _listener.quick_key(kv);
     }
   }
 
-  public QuicksettingsKey.Label label_of(String action)
+  public Quick.Label label_of(String action)
   {
     if (Behaviours.spec_of(action) != null && Behaviours.capable(Behaviours.base_of(action)) != null)
     {
-      QuicksettingsKey.Label l = label_of(Behaviours.base_of(action));
-      return new QuicksettingsKey.Label(l.text + Behaviours.spec_of(action).mark(), l.key_font);
+      Quick.Label l = label_of(Behaviours.base_of(action));
+      return new Quick.Label(l.text + Behaviours.spec_of(action).mark(), l.key_font);
     }
     switch (action)
     {
-      case "select_container": return new QuicksettingsKey.Label(focus_label(), false);
-      case "edit_menu": return new QuicksettingsKey.Label("⋯", false);
-      case "move_up": return new QuicksettingsKey.Label("⇡", false);
-      case "move_down": return new QuicksettingsKey.Label("⇣", false);
-      case "height_up": return new QuicksettingsKey.Label("+", false);
-      case "height_down": return new QuicksettingsKey.Label("−", false);
-      case "height_undo": return new QuicksettingsKey.Label("↶", false);
+      case "select_container": return new Quick.Label(focus_label(), false);
+      case "edit_menu": return new Quick.Label("⋯", false);
+      case "move_up": return new Quick.Label("⇡", false);
+      case "move_down": return new Quick.Label("⇣", false);
+      case "height_up": return new Quick.Label("+", false);
+      case "height_down": return new Quick.Label("−", false);
+      case "height_undo": return new Quick.Label("↶", false);
       case "split_backspace":
-        return new QuicksettingsKey.Label(_config.studio.split_backspace ? "⌫⌦" : "⌫", false);
-      case "layouts_save": return new QuicksettingsKey.Label("⤓", false);
-      case "layouts_pick": return new QuicksettingsKey.Label("▤", false);
+        return new Quick.Label(_config.studio.split_backspace ? "⌫⌦" : "⌫", false);
+      case "layouts_save": return new Quick.Label("⤓", false);
+      case "layouts_pick": return new Quick.Label("▤", false);
       case "toggle_repeat":
-        return new QuicksettingsKey.Label(_config.keyrepeat_enabled ? "↻" : "✎", false);
+        return new Quick.Label(_config.keyrepeat_enabled ? "↻" : "✎", false);
       case "layout_mode":
-        return new QuicksettingsKey.Label(_listener.layout_mode() ? "⇄ ✓" : "⇄", false);
-      case "height_revert": return new QuicksettingsKey.Label("⟲", false);
-      case "studio": return new QuicksettingsKey.Label("⚙", false);
+        return new Quick.Label(_listener.layout_mode() ? "⇄ ✓" : "⇄", false);
+      case "height_revert": return new Quick.Label("⟲", false);
+      case "studio": return new Quick.Label("⚙", false);
       // Tap: the suggestions' language, like upstream's button on the
       // suggestion bar.
-      case "dictionary": return new QuicksettingsKey.Label(language_label(), false);
+      case "dictionary": return new Quick.Label(language_label(), false);
       // The layout shown, as a language code: tap switches to the next.
-      case "layout": return new QuicksettingsKey.Label(current_layout_code(), false);
-      case "layout_prev": return new QuicksettingsKey.Label("‹", false);
-      case "layout_menu": return new QuicksettingsKey.Label("☰", false);
-      case "keyboard_picker": return new QuicksettingsKey.Label("⌨", false);
+      case "layout": return new Quick.Label(current_layout_code(), false);
+      case "layout_prev": return new Quick.Label("‹", false);
+      case "layout_menu": return new Quick.Label("☰", false);
+      case "keyboard_picker": return new Quick.Label("⌨", false);
     }
     if (action.startsWith("switch:"))
     {
@@ -266,13 +266,13 @@ public class Quicksettings extends FrameLayout implements QuicksettingsKey.Host
       Module active = Module.is_known_type(type) ?
         new ModuleStore(_prefs).active(type) : null;
       String name = (active == null) ? "" : " " + shorten(active.name);
-      return new QuicksettingsKey.Label(type_symbol(type) + name, false);
+      return new Quick.Label(type_symbol(type) + name, false);
     }
     String name = key_name(action);
     KeyValue kv = (name == null) ? null : KeyValue.getKeyByName(name);
     if (kv == null)
-      return new QuicksettingsKey.Label("?", false);
-    return new QuicksettingsKey.Label(kv.getString(),
+      return new Quick.Label("?", false);
+    return new Quick.Label(kv.getString(),
         kv.hasFlagsAny(KeyValue.FLAG_KEY_FONT));
   }
 
@@ -324,7 +324,7 @@ public class Quicksettings extends FrameLayout implements QuicksettingsKey.Host
     switch (type)
     {
       case "changeheight": return "↕";
-      case "quicksettings": return "☰";
+      case "quicksbar": return "☰";
       case "snippets": return "✎";
       case "theme": return "◐";
       default: return type;
@@ -825,7 +825,7 @@ public class Quicksettings extends FrameLayout implements QuicksettingsKey.Host
     }
     catch (Exception e)
     {
-      Logs.exn("Quicksettings height", e);
+      Logs.exn("Quicksbar height", e);
     }
   }
 
@@ -932,7 +932,7 @@ public class Quicksettings extends FrameLayout implements QuicksettingsKey.Host
     }
     catch (Exception e)
     {
-      Logs.exn("Quicksettings move", e);
+      Logs.exn("Quicksbar move", e);
     }
   }
 

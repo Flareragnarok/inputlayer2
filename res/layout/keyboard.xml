@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <juloo.keyboard2.studio.FocusLayout xmlns:android="http://schemas.android.com/apk/res/android" android:hardwareAccelerated="false" android:orientation="vertical" android:background="?attr/colorKeyboard">
-  <juloo.keyboard2.studio.Quicksettings android:id="@+id/quicksettings" android:layout_width="match_parent" android:layout_height="26dp"/>
+  <juloo.keyboard2.studio.Quicksbar android:id="@+id/quicksbar" android:layout_width="match_parent" android:layout_height="26dp"/>
   <juloo.keyboard2.studio.SelectionBar android:id="@+id/selection_bar" android:layout_width="match_parent" android:layout_height="26dp" android:visibility="gone"/>
   <FrameLayout android:id="@+id/candidates_frame" android:layout_width="match_parent" android:layout_height="wrap_content">
   <juloo.keyboard2.suggestions.CandidatesView android:id="@+id/candidates_view" style="@style/candidates_view" android:paddingStart="@dimen/studio_corner_icon_width" android:paddingEnd="@dimen/studio_corner_icon_width">

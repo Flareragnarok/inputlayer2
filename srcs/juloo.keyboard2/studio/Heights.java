@@ -27,7 +27,7 @@ public final class Heights
   public static final int LANDSCAPE_MIN = 20;
   public static final int LANDSCAPE_MAX = 65;
   public static final int PERCENT_STEP = 2;
-  /** Bars, in dp. The quicksettings, edit strip and selection bar can also be
+  /** Bars, in dp. The quicksbar, edit strip and selection bar can also be
       [0], hidden. */
   public static final float BAR_MIN = 12f;
   public static final float BAR_MAX = 64f;
@@ -41,9 +41,9 @@ public final class Heights
 
   /** Fields in dp: name, default, whether [0] (hidden) is allowed. */
   static final String[] DP_FIELDS =
-    { "bar_dp", "quicksettings_dp", "edit_strip_dp", "selection_bar_dp" };
+    { "bar_dp", "quicksbar_dp", "edit_strip_dp", "selection_bar_dp" };
   static final float[] DP_DEFAULTS = {
-    StudioConfig.DEFAULT_BAR_DP, StudioConfig.DEFAULT_QUICKSETTINGS_DP,
+    StudioConfig.DEFAULT_BAR_DP, StudioConfig.DEFAULT_QUICKSBAR_DP,
     StudioConfig.DEFAULT_EDIT_STRIP_DP, StudioConfig.DEFAULT_SELECTION_BAR_DP };
   static final boolean[] DP_HIDEABLE = { false, true, true, true };
 
@@ -68,7 +68,7 @@ public final class Heights
   /* Steps */
 
   /** Fields of [j] (a copy) after one step of the height key on [target]
-      ([Quicksettings.TARGET_*], or [-1] for the keyboard), bigger if [bigger].
+      ([Quicksbar.TARGET_*], or [-1] for the keyboard), bigger if [bigger].
       [rows] is the number of rows shown, [percent] the keyboard height used
       when [j] doesn't set it. [null] when the step changes nothing, at the
       edge of the range. */
@@ -79,11 +79,11 @@ public final class Heights
     int sign = bigger ? 1 : -1;
     switch (target)
     {
-      case Quicksettings.TARGET_QUICKSETTINGS: return step_dp(r, 1, sign);
-      case Quicksettings.TARGET_SUGGESTIONS: return step_dp(r, 0, sign);
-      case Quicksettings.TARGET_EDIT_STRIP: return step_dp(r, 2, sign);
-      case Quicksettings.TARGET_SELECTION_BAR: return step_dp(r, 3, sign);
-      case -1: case Quicksettings.TARGET_KEYBOARD:
+      case Quicksbar.TARGET_QUICKSBAR: return step_dp(r, 1, sign);
+      case Quicksbar.TARGET_SUGGESTIONS: return step_dp(r, 0, sign);
+      case Quicksbar.TARGET_EDIT_STRIP: return step_dp(r, 2, sign);
+      case Quicksbar.TARGET_SELECTION_BAR: return step_dp(r, 3, sign);
+      case -1: case Quicksbar.TARGET_KEYBOARD:
       {
         String o = landscape ? "landscape" : "portrait";
         JSONObject kp = r.optJSONObject("keyboard_percent");
@@ -99,7 +99,7 @@ public final class Heights
       }
       default:
       {
-        int row = target - Quicksettings.TARGET_ROWS;
+        int row = target - Quicksbar.TARGET_ROWS;
         if (row < 0)
           return null;
         float[] fs = row_factors(r.optJSONArray("rows"), Math.max(row + 1, rows));

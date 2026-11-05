@@ -102,7 +102,7 @@ public final class KeyCatalog
   {
     List<String> out = new ArrayList<String>();
     for (Behaviours.Capable c : Behaviours.capable())
-      if (!c.quicksettings)
+      if (!c.quicksbar)
         for (String m : new String[]{ "toggle", "once", "word", "10s" })
           out.add(c.name + Behaviours.SEP + m);
     return out;

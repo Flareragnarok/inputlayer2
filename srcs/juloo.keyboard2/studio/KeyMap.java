@@ -24,7 +24,7 @@ import org.json.JSONObject;
           "backspace": { "width": 2.25, "split": "delete" } } } } */
 public final class KeyMap
 {
-  /** Directions as in [QuicksettingsKeySpec.DIRECTIONS], to the index in
+  /** Directions as in [QuickSpec.DIRECTIONS], to the index in
       [KeyboardData.Key.keys]. */
   static final int[] KEY_INDEX = { 0, 7, 2, 6, 4, 8, 3, 5, 1 };
   public static final float WIDTH_MIN = 0.5f;
@@ -33,7 +33,7 @@ public final class KeyMap
 
   static final class Change
   {
-    /** Per direction ([QuicksettingsKeySpec.DIRECTIONS] order): the key's name,
+    /** Per direction ([QuickSpec.DIRECTIONS] order): the key's name,
         "" for none, [null] for unchanged. */
     final String[] dirs = new String[KEY_INDEX.length];
     /** [NaN] when unchanged. */
@@ -76,9 +76,9 @@ public final class KeyMap
         Change c = new Change();
         boolean any = false;
         for (int d = 0; d < c.dirs.length; d++)
-          if (ds.has(QuicksettingsKeySpec.DIRECTIONS[d]))
+          if (ds.has(QuickSpec.DIRECTIONS[d]))
           {
-            c.dirs[d] = ds.optString(QuicksettingsKeySpec.DIRECTIONS[d], "");
+            c.dirs[d] = ds.optString(QuickSpec.DIRECTIONS[d], "");
             any = true;
           }
         double w = ds.optDouble("width", Double.NaN);
@@ -408,7 +408,7 @@ public final class KeyMap
     JSONObject ds = ks.optJSONObject(id);
     if (ds == null)
       ks.put(id, ds = new JSONObject());
-    String d = QuicksettingsKeySpec.DIRECTIONS[dir];
+    String d = QuickSpec.DIRECTIONS[dir];
     if (name == null)
       ds.remove(d);
     else
