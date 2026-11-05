@@ -270,14 +270,14 @@ public final class LayoutDoc
     {
       JSONObject ro = rs.getJSONObject(r);
       Row row = new Row();
-      row.height = (float)ro.optDouble("h", 1);
+      row.height = clamp((float)ro.optDouble("h", 1), HEIGHT_MIN, HEIGHT_MAX);
       JSONArray ks = ro.getJSONArray("keys");
       for (int i = 0; i < ks.length(); i++)
       {
         JSONObject ko = ks.getJSONObject(i);
         Key k = new Key();
-        k.width = (float)ko.optDouble("w", 1);
-        k.shift = (float)ko.optDouble("gap", 0);
+        k.width = clamp((float)ko.optDouble("w", 1), WIDTH_MIN, WIDTH_MAX);
+        k.shift = clamp((float)ko.optDouble("gap", 0), 0f, WIDTH_MAX);
         JSONArray ns = ko.optJSONArray("k");
         for (int n = 0; ns != null && n < Math.min(9, ns.length()); n++)
           k.names[n] = ns.getString(n).isEmpty() ? null : ns.getString(n);

@@ -170,7 +170,8 @@ public class Keyboard2 extends InputMethodService
     juloo.keyboard2.studio.Renames.migrate(prefs); // il-007, before anything reads them
     _handler = new Handler(getMainLooper());
     _behaviours = new juloo.keyboard2.studio.Behaviours(new juloo.keyboard2.studio.Behaviours.Host() {
-      public void revert(String sw) { do_switch(sw, true); }
+      public void revert(String sw, Object prior) { switch_back(sw, prior); }
+      public Object state(String sw) { return switch_state(sw); }
       public Object later(Runnable r, long ms) { _handler.postDelayed(r, ms); return r; }
       public void cancel(Object h) { _handler.removeCallbacks((Runnable)h); }
     });
@@ -577,6 +578,8 @@ public class Keyboard2 extends InputMethodService
   private void set_layout_mode(boolean on)
   {
     _layout_mode = on;
+    if (!on && _behaviours != null)
+      _behaviours.cancel("layout_mode"); // left it: nothing to switch back
     _keyboard_layout_view.studio_key_picker = !on ? null :
       new Keyboard2View.KeyPicker() {
         public void key_picked(KeyboardData kw, KeyboardData.Key k)
@@ -641,8 +644,45 @@ public class Keyboard2 extends InputMethodService
     if (spec == null)
       spec = juloo.keyboard2.studio.Behaviours.default_of(juloo.keyboard2.studio.Behaviours
           .parse_defaults(Config.globalPrefs().getString(juloo.keyboard2.studio.Behaviours.PREF, "{}")), base);
+    juloo.keyboard2.studio.Behaviours.Capable cap = juloo.keyboard2.studio.Behaviours.capable(base);
+    // A page's key pressed while that page shows: the way back.
+    if (cap != null && cap.page && base.equals(_special_switch))
+    {
+      do_switch(base, true);
+      _behaviours.left_page();
+      return;
+    }
+    Object prior = switch_state(base);
     do_switch(base, false);
-    _behaviours.switched(base, spec);
+    _behaviours.switched(base, spec, prior);
+  }
+
+  /** The page shown by do_switch, by its switch name; null for the letters
+      or a page shown another way. */
+  private String _special_switch = null;
+
+  /** What a toggle is at now, so a behaviour can switch back to it. */
+  Object switch_state(String sw)
+  {
+    switch (sw)
+    {
+      case "studio_toggle_repeat": case "toggle_repeat": return _config.keyrepeat_enabled;
+      case "studio_backspace_toggle": return EditStrip.forward_delete;
+      case "split_backspace": return _config.studio.split_backspace;
+      case "layout_mode": return _layout_mode;
+      default: return null;
+    }
+  }
+
+  /** Back to [prior] (a toggle), or to the letters (a page). Nothing
+      happens when the state is already [prior]: the owner may have switched
+      back by hand meanwhile. */
+  void switch_back(String sw, Object prior)
+  {
+    Object now = switch_state(sw);
+    if (now != null && now.equals(prior))
+      return;
+    do_switch(sw, true);
   }
 
   /** The switches themselves. [back]: switching back; a page goes back to
@@ -675,6 +715,7 @@ public class Keyboard2 extends InputMethodService
         set_layout_mode(!_layout_mode);
         break;
       case "switch_numeric": case "il_symbols": case "il_symbols_more": case "switch_greekmath":
+        _special_switch = back ? null : sw;
         if (back)
         {
           _currentSpecialLayout = null;
@@ -693,6 +734,7 @@ public class Keyboard2 extends InputMethodService
         if (sw.startsWith(juloo.keyboard2.studio.Behaviours.LAYOUT_PREFIX))
         {
           // il-006: a layout from the layout editor, shown as drawn.
+          _special_switch = back ? null : sw;
           if (back)
           {
             _currentSpecialLayout = null;
@@ -704,8 +746,11 @@ public class Keyboard2 extends InputMethodService
           if (kd != null)
             setSpecialLayout(kd);
           else
+          {
+            _special_switch = null;
             android.widget.Toast.makeText(this, "No layout \"" + n + "\" (Studio → Layout editor)",
                 android.widget.Toast.LENGTH_SHORT).show();
+          }
         }
         break;
     }
@@ -730,13 +775,16 @@ public class Keyboard2 extends InputMethodService
 
   /** il-006: what the keyboard shows, for the layout editor's "start from the
       keyboard as you use it" (written when it changes). */
+  private KeyboardData _snapshot_of = null;
+
   void snapshot_layout()
   {
     try
     {
       KeyboardData kw = current_layout();
-      if (kw == null)
+      if (kw == null || kw == _snapshot_of)
         return;
+      _snapshot_of = kw;
       String j = juloo.keyboard2.studio.LayoutDoc.of_keyboard(kw, "snapshot").json().toString();
       SharedPreferences p = Config.globalPrefs();
       if (!j.equals(p.getString(SNAPSHOT_PREF, "")))
@@ -1015,6 +1063,8 @@ public class Keyboard2 extends InputMethodService
   {
     _config.editor_config.refresh(info, getResources());
     refresh_config();
+    _behaviours.left_page(); // a new field: pages waiting to switch back are moot
+    _special_switch = null;
     _currentSpecialLayout = refresh_special_layout();
     _keyboard_layout_view.setKeyboard(current_layout());
     _keyeventhandler.started(_config);
@@ -1301,6 +1351,7 @@ public class Keyboard2 extends InputMethodService
 
         case SWITCH_TEXT:
           _currentSpecialLayout = null;
+          _special_switch = null;
           _keyboard_layout_view.setKeyboard(current_layout());
           _behaviours.left_page();
           break;

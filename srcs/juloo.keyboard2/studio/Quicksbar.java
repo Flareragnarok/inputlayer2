@@ -167,15 +167,20 @@ public class Quicksbar extends FrameLayout implements Quick.Host
 
   /* Quick.Host */
 
+  /** il-008: an action as a module may write it (a quick name) to the
+      action the bar works with; done once, when the spec is made, so
+      [repeats], [quick_edit_view] and the rest compare plain actions. */
+  static String resolve(String action)
+  {
+    if (action == null || !QuickNames.is_quick(action))
+      return action;
+    String a = QuickNames.to_bar(action);
+    return a == null ? action : a;
+  }
+
   public void perform(String action)
   {
-    // il-008: modules may name actions by their quick names.
-    if (QuickNames.is_quick(action))
-    {
-      String a = QuickNames.to_bar(action);
-      if (a != null)
-        action = a;
-    }
+    action = resolve(action);
     // il-005: repeat, backspace split and edit mode switch through the
     // keyboard's behaviours ("toggle_repeat~once" places a variant).
     String base = Behaviours.base_of(action);
@@ -234,12 +239,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
 
   public Quick.Label label_of(String action)
   {
-    if (QuickNames.is_quick(action))
-    {
-      String a = QuickNames.to_bar(action);
-      if (a != null)
-        action = a;
-    }
+    action = resolve(action);
     if (Behaviours.spec_of(action) != null && Behaviours.capable(Behaviours.base_of(action)) != null)
     {
       Quick.Label l = label_of(Behaviours.base_of(action));
@@ -315,8 +315,12 @@ public class Quicksbar extends FrameLayout implements Quick.Host
       case "keyboard_picker": return "change_method";
       case "clipboard": return "switch_clipboard";
       default:
-        // il-004: "app:<package>[?k=v&…]" opens an app, as on a key.
-        return action.startsWith(KeyValue.APP_PREFIX) ? action : null;
+        // il-004/il-008: an app key, a saved layout, a behaviour variant or
+        // any special key by name works on the bar as on a key; plain text
+        // doesn't (a mistyped action must not type itself).
+        if (action.startsWith(KeyValue.APP_PREFIX) || action.startsWith(Behaviours.LAYOUT_PREFIX))
+          return action;
+        return KeyValue.getSpecialKeyByName(Behaviours.base_of(action)) != null ? action : null;
     }
   }
 

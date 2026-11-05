@@ -54,10 +54,27 @@ public final class LayoutCanvas extends View
     _small.setTextSize(dp(9));
   }
 
+  /** Labels by key name: a name is parsed once, not on every frame. */
+  final java.util.HashMap<String, String> _labels = new java.util.HashMap<String, String>();
+
+  String label(String name)
+  {
+    if (name == null)
+      return "";
+    String l = _labels.get(name);
+    if (l == null)
+    {
+      l = LayoutDoc.label(name);
+      _labels.put(name, l);
+    }
+    return l;
+  }
+
   public void set(LayoutDoc d, Listener l)
   {
     _doc = d;
     _listener = l;
+    _labels.clear();
     if (sel_row >= d.rows.size()) { sel_row = -1; sel_key = -1; }
     if (sel_row >= 0 && sel_key >= d.rows.get(sel_row).keys.size()) sel_key = -1;
     requestLayout();
@@ -102,33 +119,38 @@ public final class LayoutCanvas extends View
   {
     if (_doc == null)
       return;
+    final float u = unit();
+    final float[][] at = { {0,0}, {-1,-1}, {1,-1}, {-1,1}, {1,1}, {-1,0}, {1,0}, {0,-1}, {0,1} };
+    float y = 0;
     for (int r = 0; r < _doc.rows.size(); r++)
     {
       LayoutDoc.Row row = _doc.rows.get(r);
+      float bottom = y + row.height * _row_h;
       if (r == sel_row)
       {
-        float y = row_top(r);
-        c.drawRect(0, y, getWidth(), y + row.height * _row_h, _rowsel);
+        c.drawRect(0, y, getWidth(), bottom, _rowsel);
         // the row's height handle: its bottom edge
-        c.drawLine(getWidth() * 0.3f, y + row.height * _row_h - dp(2), getWidth() * 0.7f, y + row.height * _row_h - dp(2), _edge);
+        c.drawLine(getWidth() * 0.3f, bottom - dp(2), getWidth() * 0.7f, bottom - dp(2), _edge);
       }
+      float x = 0; // one pass per row, not a prefix walk per key
       for (int i = 0; i < row.keys.size(); i++)
       {
-        RectF b = rect(r, i);
-        RectF in = new RectF(b.left + _gap, b.top + _gap, b.right - _gap, b.bottom - _gap);
+        LayoutDoc.Key k = row.keys.get(i);
+        x += k.shift * u;
+        RectF in = new RectF(x + _gap, y + _gap, x + k.width * u - _gap, bottom - _gap);
+        x += k.width * u;
         boolean sel = (r == sel_row && i == sel_key);
         c.drawRoundRect(in, dp(5), dp(5), sel ? _sel : _key);
-        LayoutDoc.Key k = row.keys.get(i);
-        c.drawText(LayoutDoc.label(k.names[0]), in.centerX(), in.centerY() + dp(6), _text);
+        c.drawText(label(k.names[0]), in.centerX(), in.centerY() + dp(6), _text);
         // the swipes, small, where they are
-        float[][] at = { {0,0}, {-1,-1}, {1,-1}, {-1,1}, {1,1}, {-1,0}, {1,0}, {0,-1}, {0,1} };
         for (int s = 1; s < 9; s++)
           if (k.names[s] != null)
-            c.drawText(LayoutDoc.label(k.names[s]), in.centerX() + at[s][0] * in.width() * 0.32f,
+            c.drawText(label(k.names[s]), in.centerX() + at[s][0] * in.width() * 0.32f,
                 in.centerY() + at[s][1] * in.height() * 0.33f + dp(3), _small);
         if (sel)
           c.drawLine(in.right, in.top + dp(6), in.right, in.bottom - dp(6), _edge);
       }
+      y = bottom;
     }
   }
 

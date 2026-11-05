@@ -105,11 +105,37 @@ public class LayoutEditorActivity extends Activity implements LayoutCanvas.Liste
     ScrollView sv = new ScrollView(this);
     sv.addView(root);
     setContentView(sv);
-    start_from_snapshot_or_blank();
+    if (b != null && b.getString("doc") != null)
+    {
+      // Recreated (process death; rotation is handled by configChanges).
+      try
+      {
+        load(LayoutDoc.of_json(b.getString("name"), new JSONObject(b.getString("doc"))), b.getString("saved_as"));
+        _dirty = b.getBoolean("dirty");
+        info();
+      }
+      catch (Exception e) { start_from_snapshot_or_blank(); }
+    }
+    else
+      start_from_snapshot_or_blank();
     // targetSdk 36: the back gesture no longer calls onBackPressed.
     if (android.os.Build.VERSION.SDK_INT >= 33)
       getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
           android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::leave);
+  }
+
+  @Override protected void onSaveInstanceState(Bundle out)
+  {
+    super.onSaveInstanceState(out);
+    try
+    {
+      _doc.name = name_field();
+      out.putString("doc", _doc.json().toString());
+      out.putString("name", _doc.name);
+      out.putString("saved_as", _saved_as);
+      out.putBoolean("dirty", _dirty);
+    }
+    catch (Exception e) {}
   }
 
   // ---- building the screen ----

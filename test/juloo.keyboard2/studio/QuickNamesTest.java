@@ -73,6 +73,25 @@ public class QuickNamesTest
     assertEquals("switch:theme", QuickNames.to_bar("quicktoggle : module : theme"));
   }
 
+  /** A module written in quick names: resolved once, when the spec is made,
+      so the bar's own checks (repeat while held, the quickedit's view) see
+      plain actions (review 2026-11-06). */
+  @Test public void quicksbar_specs_resolve_quick_names()
+  {
+    QuickSpec s = QuickSpec.of("w", "quickfunction:left", "c", "quickedit:focus", "n", "quickedit : resize : +",
+        "s", "quickbehaviour:key behaviour:long press~once");
+    assertEquals("left", s.get(QuickSpec.index_of("w")));
+    assertEquals("select_container", s.get(QuickSpec.index_of("c")));
+    assertEquals("height_up", s.get(QuickSpec.index_of("n")));
+    assertEquals("toggle_repeat~once", s.get(QuickSpec.index_of("s")));
+    assertTrue(Quicksbar.repeats(s.get(QuickSpec.index_of("w"))));
+    // any special key by name works on the bar; plain text doesn't
+    assertEquals("backspace", Quicksbar.key_name("backspace"));
+    assertEquals("il_symbols~once", Quicksbar.key_name("il_symbols~once"));
+    assertEquals("layout:Gaming", Quicksbar.key_name("layout:Gaming"));
+    assertNull(Quicksbar.key_name("hello"));
+  }
+
   /** As fast as the legacy key: the same key, resolved once at load. */
   @Test public void quick_names_are_the_same_keys()
   {

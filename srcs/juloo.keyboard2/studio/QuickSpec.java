@@ -37,7 +37,7 @@ public final class QuickSpec
   {
     QuickSpec s = new QuickSpec();
     for (int i = 0; i + 1 < dir_actions.length; i += 2)
-      s.actions[index_of(dir_actions[i])] = dir_actions[i + 1];
+      s.actions[index_of(dir_actions[i])] = Quicksbar.resolve(dir_actions[i + 1]);
     return s;
   }
 
@@ -49,7 +49,7 @@ public final class QuickSpec
     {
       String a = j.optString(DIRECTIONS[i], "");
       if (!a.isEmpty())
-        s.actions[i] = a;
+        s.actions[i] = Quicksbar.resolve(a);
     }
     return s.is_empty() ? null : s;
   }

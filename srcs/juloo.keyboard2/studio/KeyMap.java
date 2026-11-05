@@ -342,6 +342,33 @@ public final class KeyMap
     catch (Exception _e) { return null; }
   }
 
+  static java.util.Map<KeyValue, String> _specials;
+
+  /** Every special key (placeholders too) by its key, built once: the
+      snapshot of the layout runs on every field (review 2026-11-06). */
+  static synchronized java.util.Map<KeyValue, String> specials()
+  {
+    if (_specials == null)
+    {
+      java.util.Map<KeyValue, String> m = new java.util.HashMap<KeyValue, String>();
+      // first name wins, as the scan in name order did
+      for (String n : KeyNames.SPECIAL)
+      {
+        KeyValue kv = key_of_name(n);
+        if (kv != null && !m.containsKey(kv))
+          m.put(kv, n);
+      }
+      for (String n : KeyNames.PLACEHOLDERS)
+      {
+        KeyValue kv = key_of_name(n);
+        if (kv != null && !m.containsKey(kv))
+          m.put(kv, n);
+      }
+      _specials = m;
+    }
+    return _specials;
+  }
+
   /** A name that gives [kv] back with [KeyValue.getKeyByName]. */
   public static String name_of(KeyValue kv)
   {
@@ -362,15 +389,9 @@ public final class KeyMap
       if (kv.equals(key_of_name("\\" + c)))
         return "\\" + c;
     }
-    for (String n : KeyNames.SPECIAL)
-      if (kv.equals(key_of_name(n)))
-        return n;
-    // il-008: names that give back the very key, for whole layouts
-    // (the layout editor, converting a layout to quick names).
-    if (kv.getKind() == KeyValue.Kind.Placeholder)
-      for (String n : KeyNames.PLACEHOLDERS)
-        if (kv.equals(key_of_name(n)))
-          return n;
+    String special = specials().get(kv);
+    if (special != null)
+      return special;
     if (kv.getKind() == KeyValue.Kind.Char && s.indexOf(':') < 0)
     {
       // shows [s], types another character: "symbol:character"

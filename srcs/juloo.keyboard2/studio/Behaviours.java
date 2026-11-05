@@ -203,9 +203,12 @@ public final class Behaviours
 
   public interface Host
   {
-    /** Switch [base] back (the keyboard's own toggle, or back to the
-        letters for a page). */
-    void revert(String base);
+    /** Switch [base] back to [prior], the state [state] gave before the
+        switch (a page: back to the letters, [prior] unused). */
+    void revert(String base, Object prior);
+    /** The current state of switch [base] (a Boolean for toggles), kept to
+        switch back to exactly that, not to "the other one". */
+    Object state(String base);
     /** Run [r] in [ms], cancellable. */
     Object later(Runnable r, long ms);
     void cancel(Object handle);
@@ -216,8 +219,9 @@ public final class Behaviours
     final String sw;
     final Capable cap;
     final Mode mode;
+    final Object prior;
     Object timer;
-    Armed(String s, Capable c, Mode m) { sw = s; cap = c; mode = m; }
+    Armed(String s, Capable c, Mode m, Object p) { sw = s; cap = c; mode = m; prior = p; }
   }
 
   final Host _host;
@@ -225,9 +229,10 @@ public final class Behaviours
 
   public Behaviours(Host host) { _host = host; }
 
-  /** [base] was just switched by a key with [spec]. Pressing a switched
-      key again while it waits to switch back is the manual way back. */
-  public void switched(String base, Spec spec)
+  /** [base] is about to be switched by a key with [spec]; [prior] is its
+      state before (from [Host.state]). Pressing a switched key again while
+      it waits to switch back is the manual way back. */
+  public void switched(String base, Spec spec, Object prior)
   {
     Capable cap = capable(base);
     if (cap == null)
@@ -244,13 +249,25 @@ public final class Behaviours
       left_page(); // another page: the previous one's way back is moot
     if (spec == null || spec.mode == Mode.TOGGLE)
       return;
-    final Armed a = new Armed(sw, cap, spec.mode);
+    final Armed a = new Armed(sw, cap, spec.mode, prior);
     _armed.put(sw, a);
     if (spec.mode == Mode.TIMED)
       a.timer = _host.later(new Runnable() {
         public void run() { if (_armed.get(a.sw) == a) revert(a); }
       }, spec.seconds * 1000L);
   }
+
+  /** The keyboard left switch [base] by itself (Back out of edit mode, a
+      new field…): nothing to switch back any more. */
+  public void cancel(String base)
+  {
+    Armed a = _armed.remove(switch_of(base));
+    if (a != null)
+      cancel(a);
+  }
+
+  /** Whether switch [base] waits to switch back. */
+  public boolean armed(String base) { return _armed.containsKey(switch_of(base)); }
 
   /** The keyboard went back to the letters by itself (ABC key…): pages
       waiting to switch back don't need to. */
@@ -292,7 +309,7 @@ public final class Behaviours
   {
     _armed.remove(a.sw);
     cancel(a);
-    _host.revert(a.sw);
+    _host.revert(a.sw, a.prior);
   }
 
   void cancel(Armed a)

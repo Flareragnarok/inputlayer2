@@ -61,7 +61,49 @@ public final class Renames
           order.put(i, CONTAINER);
           changed = true;
         }
+    // quicks that cycle the bar's modules: "switch:<old type>"
+    if (switch_actions(doc))
+      changed = true;
     return changed;
+  }
+
+  /** Every string value "switch:<old type>" anywhere in [j] (quicksbar
+      modules keep their quicks' actions in nested arrays and objects). */
+  static boolean switch_actions(Object j) throws JSONException
+  {
+    boolean changed = false;
+    if (j instanceof JSONObject)
+    {
+      JSONObject o = (JSONObject)j;
+      for (Iterator<String> it = o.keys(); it.hasNext(); )
+      {
+        String k = it.next();
+        Object v = o.get(k);
+        String r = renamed_switch(v);
+        if (r != null) { o.put(k, r); changed = true; }
+        else if (switch_actions(v)) changed = true;
+      }
+    }
+    else if (j instanceof JSONArray)
+    {
+      JSONArray a = (JSONArray)j;
+      for (int i = 0; i < a.length(); i++)
+      {
+        Object v = a.get(i);
+        String r = renamed_switch(v);
+        if (r != null) { a.put(i, r); changed = true; }
+        else if (switch_actions(v)) changed = true;
+      }
+    }
+    return changed;
+  }
+
+  static String renamed_switch(Object v)
+  {
+    if (!(v instanceof String) || !((String)v).startsWith("switch:"))
+      return null;
+    String t = ((String)v).substring(7);
+    return is_in(t, OLD_TYPES) ? "switch:" + TYPE : null;
   }
 
   /** The [studio_modules] object under the newest names (in place). */

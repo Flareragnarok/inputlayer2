@@ -58,6 +58,17 @@ public class RenamesTest
     check(p);
   }
 
+  /** Quicks that cycle the bar's modules named the old type (review 2026-11-06). */
+  @Test public void switch_actions_follow_the_type() throws Exception
+  {
+    JSONObject doc = new JSONObject("{\"module\":\"" + COMFORT + "\",\"name\":\"m\",\"keys\":[{\"c\":\"switch:" + COMFORT
+        + "\",\"n\":\"copy\"}],\"applets\":[\"switch:" + QS + "\"]}");
+    assertTrue(Renames.doc(doc));
+    assertEquals("switch:quicksbar", doc.getJSONArray("keys").getJSONObject(0).getString("c"));
+    assertEquals("copy", doc.getJSONArray("keys").getJSONObject(0).getString("n"));
+    assertEquals("switch:quicksbar", doc.getJSONArray("applets").getString(0));
+  }
+
   @Test public void old_module_files_still_import() throws Exception
   {
     for (String t : new String[]{ COMFORT, QS })

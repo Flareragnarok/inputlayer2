@@ -14,9 +14,11 @@ import org.junit.Test;
 public class BehavioursTest
 {
   final List<String> reverted = new ArrayList<String>();
+  final List<Object> priors = new ArrayList<Object>();
   final List<Runnable> timers = new ArrayList<Runnable>();
   final Behaviours b = new Behaviours(new Behaviours.Host() {
-    public void revert(String sw) { reverted.add(sw); }
+    public void revert(String sw, Object prior) { reverted.add(sw); priors.add(prior); }
+    public Object state(String sw) { return Boolean.FALSE; }
     public Object later(Runnable r, long ms) { timers.add(r); return r; }
     public void cancel(Object h) { timers.remove(h); }
   });
@@ -36,7 +38,7 @@ public class BehavioursTest
   /** The owner's example: repeat off, back to repeat after one key edit. */
   @Test public void repeat_once_comes_back_after_one_edit()
   {
-    b.switched("studio_toggle_repeat", Spec.parse("once"));
+    b.switched("studio_toggle_repeat", Spec.parse("once"), Boolean.TRUE);
     b.typed(false, false);
     b.typed(true, true);
     assertTrue("typing isn't the use of repeat off", reverted.isEmpty());
@@ -48,14 +50,14 @@ public class BehavioursTest
 
   @Test public void quicksbar_repeat_is_the_same_switch()
   {
-    b.switched("toggle_repeat", Spec.parse("once"));
+    b.switched("toggle_repeat", Spec.parse("once"), Boolean.TRUE);
     b.edited();
     assertEquals("[studio_toggle_repeat]", reverted.toString());
   }
 
   @Test public void backspace_once_after_one_delete()
   {
-    b.switched("studio_backspace_toggle", Spec.parse("once"));
+    b.switched("studio_backspace_toggle", Spec.parse("once"), Boolean.TRUE);
     b.typed(false, false);
     assertTrue(reverted.isEmpty());
     b.typed(true, false);
@@ -64,10 +66,10 @@ public class BehavioursTest
 
   @Test public void page_once_after_one_key_word_at_word_end()
   {
-    b.switched("il_symbols", Spec.parse("once"));
+    b.switched("il_symbols", Spec.parse("once"), Boolean.TRUE);
     b.typed(false, false);
     assertEquals("[il_symbols]", reverted.toString());
-    b.switched("switch_numeric", Spec.parse("word"));
+    b.switched("switch_numeric", Spec.parse("word"), Boolean.TRUE);
     b.typed(false, false);
     b.typed(false, false);
     assertEquals(1, reverted.size());
@@ -77,23 +79,23 @@ public class BehavioursTest
 
   @Test public void timed_and_manual_back()
   {
-    b.switched("studio_backspace_toggle", Spec.parse("5s"));
+    b.switched("studio_backspace_toggle", Spec.parse("5s"), Boolean.TRUE);
     assertEquals(1, timers.size());
     timers.get(0).run();
     assertEquals("[studio_backspace_toggle]", reverted.toString());
     // pressing it again while it waits is the way back by hand: nothing left to do
-    b.switched("studio_toggle_repeat", Spec.parse("30s"));
-    b.switched("studio_toggle_repeat", Spec.TOGGLE);
+    b.switched("studio_toggle_repeat", Spec.parse("30s"), Boolean.TRUE);
+    b.switched("studio_toggle_repeat", Spec.TOGGLE, Boolean.TRUE);
     assertTrue(timers.isEmpty());
     assertTrue(b.waiting().isEmpty());
   }
 
   @Test public void another_page_or_abc_drops_the_way_back()
   {
-    b.switched("il_symbols", Spec.parse("word"));
-    b.switched("switch_numeric", Spec.TOGGLE);
+    b.switched("il_symbols", Spec.parse("word"), Boolean.TRUE);
+    b.switched("switch_numeric", Spec.TOGGLE, Boolean.TRUE);
     assertTrue(b.waiting().isEmpty());
-    b.switched("switch_numeric", Spec.parse("once"));
+    b.switched("switch_numeric", Spec.parse("once"), Boolean.TRUE);
     b.left_page();
     b.typed(false, false);
     assertTrue(reverted.isEmpty());
@@ -101,9 +103,31 @@ public class BehavioursTest
 
   @Test public void toggle_never_switches_back()
   {
-    b.switched("studio_toggle_repeat", Spec.TOGGLE);
+    b.switched("studio_toggle_repeat", Spec.TOGGLE, Boolean.TRUE);
     b.edited();
     b.typed(true, true);
+    assertTrue(reverted.isEmpty());
+  }
+
+  /** The revert gets the state from before the switch, so a toggle goes
+      back to exactly that, never to "the other one" (review 2026-11-06). */
+  @Test public void revert_carries_the_prior_state()
+  {
+    b.switched("layout_mode", Spec.parse("once"), Boolean.FALSE);
+    b.edited();
+    assertEquals("[layout_mode]", reverted.toString());
+    assertEquals(Boolean.FALSE, priors.get(0));
+  }
+
+  /** Edit mode left by Back (the keyboard's own doing): nothing waits. */
+  @Test public void cancel_when_the_keyboard_leaves_the_mode_itself()
+  {
+    b.switched("layout_mode", Spec.parse("10s"), Boolean.FALSE);
+    assertTrue(b.armed("layout_mode"));
+    b.cancel("layout_mode");
+    assertFalse(b.armed("layout_mode"));
+    assertTrue(timers.isEmpty());
+    b.edited();
     assertTrue(reverted.isEmpty());
   }
 
