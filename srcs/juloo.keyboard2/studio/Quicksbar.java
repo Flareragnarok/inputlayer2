@@ -44,7 +44,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     List<KeyboardData> layouts();
     int current_layout();
     void select_layout(int i);
-    /** The edit key: the keyboard shown, and its focus changed (redraw the
+    /** The quick edit: the keyboard shown, and its focus changed (redraw the
         outlines from [layer], [target], [sel_row], [sel_pos]). */
     KeyboardData shown_keyboard();
     void focus_changed();
@@ -55,7 +55,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     void open_key_editor_at(int row, int pos);
   }
 
-  /** Containers the height key resizes, in the order it selects them. Only
+  /** Containers the quick edit resizes, in the order it selects them. Only
       whole containers, never the elements inside them. */
   public static final int TARGET_QUICKSBAR = 0;
   public static final int TARGET_SUGGESTIONS = 1;
@@ -68,7 +68,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
   /** Names of the targets in [StudioConfig.order]. */
   static final String[] TARGET_NAMES = { "quicksbar", "suggestions", "keyboard", "edit", "selection" };
 
-  /** Container selected by the height key, [-1] for none (height up/down
+  /** Container selected by the quick edit, [-1] for none (height up/down
       then resize the keyboard). */
   int _target = -1;
   Listener _listener;
@@ -108,7 +108,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     p.height = (int)(dp * density());
     setLayoutParams(p);
     // Rebuilding would remove the key under the finger in the middle of a
-    // gesture (height keys save on every repeat): only relabel when the keys
+    // gesture (height quicks save on every repeat): only relabel when the keys
     // are the same.
     if (dp == _built_dp && same_keys(config.studio.keys, _built_keys)
         && _keys.getChildCount() == _built_keys.size())
@@ -137,9 +137,9 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     return true;
   }
 
-  /** The edit key (its tap selects the layer of focus), [null] if not on
+  /** The quick edit (its tap selects the layer of focus), [null] if not on
       the bar. */
-  public View edit_key_view()
+  public View quick_edit_view()
   {
     if (_keys == null)
       return null;
@@ -361,10 +361,10 @@ public class Quicksbar extends FrameLayout implements Quick.Host
       refresh(_config);
   }
 
-  /* The edit key. Its tap cycles the layer of focus: whole keyboard, bars,
+  /* The quick edit. Its tap cycles the layer of focus: whole keyboard, bars,
      components (a keyboard row, or a bar), items (a key). In a layer, tap
      the element itself to select it (the keyboard catches the taps, see
-     [tapped]); the edit key's swipes then act on it: ↑ ↓ size, ← → order,
+     [tapped]); the quick edit's swipes then act on it: ↑ ↓ size, ← → order,
      ↗ more (the menu), ↖ undo, ↙ undo all. */
 
   public static final int LAYER_OFF = 0, LAYER_WHOLE = 1, LAYER_BARS = 2,
@@ -511,7 +511,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     }
     catch (Exception e)
     {
-      Logs.exn("Edit key move", e);
+      Logs.exn("Quick edit move", e);
     }
   }
 
@@ -531,7 +531,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     }
     catch (Exception e)
     {
-      Logs.exn("Edit key scale", e);
+      Logs.exn("Quick edit scale", e);
     }
   }
 
@@ -579,11 +579,11 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     }
     catch (Exception e)
     {
-      Logs.exn("Edit key width", e);
+      Logs.exn("Quick edit width", e);
     }
   }
 
-  /** The edit key's ↗: what else can be done with the selection. */
+  /** The quick edit's ↗: what else can be done with the selection. */
   void edit_menu()
   {
     final List<String> labels = new ArrayList<String>();
@@ -618,7 +618,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     }
     else
     {
-      toast((_layer == LAYER_OFF) ? "Tap the edit key to pick a layer first"
+      toast((_layer == LAYER_OFF) ? "Tap the quick edit to pick a layer first"
           : LAYER_HINTS[_layer]);
       return;
     }
@@ -727,7 +727,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     }
     catch (Exception e)
     {
-      Logs.exn("Edit key remove", e);
+      Logs.exn("Quick edit remove", e);
     }
   }
 
@@ -752,7 +752,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     }
     catch (Exception e)
     {
-      Logs.exn("Edit key split row", e);
+      Logs.exn("Quick edit split row", e);
     }
   }
 
@@ -773,7 +773,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     }
     catch (Exception e)
     {
-      Logs.exn("Edit key join", e);
+      Logs.exn("Quick edit join", e);
     }
   }
 
@@ -787,7 +787,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     }
     catch (Exception e)
     {
-      Logs.exn("Edit key reset", e);
+      Logs.exn("Quick edit reset", e);
     }
   }
 

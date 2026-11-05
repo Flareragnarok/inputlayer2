@@ -5,9 +5,9 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.widget.LinearLayout;
 
-/** The keyboard's stack of parts. While the edit key is focusing, it takes
+/** The keyboard's stack of parts. While the quick edit is focusing, it takes
     the taps meant for the parts (they select instead of typing), except on
-    the edit key itself. */
+    the quick edit itself. */
 public class FocusLayout extends LinearLayout
 {
   public interface Catcher

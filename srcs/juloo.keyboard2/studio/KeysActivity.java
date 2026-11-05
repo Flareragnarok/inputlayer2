@@ -130,7 +130,7 @@ public class KeysActivity extends Activity
     AlertDialog.Builder d = new AlertDialog.Builder(this).setTitle(e.glyph + "    " + e.name);
     if (c == null)
     {
-      d.setMessage("No behaviours for this key: it does one thing. Place it with edit mode (layout key) or the layout editor.\n\nName: " + e.name)
+      d.setMessage("No behaviours for this key: it does one thing. Place it with edit mode (quick layout) or the layout editor.\n\nName: " + e.name)
         .setPositiveButton(android.R.string.ok, null)
         .setNeutralButton("Copy name", new DialogInterface.OnClickListener() {
           public void onClick(DialogInterface di, int i) { copy(e.name); }

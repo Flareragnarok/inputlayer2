@@ -54,7 +54,7 @@ public class StudioActivity extends Activity
   /** The layout's other keys: ids, and 9 names per key. */
   public static final String EXTRA_KEY_ALL_IDS = "studio_key_all_ids";
   public static final String EXTRA_KEY_ALL_NAMES = "studio_key_all_names";
-  /** The edit key's "add a key": the layout, its rows (JSON, key ids), the
+  /** The quick edit's "add a key": the layout, its rows (JSON, key ids), the
       row and position. */
   public static final String EXTRA_ADD_LAYOUT = "studio_add_layout";
   public static final String EXTRA_ADD_ROWS = "studio_add_rows";
@@ -787,7 +787,7 @@ public class StudioActivity extends Activity
 
   /* Languages */
 
-  /** Layouts offered in Studio, in the order the quicksbar's layout key
+  /** Layouts offered in Studio, in the order the quicksbar's quick layout
       cycles through them: { layout name ("system" for the phone's
       language), label }. */
   static final String[][] LANGUAGE_LAYOUTS = {

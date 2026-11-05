@@ -333,7 +333,7 @@ public final class KeyEditor
     show();
   }
 
-  /** The edit key's "add a key": pick one, put it at [pos] in row [row] of
+  /** The quick edit's "add a key": pick one, put it at [pos] in row [row] of
       the layout's rows [rows_json] (key ids), saved as its arrangement. */
   public void add_key(final String rows_json, final int row, final int pos)
   {

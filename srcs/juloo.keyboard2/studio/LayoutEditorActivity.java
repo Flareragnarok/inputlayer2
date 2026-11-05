@@ -29,7 +29,7 @@ import org.json.JSONObject;
     keys added, removed, moved and resized freely, the nine names of each
     key set from the key list; saved as named layouts. A key
     `layout:<name>` (with the behaviours of a page, Studio → Keys) shows a
-    saved layout; "Add to my layouts" puts it in the language key's list. */
+    saved layout; "Add to my layouts" puts it in the quick language's list. */
 public class LayoutEditorActivity extends Activity implements LayoutCanvas.Listener
 {
   SharedPreferences _prefs;
@@ -506,7 +506,7 @@ public class LayoutEditorActivity extends Activity implements LayoutCanvas.Liste
     toast("Copied layout:" + _saved_as + " — place it with edit mode → Replace with… (search \"Your layouts\")");
   }
 
-  /** Into the language key's list (Studio → Languages), as a custom layout. */
+  /** Into the quick language's list (Studio → Languages), as a custom layout. */
   void add_to_layouts()
   {
     try
@@ -520,7 +520,7 @@ public class LayoutEditorActivity extends Activity implements LayoutCanvas.Liste
       SharedPreferences.Editor e = _prefs.edit();
       LayoutsPreference.save_to_preferences(e, ls);
       e.apply();
-      toast("Added: the language key switches to it (Studio → Languages lists it)");
+      toast("Added: the quick language switches to it (Studio → Languages lists it)");
     }
     catch (Throwable e)
     {

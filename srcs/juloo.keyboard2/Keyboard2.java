@@ -215,12 +215,12 @@ public class Keyboard2 extends InputMethodService
     _keyboard_layout_view = (Keyboard2View)_keyboard_container_view.findViewById(R.id.keyboard_view);
     _candidates_view = (CandidatesView)_keyboard_container_view.findViewById(R.id.candidates_view);
     _quicksbar = (Quicksbar)_keyboard_container_view.findViewById(R.id.quicksbar);
-    // The edit key's focus: taps on the parts select them.
+    // The quick edit's focus: taps on the parts select them.
     ((juloo.keyboard2.studio.FocusLayout)_keyboard_container_view).set_catcher(
         new juloo.keyboard2.studio.FocusLayout.Catcher() {
           public boolean catches(MotionEvent ev)
           {
-            return _quicksbar.focusing() && !on_view(_quicksbar.edit_key_view(), ev);
+            return _quicksbar.focusing() && !on_view(_quicksbar.quick_edit_view(), ev);
           }
           public void tapped(float x, float y) { focus_tapped(x, y); }
         });
@@ -456,7 +456,7 @@ public class Keyboard2 extends InputMethodService
     }
   }
 
-  /** Studio: stack the containers in the order the height key gave them. */
+  /** Studio: stack the containers in the order the quick edit gave them. */
   private void apply_container_order()
   {
     ViewGroup c = _keyboard_container_view;
@@ -798,7 +798,7 @@ public class Keyboard2 extends InputMethodService
     return x >= p[0] && x < p[0] + v.getWidth() && y >= p[1] && y < p[1] + v.getHeight();
   }
 
-  /** Studio: a tap while the edit key focuses: which part, row and key. */
+  /** Studio: a tap while the quick edit focuses: which part, row and key. */
   private void focus_tapped(float x, float y)
   {
     ViewGroup c = _keyboard_container_view;
@@ -824,7 +824,7 @@ public class Keyboard2 extends InputMethodService
     }
   }
 
-  /** Studio: outlines for the edit key's focus. */
+  /** Studio: outlines for the quick edit's focus. */
   private void draw_focus()
   {
     int layer = _quicksbar.layer();
@@ -850,7 +850,7 @@ public class Keyboard2 extends InputMethodService
     _keyboard_layout_view.studio_focus(row, pos, all);
   }
 
-  /** Studio: outline the container the quicksbar's height key resizes. */
+  /** Studio: outline the container the quicksbar's quick edit resizes. */
   private void highlight_container(int target)
   {
     if (VERSION.SDK_INT < 23)

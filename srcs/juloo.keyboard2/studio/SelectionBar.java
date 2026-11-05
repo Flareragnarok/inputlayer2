@@ -13,7 +13,7 @@ import juloo.keyboard2.R;
 
 /** The selection bar: while typing in format (Scope swiped down) it shows
     what the typing produces, the format and look applied, as it goes to the
-    cursor. Only shown then (or while the height key places it). It can
+    cursor. Only shown then (or while the quick edit places it). It can
     also show a pinned selection: tap selects it again, ✕ drops it. */
 public class SelectionBar extends LinearLayout
 {
@@ -28,7 +28,7 @@ public class SelectionBar extends LinearLayout
   String _pinned = null;
   /** Typing in format's result, shown instead of the pinned text. */
   String _preview = null;
-  /** Shown even when empty, while the height key places it. */
+  /** Shown even when empty, while the quick edit places it. */
   boolean _placing = false;
   float _dp = StudioConfig.DEFAULT_SELECTION_BAR_DP;
 

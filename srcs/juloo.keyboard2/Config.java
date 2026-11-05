@@ -170,7 +170,7 @@ public final class Config
     longPressTimeout = _prefs.getInt("longpress_timeout", 600);
     longPressInterval = _prefs.getInt("longpress_interval", 65);
     // Studio: off by default; holding a key opens its editor instead. The
-    // layout key's ↓ switches it.
+    // quick layout's ↓ switches it.
     keyrepeat_enabled = _prefs.getBoolean("keyrepeat_enabled", false);
     margin_bottom = get_dip_pref_oriented(dm, "margin_bottom", 7, 3);
     if (!Float.isNaN(studio.margin_bottom_dp))

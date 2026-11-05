@@ -16,22 +16,22 @@ public final class StudioConfig
   public static final float DEFAULT_BAR_DP = 28f;
 
   /** Keys shown when no [quicksbar] module is active, left to right
-      (owner's names, build 73): layout key, suggestions key, cursor key
-      (center), language key, edit key. */
+      (owner's names, build 73): quick layout, quick suggestions, quick cursor
+      (center), quick language, quick edit. */
   public static final List<QuickSpec> DEFAULT_KEYS = Arrays.asList(
-      // Layout key: edit mode, ↑ copy, ↓ key repeat on/off, ↗ split
+      // Quick layout: edit mode, ↑ copy, ↓ key repeat on/off, ↗ split
       // backspace on/off. Cut is backspace ↓, select all ⌦ ←.
       QuickSpec.of("c", "layout_mode", "n", "copy", "s", "toggle_repeat",
           "ne", "split_backspace"),
-      // Suggestions key: the suggestions' language.
+      // Quick suggestions: the suggestions' language.
       QuickSpec.of("c", "dictionary"),
-      // Cursor key.
+      // Quick cursor.
       QuickSpec.of("w", "left", "e", "right", "n", "up", "s", "down"),
-      // Language key: tap next language, ← previous, ↑ list; ↓ saves the key
+      // Quick language: tap next language, ← previous, ↑ list; ↓ saves the key
       // arrangement as a layout, → picks a saved one.
       QuickSpec.of("c", "layout", "w", "layout_prev", "n", "layout_menu",
           "s", "layouts_save", "e", "layouts_pick"),
-      // Edit key (right end): tap cycles the layer of focus (whole, bars,
+      // Quick edit (right end): tap cycles the layer of focus (whole, bars,
       // rows, keys); tap an element to select it; ↑ ↓ size, ← → order,
       // ↗ more, ↖ undo (like Back), ↙ undo all since shown.
       QuickSpec.of("c", "select_container", "n", "height_up", "s", "height_down",
@@ -49,7 +49,7 @@ public final class StudioConfig
   public static final float DEFAULT_SELECTION_BAR_DP = 26f;
   /** The selection bar, [0] hides it. */
   public float selection_bar_dp = DEFAULT_SELECTION_BAR_DP;
-  /** Containers top to bottom; the height key moves them. */
+  /** Containers top to bottom; the quick edit moves them. */
   public static final List<String> DEFAULT_ORDER =
     Arrays.asList("quicksbar", "selection", "suggestions", "keyboard", "edit");
   public List<String> order = DEFAULT_ORDER;
@@ -61,7 +61,7 @@ public final class StudioConfig
   /** Key changes made in layout mode, [null] when none. */
   public KeyMap keymap = null;
   public static final String KEY_SPLIT_BACKSPACE = "studio_split_backspace";
-  /** A wide backspace is cut in two (the layout key's ↗). */
+  /** A wide backspace is cut in two (the quick layout's ↗). */
   public boolean split_backspace = true;
 
   public static StudioConfig load(SharedPreferences prefs)

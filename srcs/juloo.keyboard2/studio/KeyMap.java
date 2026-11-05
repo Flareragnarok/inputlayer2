@@ -45,7 +45,7 @@ public final class KeyMap
   /** layout -> key id -> its changes. */
   final Map<String, Map<String, Change>> _layouts =
     new HashMap<String, Map<String, Change>>();
-  /** layout -> its rows as key ids, top to bottom, when the edit key has
+  /** layout -> its rows as key ids, top to bottom, when the quick edit has
       rearranged it ([ROWS] in the module). */
   final Map<String, List<List<String>>> _structures =
     new HashMap<String, List<List<String>>>();
@@ -130,7 +130,7 @@ public final class KeyMap
 
   public boolean is_empty() { return _layouts.isEmpty() && _structures.isEmpty(); }
 
-  /** The rows of [layout] as the edit key arranged them, [null] if it
+  /** The rows of [layout] as the quick edit arranged them, [null] if it
       didn't. */
   public List<List<String>> structure(String layout)
   {
@@ -272,7 +272,7 @@ public final class KeyMap
     return out;
   }
 
-  /** A key added by the edit key: one key wide, tapping [id]. */
+  /** A key added by the quick edit: one key wide, tapping [id]. */
   static KeyboardData.Key new_key(String id, KeyboardData.Key template, Change c)
   {
     KeyValue tap = key_of_name(id);

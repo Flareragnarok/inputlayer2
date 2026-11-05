@@ -9,7 +9,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /** The height math of [changeheight] modules, in one place: the sane range
-    of every value, one step of the height key, and the repair of stored
+    of every value, one step of the quick edit, and the repair of stored
     values that left their range.
 
     A step only reads the module itself (never a view's measured height), so
@@ -67,7 +67,7 @@ public final class Heights
 
   /* Steps */
 
-  /** Fields of [j] (a copy) after one step of the height key on [target]
+  /** Fields of [j] (a copy) after one step of the quick edit on [target]
       ([Quicksbar.TARGET_*], or [-1] for the keyboard), bigger if [bigger].
       [rows] is the number of rows shown, [percent] the keyboard height used
       when [j] doesn't set it. [null] when the step changes nothing, at the
@@ -116,7 +116,7 @@ public final class Heights
     }
   }
 
-  /** Fields of [j] (a copy) after one step of the edit key on the whole
+  /** Fields of [j] (a copy) after one step of the quick edit on the whole
       keyboard: the keyboard height one step bigger (smaller), and every
       bar shown scaled by as much, so everything keeps its proportions.
       [null] at the edge of the range. */

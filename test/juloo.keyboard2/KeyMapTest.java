@@ -249,7 +249,7 @@ public class KeyMapTest
         3f, null, "latin", null, "IL", false, false, false);
   }
 
-  /** The edit key's arrangement: order, added keys, removed keys, rows
+  /** The quick edit's arrangement: order, added keys, removed keys, rows
       split, heights following their keys. */
   @Test
   public void structure() throws Exception

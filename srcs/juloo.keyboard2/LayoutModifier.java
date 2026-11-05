@@ -105,7 +105,7 @@ public final class LayoutModifier
     kw = ctrl_undo(kw);
     if (globalConfig.studio != null && globalConfig.studio.keymap != null)
       kw = globalConfig.studio.keymap.apply(kw);
-    // Heights by position, after the edit key rearranged the rows (it moves
+    // Heights by position, after the quick edit rearranged the rows (it moves
     // a row's height with it).
     return scale_rows(kw);
   }

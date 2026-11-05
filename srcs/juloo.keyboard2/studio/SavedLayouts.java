@@ -5,7 +5,7 @@ import java.util.List;
 import org.json.JSONObject;
 
 /** Saved layouts: key arrangements made in edit mode, kept as [keymap]
-    modules. The language key saves the current one (↓) and picks between
+    modules. The quick language saves the current one (↓) and picks between
     them (→). The active [keymap] module is the one edit mode changes, so
     saving copies it under a new name and goes on with the copy: the saved
     one stays as it was. */
