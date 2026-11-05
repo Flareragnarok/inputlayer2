@@ -34,7 +34,7 @@ import juloo.keyboard2.dict.DictionarySwitcher;
 import juloo.keyboard2.dict.SupportedDictionaries;
 import juloo.keyboard2.prefs.LayoutsPreference;
 import juloo.keyboard2.studio.ClipKeeper;
-import juloo.keyboard2.studio.ComfortBar;
+import juloo.keyboard2.studio.Quicksettings;
 import juloo.keyboard2.studio.EditStrip;
 import juloo.keyboard2.studio.MemoryPane;
 import juloo.keyboard2.studio.SelectionBar;
@@ -51,7 +51,7 @@ public class Keyboard2 extends InputMethodService
   private ViewGroup _keyboard_container_view;
   private Keyboard2View _keyboard_layout_view;
   private CandidatesView _candidates_view;
-  private ComfortBar _comfort_bar;
+  private Quicksettings _quicksettings;
   private ClipKeeper _clip_keeper;
   /** Studio: words learned from typing; [null] when off or the phone is
       still locked (direct boot). */
@@ -167,6 +167,7 @@ public class Keyboard2 extends InputMethodService
     // Studio: crashes are kept, to be copied from Studio.
     juloo.keyboard2.studio.CrashLog.install(this);
     SharedPreferences prefs = DirectBootAwarePreferences.get_shared_preferences(this);
+    juloo.keyboard2.studio.Renames.migrate(prefs); // il-007, before anything reads them
     _handler = new Handler(getMainLooper());
     _behaviours = new juloo.keyboard2.studio.Behaviours(new juloo.keyboard2.studio.Behaviours.Host() {
       public void revert(String sw) { do_switch(sw, true); }
@@ -213,13 +214,13 @@ public class Keyboard2 extends InputMethodService
     _keyboard_container_view = (ViewGroup)inflate_view(R.layout.keyboard);
     _keyboard_layout_view = (Keyboard2View)_keyboard_container_view.findViewById(R.id.keyboard_view);
     _candidates_view = (CandidatesView)_keyboard_container_view.findViewById(R.id.candidates_view);
-    _comfort_bar = (ComfortBar)_keyboard_container_view.findViewById(R.id.comfort_bar);
+    _quicksettings = (Quicksettings)_keyboard_container_view.findViewById(R.id.quicksettings);
     // The edit key's focus: taps on the parts select them.
     ((juloo.keyboard2.studio.FocusLayout)_keyboard_container_view).set_catcher(
         new juloo.keyboard2.studio.FocusLayout.Catcher() {
           public boolean catches(MotionEvent ev)
           {
-            return _comfort_bar.focusing() && !on_view(_comfort_bar.edit_key_view(), ev);
+            return _quicksettings.focusing() && !on_view(_quicksettings.edit_key_view(), ev);
           }
           public void tapped(float x, float y) { focus_tapped(x, y); }
         });
@@ -290,8 +291,8 @@ public class Keyboard2 extends InputMethodService
       .setOnClickListener(new View.OnClickListener() {
         public void onClick(View _v) { open_memory_pane(true); }
       });
-    _comfort_bar.setup(new ComfortBar.Listener() {
-      public void comfort_key(KeyValue kv)
+    _quicksettings.setup(new Quicksettings.Listener() {
+      public void quicksettings_key(KeyValue kv)
       {
         _keyeventhandler.key_down(kv, false);
         _keyeventhandler.key_up(kv, Pointers.Modifiers.EMPTY);
@@ -447,7 +448,7 @@ public class Keyboard2 extends InputMethodService
   {
     switch (name)
     {
-      case "comfort": return _comfort_bar;
+      case "quicksettings": return _quicksettings;
       case "selection": return _selection_bar;
       case "suggestions": return _keyboard_container_view.findViewById(R.id.candidates_frame);
       case "keyboard": return _keyboard_layout_view;
@@ -569,7 +570,7 @@ public class Keyboard2 extends InputMethodService
     return super.getCurrentInputConnection();
   }
 
-  /** Studio: layout mode, from the comfort bar. Tapping a key opens it in
+  /** Studio: layout mode, from the quicksettings. Tapping a key opens it in
       Studio's key editor instead of typing. */
   private boolean _layout_mode = false;
 
@@ -594,7 +595,7 @@ public class Keyboard2 extends InputMethodService
       }
       _keyboard_layout_view.setForeground(d);
     }
-    _comfort_bar.refresh(_config);
+    _quicksettings.refresh(_config);
   }
 
   private void open_key_editor(KeyboardData kw, KeyboardData.Key k)
@@ -802,7 +803,7 @@ public class Keyboard2 extends InputMethodService
   {
     ViewGroup c = _keyboard_container_view;
     View[] parts = {
-      _comfort_bar,
+      _quicksettings,
       c.findViewById(R.id.candidates_frame),
       _keyboard_layout_view,
       _edit_strip,
@@ -818,7 +819,7 @@ public class Keyboard2 extends InputMethodService
         row = _keyboard_layout_view.studio_row_at(y - v.getTop());
         pos = _keyboard_layout_view.studio_key_at(row, x - v.getLeft());
       }
-      _comfort_bar.tapped(t, row, pos);
+      _quicksettings.tapped(t, row, pos);
       return;
     }
   }
@@ -826,11 +827,11 @@ public class Keyboard2 extends InputMethodService
   /** Studio: outlines for the edit key's focus. */
   private void draw_focus()
   {
-    int layer = _comfort_bar.layer();
+    int layer = _quicksettings.layer();
     if (VERSION.SDK_INT >= 23)
     {
       GradientDrawable d = null;
-      if (layer == ComfortBar.LAYER_WHOLE)
+      if (layer == Quicksettings.LAYER_WHOLE)
       {
         d = new GradientDrawable();
         d.setColor(0x143399ff);
@@ -840,27 +841,27 @@ public class Keyboard2 extends InputMethodService
     }
     int row = -1, pos = -1;
     boolean all = false;
-    if (layer == ComfortBar.LAYER_COMPONENTS || layer == ComfortBar.LAYER_ITEMS)
+    if (layer == Quicksettings.LAYER_COMPONENTS || layer == Quicksettings.LAYER_ITEMS)
     {
-      row = _comfort_bar.sel_row();
-      pos = (layer == ComfortBar.LAYER_ITEMS) ? _comfort_bar.sel_pos() : -1;
+      row = _quicksettings.sel_row();
+      pos = (layer == Quicksettings.LAYER_ITEMS) ? _quicksettings.sel_pos() : -1;
       all = (row < 0);
     }
     _keyboard_layout_view.studio_focus(row, pos, all);
   }
 
-  /** Studio: outline the container the comfort bar's height key resizes. */
+  /** Studio: outline the container the quicksettings' height key resizes. */
   private void highlight_container(int target)
   {
     if (VERSION.SDK_INT < 23)
       return;
     // The selection bar shows while it is being placed, even if empty.
-    _selection_bar.set_placing(target == ComfortBar.TARGET_SELECTION_BAR);
+    _selection_bar.set_placing(target == Quicksettings.TARGET_SELECTION_BAR);
     // Rows are outlined inside the keyboard.
     _keyboard_layout_view.studio_highlight_row(
-        (target >= ComfortBar.TARGET_ROWS) ? target - ComfortBar.TARGET_ROWS : -1);
+        (target >= Quicksettings.TARGET_ROWS) ? target - Quicksettings.TARGET_ROWS : -1);
     View[] views = {
-      _comfort_bar,
+      _quicksettings,
       _keyboard_container_view.findViewById(R.id.candidates_frame),
       _keyboard_layout_view,
       _edit_strip,
@@ -946,7 +947,7 @@ public class Keyboard2 extends InputMethodService
     boolean mem = pane && memory_pane().memory_tab();
     light_corner_icon(R.id.corner_clipboard, pane && !mem);
     light_corner_icon(R.id.corner_memory, mem);
-    _comfort_bar.refresh(_config);
+    _quicksettings.refresh(_config);
     _edit_strip.refresh(_config);
     _selection_bar.refresh(_config);
     apply_container_order();
@@ -1017,7 +1018,7 @@ public class Keyboard2 extends InputMethodService
     _currentSpecialLayout = refresh_special_layout();
     _keyboard_layout_view.setKeyboard(current_layout());
     _keyeventhandler.started(_config);
-    _comfort_bar.reset_target();
+    _quicksettings.reset_target();
     // A new field: no pane, no item being edited.
     memory_pane().closed();
     _studio_memory_open = false;
@@ -1159,7 +1160,7 @@ public class Keyboard2 extends InputMethodService
       _user_words.flush();
     // Height changes are kept; their sane values become the ones to fall
     // back to.
-    _comfort_bar.commit();
+    _quicksettings.commit();
     if (_layout_mode)
       set_layout_mode(false);
     try
@@ -1180,7 +1181,7 @@ public class Keyboard2 extends InputMethodService
   public boolean onKeyDown(int keyCode, KeyEvent event)
   {
     if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0
-        && isInputViewShown() && (_layout_mode || _comfort_bar.wants_back()))
+        && isInputViewShown() && (_layout_mode || _quicksettings.wants_back()))
     {
       _back_ours = true;
       event.startTracking();
@@ -1196,7 +1197,7 @@ public class Keyboard2 extends InputMethodService
   {
     if (keyCode == KeyEvent.KEYCODE_BACK && _back_ours)
     {
-      _comfort_bar.revert_all();
+      _quicksettings.revert_all();
       return true;
     }
     return super.onKeyLongPress(keyCode, event);
@@ -1212,7 +1213,7 @@ public class Keyboard2 extends InputMethodService
       if (!event.isCanceled() && _layout_mode)
         set_layout_mode(false);
       else if (!event.isCanceled())
-        _comfort_bar.back();
+        _quicksettings.back();
       return true;
     }
     return super.onKeyUp(keyCode, event);

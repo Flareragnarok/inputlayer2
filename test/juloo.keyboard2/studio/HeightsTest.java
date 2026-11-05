@@ -10,7 +10,7 @@ public class HeightsTest
 {
   public HeightsTest() {}
 
-  static final int ROW = ComfortBar.TARGET_ROWS;
+  static final int ROW = Quicksettings.TARGET_ROWS;
 
   static JSONObject step(JSONObject j, int target, boolean bigger) throws Exception
   {
@@ -83,7 +83,7 @@ public class HeightsTest
   {
     JSONObject r = step(new JSONObject(), -1, true);
     assertEquals(37, r.getJSONObject("keyboard_percent").getInt("portrait"));
-    r = Heights.step(new JSONObject(), ComfortBar.TARGET_KEYBOARD, false, 4, true, 50);
+    r = Heights.step(new JSONObject(), Quicksettings.TARGET_KEYBOARD, false, 4, true, 50);
     assertEquals(48, r.getJSONObject("keyboard_percent").getInt("landscape"));
     JSONObject j = settle(new JSONObject(), -1, true, 50);
     assertEquals(Heights.PORTRAIT_MAX,
@@ -96,12 +96,12 @@ public class HeightsTest
   @Test
   public void bars() throws Exception
   {
-    JSONObject r = step(new JSONObject(), ComfortBar.TARGET_SUGGESTIONS, true);
+    JSONObject r = step(new JSONObject(), Quicksettings.TARGET_SUGGESTIONS, true);
     assertEquals(StudioConfig.DEFAULT_BAR_DP + 2, r.getDouble("bar_dp"), 1e-6);
     // A hidden bar comes back at its smallest.
-    r = step(new JSONObject("{\"comfort_bar_dp\":0}"), ComfortBar.TARGET_COMFORT_BAR, true);
-    assertEquals(Heights.BAR_MIN, r.getDouble("comfort_bar_dp"), 1e-6);
-    JSONObject j = settle(new JSONObject(), ComfortBar.TARGET_EDIT_STRIP, true, 50);
+    r = step(new JSONObject("{\"quicksettings_dp\":0}"), Quicksettings.TARGET_QUICKSETTINGS, true);
+    assertEquals(Heights.BAR_MIN, r.getDouble("quicksettings_dp"), 1e-6);
+    JSONObject j = settle(new JSONObject(), Quicksettings.TARGET_EDIT_STRIP, true, 50);
     assertEquals(Heights.BAR_MAX, j.getDouble("edit_strip_dp"), 1e-6);
   }
 
@@ -112,7 +112,7 @@ public class HeightsTest
   static final String BROKEN =
     "{\"module\":\"changeheight\",\"name\":\"quick\",\"version\":1,"
     + "\"rows\":[1,3,1,1],\"keyboard_percent\":{\"portrait\":100,\"landscape\":45},"
-    + "\"comfort_bar_dp\":30,\"bar_dp\":96,\"order\":[\"keyboard\",\"comfort\"]}";
+    + "\"quicksettings_dp\":30,\"bar_dp\":96,\"order\":[\"keyboard\",\"quicksettings\"]}";
 
   @Test
   public void repair_to_defaults() throws Exception
@@ -125,7 +125,7 @@ public class HeightsTest
     assertFalse(j.has("bar_dp"));
     // The rest is kept.
     assertEquals(45, j.getJSONObject("keyboard_percent").getInt("landscape"));
-    assertEquals(30, j.getInt("comfort_bar_dp"));
+    assertEquals(30, j.getInt("quicksettings_dp"));
     assertEquals("keyboard", j.getJSONArray("order").getString(0));
     assertEquals("quick", j.getString("name"));
     // Once repaired, nothing more to do.
@@ -176,12 +176,12 @@ public class HeightsTest
     ModuleStore s = new ModuleStore(p);
     s.save(Module.parse(BROKEN), true);
     s.save(Module.parse("{\"module\":\"changeheight\",\"name\":\"ok\",\"rows\":[1,1.2]}"));
-    s.save(Module.parse("{\"module\":\"comfortbar\",\"name\":\"mine\",\"keys\":[{\"c\":\"copy\"}]}"), true);
+    s.save(Module.parse("{\"module\":\"quicksettings\",\"name\":\"mine\",\"keys\":[{\"c\":\"copy\"}]}"), true);
     assertEquals(1, Heights.check(p));
     Module q = s.active("changeheight");
     assertEquals("quick", q.name); // Still active.
     assertEquals(1.0, q.json.getJSONArray("rows").getDouble(1), 1e-6);
-    assertEquals("mine", s.active("comfortbar").name); // Other settings kept.
+    assertEquals("mine", s.active("quicksettings").name); // Other settings kept.
     StudioConfig c = StudioConfig.load(p);
     assertEquals(1f, c.row_factor(1), 0f);
     assertEquals(35, c.keyboard_percent(false, 35));
@@ -205,7 +205,7 @@ public class HeightsTest
     Module q = s.active("changeheight");
     assertEquals(1.5, q.json.getJSONArray("rows").getDouble(1), 1e-6);
     assertEquals(42, q.json.getJSONObject("keyboard_percent").getInt("portrait"));
-    assertEquals(30, q.json.getInt("comfort_bar_dp"));
+    assertEquals(30, q.json.getInt("quicksettings_dp"));
   }
 
   /* Undo (ModuleStore snapshots) */
@@ -215,7 +215,7 @@ public class HeightsTest
   {
     FakePrefs p = new FakePrefs();
     ModuleStore s = new ModuleStore(p);
-    s.save(Module.parse("{\"module\":\"comfortbar\",\"name\":\"mine\",\"keys\":[{\"c\":\"copy\"}]}"), true);
+    s.save(Module.parse("{\"module\":\"quicksettings\",\"name\":\"mine\",\"keys\":[{\"c\":\"copy\"}]}"), true);
     ModuleStore.Snapshot none = s.snapshot("changeheight");
     s.save(Module.parse("{\"module\":\"changeheight\",\"name\":\"quick\",\"rows\":[1,1.1]}"), true);
     ModuleStore.Snapshot one = s.snapshot("changeheight");
@@ -225,6 +225,6 @@ public class HeightsTest
     s.restore(none);
     assertNull(s.active("changeheight"));
     assertTrue(s.list("changeheight").isEmpty());
-    assertEquals("mine", s.active("comfortbar").name);
+    assertEquals("mine", s.active("quicksettings").name);
   }
 }

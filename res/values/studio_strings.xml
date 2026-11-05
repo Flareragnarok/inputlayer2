@@ -116,5 +116,5 @@
   <string name="studio_mark_stable">Mark build %1$d stable</string>
   <string name="studio_mark_stable_howto">On GitHub, untick "Set as a pre-release", then Update release</string>
   <string name="studio_languages">Languages</string>
-  <string name="studio_languages_desc">The layouts the comfort bar\'s language key (right end) switches between: tap for the next, ← for the previous, ↑ for the list. Japanese has no layout yet: typing kana and kanji needs a converter, still to be built.</string>
+  <string name="studio_languages_desc">The layouts the quicksettings\' language key (right end) switches between: tap for the next, ← for the previous, ↑ for the list. Japanese has no layout yet: typing kana and kanji needs a converter, still to be built.</string>
 </resources>

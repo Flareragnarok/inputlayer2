@@ -33,7 +33,7 @@ public class CandidatesView extends LinearLayout
   TextView[] _item_views = new TextView[NUM_CANDIDATES];
 
   // Studio: the language name, language switch and "install a dictionary"
-  // message are on the comfort bar's language key instead.
+  // message are on the quicksettings' language key instead.
 
   public CandidatesView(Context context, AttributeSet attrs)
   {

@@ -94,10 +94,10 @@ public class MemoryPane extends LinearLayout
   {
     super(ctx, attrs);
     setOrientation(VERTICAL);
-    _label_color = ComfortKey.attr_color(ctx, R.attr.colorLabel, 0xffffffff);
-    int key = ComfortKey.attr_color(ctx, R.attr.colorKey, 0xff333333);
-    _item_color = ComfortKey.brighter(key, 0.08f);
-    _selected_color = ComfortKey.brighter(key, 0.3f);
+    _label_color = QuicksettingsKey.attr_color(ctx, R.attr.colorLabel, 0xffffffff);
+    int key = QuicksettingsKey.attr_color(ctx, R.attr.colorKey, 0xff333333);
+    _item_color = QuicksettingsKey.brighter(key, 0.08f);
+    _selected_color = QuicksettingsKey.brighter(key, 0.3f);
     // No tab row: the clipboard and memory icons over the pane switch
     // between them and close it.
     _bar = new FrameLayout(ctx);

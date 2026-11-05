@@ -15,15 +15,15 @@ Last updated: 2026-11-01 (build 74).
 | Build | What |
 |---|---|
 | 1 | Own app id `io.github.flareragnarok.inputlayer` and name "Input Layer", installs next to Unexpected Keyboard. Studio screen (Settings → Studio): modules (import, export, use, delete) and in-app updates from GitHub releases. |
-| 2 | Comfort bar above the suggestion bar. `changeheight` modules apply to the keyboard (keyboard height, bar height, row heights, bottom margin). |
-| 3 | Comfort bar redesigned: tiny centered keys with a tap action and up to 8 swipe actions, like the keyboard's keys. See-through clipboard icon in the bottom-left corner of the suggestion bar. |
-| 4 | The comfort bar's language key switches the suggestions' language (the button upstream had on the suggestion bar). |
+| 2 | Quicksettings above the suggestion bar. `changeheight` modules apply to the keyboard (keyboard height, bar height, row heights, bottom margin). |
+| 3 | Quicksettings redesigned: tiny centered keys with a tap action and up to 8 swipe actions, like the keyboard's keys. See-through clipboard icon in the bottom-left corner of the suggestion bar. |
+| 4 | The quicksettings' language key switches the suggestions' language (the button upstream had on the suggestion bar). |
 | 5 | Updates: dropdown of newer builds, newest preselected. Past builds can be restored (republished on GitHub as a new build number). |
 | 6 | Suggestion bar 28dp by default instead of a full key row. |
 | 7 | Bigger clipboard corner icon; suggestions start after it. |
-| 8 | The language key is a normal comfort bar key instead of pinned to the right end. ROADMAP.md. |
-| 9 | Comfort bar keys look like the keyboard's keys, smaller and a shade brighter. The height key selects a whole container (comfort bar, suggestions, keyboard) and highlights it; swiping up/down resizes it. |
-| 10 | Suggestion bar only shows suggestions: the language name, language button and "install a dictionary" message are gone from it (the comfort bar's language key shows `⬇ EN` when that dictionary is missing). Memory icon in the bottom-right corner (the pane itself comes next). |
+| 8 | The language key is a normal quicksettings key instead of pinned to the right end. ROADMAP.md. |
+| 9 | Quicksettings keys look like the keyboard's keys, smaller and a shade brighter. The height key selects a whole container (quicksettings, suggestions, keyboard) and highlights it; swiping up/down resizes it. |
+| 10 | Suggestion bar only shows suggestions: the language name, language button and "install a dictionary" message are gone from it (the quicksettings' language key shows `⬇ EN` when that dictionary is missing). Memory icon in the bottom-right corner (the pane itself comes next). |
 | 11 | Clipboard / Memory pane with tabs, replacing upstream's clipboard pane. Clipboard: history on the left third, pins on the right two thirds (existing pins kept), one tap to turn history on. Memory: items by category (Links, Symbols, Snippets, Notes and your own, managed in Studio). Long-press menus: pin, save to Memory (likely category first), copy to clipboard, move, delete. |
 | 12 | Memory keeps what is copied: every copied text is saved automatically under its content type (Text, Links, Snippets, Symbols; Images and Files come next), and stays after restarts. Skipped: copies from password fields and copies marked sensitive (Android 13+). Off switch in Studio. Clipboard tab filters by content type. The clipboard itself works as before. Source app is not used: Android doesn't tell which app a copy came from (decided 2026-10-31). |
 | 13 | Memory's history: a ⟲ History button at the right end of Memory's categories shows what was copied, one record per phone restart. Delete one item, one record or all history (tap twice to confirm). Saved items (saved or moved by you) are never deleted with the history. Clipboard tab: Clear button for its short-term history. |
@@ -39,7 +39,7 @@ Last updated: 2026-11-01 (build 74).
 | 23 | "plain" is an item of every Verse nest (but Case) and of View's list. Swipe down on View or Verse applies plain to the text and goes back to the default nest. Sector left/right with a selection moves the selection by a unit (staying inclusive or exclusive); without one, the cursor moves, skipping spaces when inclusive. |
 | 24 | Inclusive selection grows a (partial) selection out to whole units and their separators, keeping what it held. Typing in format shows on the Scope key (lit, "✎ typing", the format and look) with a message saying what ends it. |
 | 25 | Updater reads all releases (up to 300, by pages of 100) and sorts them by build number: GitHub lists them by tag as text (build-9 before build-24), so the newest could fall off a single page. CI writes build failures as annotations. |
-| 26 | Pinned selection: Sector ↖ pins the selection; a selection bar (above the suggestions by default) shows it, tap selects it again, ✕ unpins. View, Verse and backspace ↓ (cut) act on the pinned text while the cursor types elsewhere; it is found again when text before it changes. The height key also moves the selected container: ← up, → down in the stack (comfort bar, selection bar, suggestions, keyboard, edit strip), saved as `order` in the changeheight module. The lowest container keeps clear of the navigation bar. |
+| 26 | Pinned selection: Sector ↖ pins the selection; a selection bar (above the suggestions by default) shows it, tap selects it again, ✕ unpins. View, Verse and backspace ↓ (cut) act on the pinned text while the cursor types elsewhere; it is found again when text before it changes. The height key also moves the selected container: ← up, → down in the stack (quicksettings, selection bar, suggestions, keyboard, edit strip), saved as `order` in the changeheight module. The lowest container keeps clear of the navigation bar. |
 | 27 | The height key also selects each keyboard row (after the containers: row 1 at the top to the last row), outlined in the keyboard; up/down change that row's height factor by 0.1, independently of the others. Growing a row makes the keyboard taller. |
 | 28 | Pinning dropped (unintuitive). Typing in format moved to Scope ↑ and is previewed in the selection bar (✎ and the formatted text) while it goes to the cursor; ✕ stops it. Scope ↓ goes back to Text/Word. Sector shows the selection type (excl/incl) at the bottom. |
 | 29 | Inclusive Sector keeps the selection: tap and left/right add the next or previous unit to it (exclusive still moves to it). Scope ↑ always starts typing in format, with what View and Verse show (even plain), so the selection bar's ✎ shows it's on. |
@@ -52,7 +52,7 @@ Last updated: 2026-11-01 (build 74).
 | 36 | The arrow key next to the space bar: tap is Sector's step in the ←→ direction (its tap was an off-by-default Compose placeholder). Sector's tap cycles excl/incl/desel. Shift: swipe up Caps Lock, swipe right Compose. Verse's tOGGLE cASE gives exactly that (it flipped every letter, like UPPER on lowercase). |
 | 37 | desel removes units from the end opposite to the arrow's tip, so the tip's unit goes last (it went first). The arrow key's tap shows ⇢ or ⇠ with Sector's direction. |
 | 38 | Backspace ↑ switches between regular backspace (⌫) and forward removal (⌦), the tap and label following; the forward delete on backspace's ↗ is retired. |
-| 39 | Undo/redo that work: Ctrl ↖ undoes (Ctrl+Z), Ctrl ↗ redoes (Ctrl+Shift+Z), replacing placeholders there. The editing actions behind the comfort bar's undo key often did nothing; that key is retired from the defaults, and `undo`/`redo` in comfortbar modules now send the Ctrl keys too. |
+| 39 | Undo/redo that work: Ctrl ↖ undoes (Ctrl+Z), Ctrl ↗ redoes (Ctrl+Shift+Z), replacing placeholders there. The editing actions behind the quicksettings' undo key often did nothing; that key is retired from the defaults, and `undo`/`redo` in quicksettings modules now send the Ctrl keys too. |
 | 40 | Suggestions learn from typing: finished words are counted, the user's words come first (most used first) before the dictionary's, words not in the dictionary are suggested once typed twice, words written in typing in format are suggested as written, and with nothing typed yet the bar shows the usual next words. Private storage, never from password fields; off switch and "forget" in Studio. |
 | 41 | Mails: copied email addresses (and mailto: links) are kept in a Mails category of Memory and can be filtered in the Clipboard tab. |
 | 42 | Verse's Case nest: snake_case, camelCase and aLtErNaTiNg, also while typing in format (a space becomes _ or is dropped with the next letter capital). snake_case and camelCase convert into each other; Title splits them back into words. |
@@ -74,20 +74,20 @@ Last updated: 2026-11-01 (build 74).
 | 58 | **Input Layer QWERTZ** like Gboard's German keyboard (ü ö ä keys, S ↖ ß). Fix: build 57's "system" choice gave German (and every other Latin-script language) our QWERTY; now French → AZERTY, German → QWERTZ, English → QWERTY, and other languages keep their own layout. |
 | 59 | **Crash reports** in Studio: crashes and survived errors are kept on the phone (error, place, build; never typed text), the last 10, with Copy and Clear. |
 | 60 | **Beta and stable builds**: every push is published as a beta (GitHub pre-release). The updater offers only stable builds unless *Beta builds* is on; *Mark build N stable* opens the release on GitHub. Builds 56–59 were marked beta; 55 is the latest stable. |
-| 61 | **Layout key** at the right end of the comfort bar: shows the layout (FR, DE, RU, EL…), tap next, ← previous, ↑ list. **Studio → Languages** ticks the layouts to switch between (automatic, French AZERTY, German QWERTZ, English QWERTY, Russian, Greek). Every layout, upstream's included, gets Input Layer's bottom row (no Ctrl / Fn / Compose). |
+| 61 | **Layout key** at the right end of the quicksettings: shows the layout (FR, DE, RU, EL…), tap next, ← previous, ↑ list. **Studio → Languages** ticks the layouts to switch between (automatic, French AZERTY, German QWERTZ, English QWERTY, Russian, Greek). Every layout, upstream's included, gets Input Layer's bottom row (no Ctrl / Fn / Compose). |
 | 62 | **Fix: endless row growth** from the height key (see Bug log). **Back undoes** height changes and moves, one gesture at a time; long Back (or ↕ ↙) undoes all since the keyboard was shown; ↕ ↖ undoes one. Heights are clamped to sane ranges and **repaired on start** without touching other data. |
 | 63 | **Updater no longer hides betas silently**: with *Beta builds* off, Studio said "You have the newest build" while a newer beta existed (owner on 61, build 62 was a beta, so they had to install from GitHub). It now says which beta is out and to turn on *Beta builds*; the switch re-filters the list at once, without checking again. |
 | 64 | **Past builds lists every older build**, betas included (marked "· beta"). With *Beta builds* off it only offered stable ones, so on 61 the newest restorable build was 55. The switch now only filters the *newer* builds offered as updates. |
-| 65 | **Layout mode** (owner's request): ⇄, the comfort bar's leftmost key (copy/cut/paste/select all moved to its swipes), makes a tapped key open in Studio's **key editor**: pick the tap or a swipe, then add/replace from a searchable list of every key of every layout plus the special keys (grouped by script, alphabetical), remove, or back to the layout's own. Per layout, in a `keymap` module, applied after all other changes. Dot and comma are left to the owner to rearrange with it. |
+| 65 | **Layout mode** (owner's request): ⇄, the quicksettings' leftmost key (copy/cut/paste/select all moved to its swipes), makes a tapped key open in Studio's **key editor**: pick the tap or a swipe, then add/replace from a searchable list of every key of every layout plus the special keys (grouped by script, alphabetical), remove, or back to the layout's own. Per layout, in a `keymap` module, applied after all other changes. Dot and comma are left to the owner to rearrange with it. |
 | 66 | Layout mode's picker gains **Music** (♩ ♪ ♫ ♬ ♭ ♮ ♯ 𝄞 … 🎵 🎶 🎼) and **Emoji** (all, in the emoji pane's order), and **Type text or emoji…** puts any text on a key (kaomoji with `:` and quotes included). Special keys show their names in the list (their icons only exist in the keyboard's font). |
 | 67 | Owner's defaults: **?123 and Shift trade places** on every layout (symbols pages follow: the key back is where ?123 was), **Ctrl on ?123's ↓**. Layout mode can **swap whole keys** ("⇄ Swap the whole key with…" in the key editor), so rearranging no longer needs a build. |
 | 68 | Owner's default: **?123 a quarter key wider, backspace as much tighter** (same row total). Layout mode's key editor gains **↔ Width** (±¼, with the row's total against the widest row) and **✂ Split into two keys** (right half: forward delete or any key, edited like any key) / **⧉ Join**. Stored as `width` and `split` in `keymap`. |
 | 69 | **Hold a key to edit it** (owner): with key repeat off, the new default, holding a key opens Studio's key editor for it instead of repeating; nothing repeats. The layout key's **↓** switches key repeat (↻ on / ✎ off; was the keyboard picker, still on the language key's ↘). Modifiers still lock when held. |
 | 70 | Keyboard picker on the **layout key's ↘** (off the language key). A backspace 2 keys wide or more (QWERTZ) is **split**: ⌫ with its swipes, then at the edge **⌦ forward delete, ↓ keyboard picker**. Narrower backspaces stay whole. |
-| 71 | **Names** (owner): layout key = left end ⇄ (customizes the layout), language key = right end, suggestions key = the suggestions' language. **Language key ↓ saves the key arrangement** as "Layout N", **→ picks a saved one**. **Layout key**: tap edit mode, ↑ copy, ↓ key repeat on/off, ↗ backspace split on/off. Cut (backspace ↓) and select all (now ⌦ ←) live on the keys; paste dropped from the comfort bar (owner: superfluous); the keyboard picker is ⌦ ↓ only. |
+| 71 | **Names** (owner): layout key = left end ⇄ (customizes the layout), language key = right end, suggestions key = the suggestions' language. **Language key ↓ saves the key arrangement** as "Layout N", **→ picks a saved one**. **Layout key**: tap edit mode, ↑ copy, ↓ key repeat on/off, ↗ backspace split on/off. Cut (backspace ↓) and select all (now ⌦ ←) live on the keys; paste dropped from the quicksettings (owner: superfluous); the keyboard picker is ⌦ ↓ only. |
 | 72 | Split backspace is **⅔ ⌫ / ⅓ ⌦** (owner: one much smaller). **⌦ ↓ switches key repeat** (new key `studio_toggle_repeat`), replacing the keyboard picker there. |
-| 73 | **Comfort bar order and names** (owner): layout key ⇄ · suggestions key · cursor key (center) · language key · **edit key** ↕ (was "height", now at the right end). README has a Names section. |
-| 74 | **The edit key edits everything** (owner's model): tap cycles **layers of focus** (whole keyboard, bars, components = rows, items = keys); **tap the element** to select it (the keyboard catches the taps, `FocusLayout`); ↑ ↓ size (whole: everything in proportion; key: the row keeps its width, from the next key or the whole row), ← → order (rows carry their heights), ↗ menu: add a key (Studio's picker), split / join rows, remove a key, edit its tap and swipes, arrangement back. Arrangement stored per layout as `_rows` in `keymap` (`Arrange`, `KeyMap.arrange`). Undo covers heights and arrangement. Bars' own items (comfort and edit strip keys) are not editable yet. |
+| 73 | **Quicksettings order and names** (owner): layout key ⇄ · suggestions key · cursor key (center) · language key · **edit key** ↕ (was "height", now at the right end). README has a Names section. |
+| 74 | **The edit key edits everything** (owner's model): tap cycles **layers of focus** (whole keyboard, bars, components = rows, items = keys); **tap the element** to select it (the keyboard catches the taps, `FocusLayout`); ↑ ↓ size (whole: everything in proportion; key: the row keeps its width, from the next key or the whole row), ← → order (rows carry their heights), ↗ menu: add a key (Studio's picker), split / join rows, remove a key, edit its tap and swipes, arrangement back. Arrangement stored per layout as `_rows` in `keymap` (`Arrange`, `KeyMap.arrange`). Undo covers heights and arrangement. Bars' own items (quicksettings and edit strip keys) are not editable yet. |
 
 Infrastructure:
 
@@ -123,14 +123,14 @@ Infrastructure:
   Studio-Briefing).** The release key is the owner's to create and hold.
   A new core and dropping the debug tag are long-term; builds stay signed
   with the debug key until then.
-- **Resize mode.** Drag the edge of a highlighted container (comfort bar,
+- **Resize mode.** Drag the edge of a highlighted container (quicksettings,
   suggestion bar, keyboard) instead of tapping up/down, and save the result
   as a named `changeheight` module. Containers only, never single keys or
   rows (decided 2026-10-31).
 - **Snippets module.** Your own snippets (commands, ASCII art), inserted with
   one tap; multi-line supported.
 - **Theme module.** Custom colours, picked in the app.
-- **Comfort bar editor.** Choose and place the comfort bar's keys and their
+- **Quicksettings editor.** Choose and place the quicksettings' keys and their
   swipe actions in the app instead of writing JSON.
 - **`DONE-keyboard.md`** final report in the Studio-Briefing Drive folder.
 - Store texts in `fastlane/` still say "Unexpected Keyboard"; only matters
@@ -148,8 +148,8 @@ Infrastructure:
   (decided 2026-11-01).
 
 - Corner icons disappear when suggestions are turned off. Move them to the
-  comfort bar in that case?
-- Comfort bar in the split layout (tablets, landscape): untested.
+  quicksettings in that case?
+- Quicksettings in the split layout (tablets, landscape): untested.
 - Dictionaries come from upstream's
   [Unexpected-Keyboard-dictionaries](https://github.com/Julow/Unexpected-Keyboard-dictionaries)
   (word lists from Helium314's aosp-dictionaries), which states no license.
@@ -176,9 +176,9 @@ unusable.
 from the screen size and the settings, never from a view's measured height.
 It was a **repeat timer that outlived its key**:
 
-1. The height key's `+` / `−` repeat while held (`ComfortKey.run`).
+1. The height key's `+` / `−` repeat while held (`QuicksettingsKey.run`).
 2. Every repeat saves the `changeheight` module. The preference change
-   refreshes the config, and `ComfortBar.refresh` threw away and rebuilt all
+   refreshes the config, and `Quicksettings.refresh` threw away and rebuilt all
    its keys, the held one included.
 3. The removed key never saw the finger lift, and `run()` re-posted itself
    *after* performing the action, even when the key had been removed. The
@@ -190,9 +190,9 @@ It was a **repeat timer that outlived its key**:
 
 **Fix.**
 
-- `ComfortKey` repeats only while the finger is on it and the key is
+- `QuicksettingsKey` repeats only while the finger is on it and the key is
   attached; it stops on detach, and re-posts only if both still hold.
-- `ComfortBar.refresh` relabels the keys instead of rebuilding them when they
+- `Quicksettings.refresh` relabels the keys instead of rebuilding them when they
   are the same, so a held key keeps working smoothly.
 - `Heights` (new) holds all the height math. A step reads the stored module
   only, applies once, and saves nothing at the edge of a range.
@@ -231,18 +231,18 @@ but not in the layout are added, keys left out are removed.
 ```json
 { "module": "changeheight", "name": "compact", "version": 1,
   "keyboard_percent": { "portrait": 30, "landscape": 45 },
-  "bar_dp": 26, "comfort_bar_dp": 26, "margin_bottom_dp": 4,
+  "bar_dp": 26, "quicksettings_dp": 26, "margin_bottom_dp": 4,
   "rows": [0.8, 1.0, 1.0, 1.0, 0.9] }
 ```
 
 `edit_strip_dp` and `selection_bar_dp` set the edit strip and selection
-bar (0 hides them); `order` lists the containers top to bottom (`comfort`,
+bar (0 hides them); `order` lists the containers top to bottom (`quicksettings`,
 `selection`, `suggestions`, `keyboard`, `edit`). `rows` are height factors, top to bottom (the height key changes them one
 row at a time), 0.5 to 2. Values out of range are repaired on start (see
-the Bug log, build 62). `comfort_bar_dp: 0` hides the comfort bar.
+the Bug log, build 62). `quicksettings_dp: 0` hides the quicksettings.
 
 ```json
-{ "module": "comfortbar", "name": "mine", "version": 1,
+{ "module": "quicksettings", "name": "mine", "version": 1,
   "keys": [ { "c": "copy", "nw": "cut", "ne": "paste", "sw": "select_all" },
             { "w": "left", "e": "right", "n": "up", "s": "down" },
             { "c": "dictionary", "sw": "layout", "se": "keyboard_picker" } ] }

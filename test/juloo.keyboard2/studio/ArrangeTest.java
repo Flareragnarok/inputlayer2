@@ -74,11 +74,11 @@ public class ArrangeTest
   @Test
   public void scale_all_keeps_proportions() throws Exception
   {
-    JSONObject j = new JSONObject("{\"bar_dp\":28,\"comfort_bar_dp\":26,\"edit_strip_dp\":0}");
+    JSONObject j = new JSONObject("{\"bar_dp\":28,\"quicksettings_dp\":26,\"edit_strip_dp\":0}");
     JSONObject r = Heights.scale_all(j, true, false, 35);
     assertEquals(37, r.getJSONObject("keyboard_percent").getInt("portrait"));
     assertEquals(28 * 37f / 35, r.getDouble("bar_dp"), 0.01);
-    assertEquals(26 * 37f / 35, r.getDouble("comfort_bar_dp"), 0.01);
+    assertEquals(26 * 37f / 35, r.getDouble("quicksettings_dp"), 0.01);
     assertEquals(0, r.getDouble("edit_strip_dp"), 0); // Hidden stays hidden.
     // At the top of the range: nothing.
     JSONObject top = new JSONObject("{\"keyboard_percent\":{\"portrait\":" + Heights.PORTRAIT_MAX + "}}");

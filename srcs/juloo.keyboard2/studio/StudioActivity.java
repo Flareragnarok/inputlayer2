@@ -93,6 +93,7 @@ public class StudioActivity extends Activity
     super.onCreate(savedInstanceState);
     CrashLog.install(this);
     _prefs = DirectBootAwarePreferences.get_shared_preferences(this);
+    Renames.migrate(_prefs); // il-007
     _store = new ModuleStore(_prefs);
     // Heights out of range are repaired (keeping everything else); guarded
     // like everything on the way to the updater.
@@ -786,7 +787,7 @@ public class StudioActivity extends Activity
 
   /* Languages */
 
-  /** Layouts offered in Studio, in the order the comfort bar's layout key
+  /** Layouts offered in Studio, in the order the quicksettings' layout key
       cycles through them: { layout name ("system" for the phone's
       language), label }. */
   static final String[][] LANGUAGE_LAYOUTS = {

@@ -2,10 +2,10 @@ package juloo.keyboard2.studio;
 
 import org.json.JSONObject;
 
-/** What a comfort bar key does: an action for a tap and for each of the 8
+/** What a quicksettings key does: an action for a tap and for each of the 8
     swipe directions, like the keys of the keyboard. Actions are names of
-    built-in actions, see [ComfortBar.perform]. */
-public final class ComfortKeySpec
+    built-in actions, see [Quicksettings.perform]. */
+public final class QuicksettingsKeySpec
 {
   /** "c" is the tap, the others clockwise from the top. */
   public static final String[] DIRECTIONS =
@@ -33,18 +33,18 @@ public final class ComfortKeySpec
   }
 
   /** Pairs of direction and action. */
-  public static ComfortKeySpec of(String... dir_actions)
+  public static QuicksettingsKeySpec of(String... dir_actions)
   {
-    ComfortKeySpec s = new ComfortKeySpec();
+    QuicksettingsKeySpec s = new QuicksettingsKeySpec();
     for (int i = 0; i + 1 < dir_actions.length; i += 2)
       s.actions[index_of(dir_actions[i])] = dir_actions[i + 1];
     return s;
   }
 
   /** [null] if no direction has an action. */
-  static ComfortKeySpec of_json(JSONObject j)
+  static QuicksettingsKeySpec of_json(JSONObject j)
   {
-    ComfortKeySpec s = new ComfortKeySpec();
+    QuicksettingsKeySpec s = new QuicksettingsKeySpec();
     for (int i = 0; i < DIRECTIONS.length; i++)
     {
       String a = j.optString(DIRECTIONS[i], "");

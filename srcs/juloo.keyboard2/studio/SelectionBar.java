@@ -37,7 +37,7 @@ public class SelectionBar extends LinearLayout
     super(ctx, attrs);
     setOrientation(HORIZONTAL);
     setGravity(Gravity.CENTER_VERTICAL);
-    int label = ComfortKey.attr_color(ctx, R.attr.colorLabel, 0xffffffff);
+    int label = QuicksettingsKey.attr_color(ctx, R.attr.colorLabel, 0xffffffff);
     _text = new TextView(ctx);
     _text.setTextColor(label);
     _text.setSingleLine(true);

@@ -120,7 +120,7 @@ public final class LayoutModifier
   /** Studio: the space bar's swipes drive the edit strip's nest configs:
       down resets all nests, up switches to the next saved config, left
       saves the current one. They replace upstream's layout switching (still
-      on the comfort bar) and the left half of the cursor slider (the arrow
+      on the quicksettings) and the left half of the cursor slider (the arrow
       keys move the cursor). */
   static KeyboardData space_nests(KeyboardData kw)
   {

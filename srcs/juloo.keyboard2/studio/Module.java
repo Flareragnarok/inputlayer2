@@ -9,7 +9,7 @@ import org.json.JSONObject;
     fields depend on the type. */
 public final class Module
 {
-  public static final String[] TYPES = { "changeheight", "comfortbar", "font", "format", "keymap", "layout", "selection", "snippets", "spec", "theme", "vert" };
+  public static final String[] TYPES = { "changeheight", "quicksettings", "font", "format", "keymap", "layout", "selection", "snippets", "spec", "theme", "vert" };
   /** Bigger files are refused on import. */
   public static final int MAX_JSON_LENGTH = 64 * 1024;
 
@@ -21,6 +21,8 @@ public final class Module
 
   Module(JSONObject json) throws InvalidModule
   {
+    // il-007: documents saved or exported under the old names.
+    try { Renames.doc(json); } catch (org.json.JSONException _e) {}
     this.json = json;
     type = json.optString("module", "");
     name = json.optString("name", "");

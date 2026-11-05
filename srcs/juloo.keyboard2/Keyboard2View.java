@@ -59,7 +59,7 @@ public class Keyboard2View extends View
   }
   public BottomInsetTaker studio_bottom = null;
 
-  /** Studio: row outlined while the comfort bar's height key resizes it,
+  /** Studio: row outlined while the quicksettings' height key resizes it,
       [-1] for none. */
   private int _studio_row = -1;
   private Paint _studio_row_paint = null;

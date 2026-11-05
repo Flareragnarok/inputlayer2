@@ -99,13 +99,13 @@ public final class Behaviours
     public final Use use;
     /** It shows a layout page; switching back means back to the letters. */
     public final boolean page;
-    /** A comfort bar action (not a key of the layouts). */
-    public final boolean comfort;
+    /** A quicksettings action (not a key of the layouts). */
+    public final boolean quicksettings;
     public final String what;
 
     Capable(String n, Use u, boolean p, boolean c, String w)
     {
-      name = n; use = u; page = p; comfort = c; what = w;
+      name = n; use = u; page = p; quicksettings = c; what = w;
     }
 
     /** What "one use" is, for the screen. */
@@ -130,11 +130,11 @@ public final class Behaviours
       new Capable("il_symbols_more", Use.KEY, true, false, "The =\\< symbols page."),
       new Capable("switch_greekmath", Use.KEY, true, false, "The Greek and math page."),
       new Capable("toggle_repeat", Use.EDIT, false, true,
-        "Comfort bar: key repeat on/off (the layout key's ↓). Same switch as studio_toggle_repeat."),
+        "Quicksettings: key repeat on/off (the layout key's ↓). Same switch as studio_toggle_repeat."),
       new Capable("split_backspace", Use.DELETE, false, true,
-        "Comfort bar: backspace split into ⌫ ⌦, or whole (the layout key's ↗)."),
+        "Quicksettings: backspace split into ⌫ ⌦, or whole (the layout key's ↗)."),
       new Capable("layout_mode", Use.EDIT, false, true,
-        "Comfort bar: edit mode, tapping a key opens its editor (the layout key's tap).")));
+        "Quicksettings: edit mode, tapping a key opens its editor (the layout key's tap).")));
 
   public static List<Capable> capable() { return CAPABLE; }
 
@@ -149,7 +149,7 @@ public final class Behaviours
     return null;
   }
 
-  /** The comfort action and the key share one switch, so one default. */
+  /** The quicksettings action and the key share one switch, so one default. */
   static String switch_of(String base)
   {
     return base.equals("toggle_repeat") ? "studio_toggle_repeat" : base;

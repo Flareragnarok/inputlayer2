@@ -11,10 +11,10 @@ import android.view.MotionEvent;
 import android.view.View;
 import juloo.keyboard2.R;
 
-/** A tiny key of the comfort bar. Tap for the "c" action, or press and slide
+/** A tiny key of the quicksettings. Tap for the "c" action, or press and slide
     toward one of the 8 directions for the others, like the keyboard's keys.
     Some actions repeat while held. */
-final class ComfortKey extends View implements Runnable
+final class QuicksettingsKey extends View implements Runnable
 {
   interface Host
   {
@@ -36,14 +36,14 @@ final class ComfortKey extends View implements Runnable
     Label(String t, boolean f) { text = t; key_font = f; }
   }
 
-  /** Direction offsets, indexed like [ComfortKeySpec.DIRECTIONS]. */
+  /** Direction offsets, indexed like [QuicksettingsKeySpec.DIRECTIONS]. */
   static final float[][] OFFSETS = {
     { 0, 0 }, { 0, -1 }, { 1, -1 }, { 1, 0 }, { 1, 1 },
     { 0, 1 }, { -1, 1 }, { -1, 0 }, { -1, -1 } };
 
-  final ComfortKeySpec _spec;
+  final QuicksettingsKeySpec _spec;
   final Host _host;
-  final Label[] _labels = new Label[ComfortKeySpec.DIRECTIONS.length];
+  final Label[] _labels = new Label[QuicksettingsKeySpec.DIRECTIONS.length];
   final Paint _paint = new Paint(Paint.ANTI_ALIAS_FLAG);
   final Paint _bg = new Paint(Paint.ANTI_ALIAS_FLAG);
   int _key_color;
@@ -67,7 +67,7 @@ final class ComfortKey extends View implements Runnable
   /** The finger is on the key. */
   boolean _held = false;
 
-  ComfortKey(Context ctx, ComfortKeySpec spec, Host host, Typeface key_font)
+  QuicksettingsKey(Context ctx, QuicksettingsKeySpec spec, Host host, Typeface key_font)
   {
     super(ctx);
     _spec = spec;
@@ -223,14 +223,14 @@ final class ComfortKey extends View implements Runnable
     return false;
   }
 
-  /** Index into [ComfortKeySpec.DIRECTIONS]: [0] near the starting point,
+  /** Index into [QuicksettingsKeySpec.DIRECTIONS]: [0] near the starting point,
       the closest set direction otherwise, [-1] if none is close. */
   int direction(float dx, float dy)
   {
     return direction(_spec, dx, dy, _host.swipe_dist_px());
   }
 
-  static int direction(ComfortKeySpec _spec, float dx, float dy, float min_dist)
+  static int direction(QuicksettingsKeySpec _spec, float dx, float dy, float min_dist)
   {
     if (Math.hypot(dx, dy) < min_dist)
       return 0;
@@ -256,7 +256,7 @@ final class ComfortKey extends View implements Runnable
   public void run()
   {
     String a = (_dir >= 0) ? _spec.get(_dir) : null;
-    if (!_held || a == null || !ComfortBar.repeats(a))
+    if (!_held || a == null || !Quicksettings.repeats(a))
       return;
     _repeated = true;
     _host.perform(a);
