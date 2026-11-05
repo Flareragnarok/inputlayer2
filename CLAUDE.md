@@ -1,5 +1,12 @@
 # Notes for Claude (read at the start of every session)
 
+## Scenarios (owner's rule, 2026-11-05)
+
+Before any change, read `scenarios/`. Every commit message names the scenarios
+it touches (`scenarios: il-003, il-007`). A change that fixes a problem no
+scenario describes gets a new scenario first. Never mark a scenario verified;
+only the owner does that.
+
 ## First thing next session
 
 - Read `NOTE-inputlayer-20261101-2231.md` and `NOTE-inputlayer-20261101-2245.md`
