@@ -97,6 +97,11 @@ Infrastructure:
 - Local build machine: `android-build-setup.sh` (user-level JDK 17 and
   Android SDK, no root) and its section in the VM's `RECIPE.md`. Reusable for
   a remote build machine; GitHub Actions already covers remote builds.
+- Scenarios (owner's rule, 2026-11-05): `scenarios/`, every commit names
+  the ones it touches, release notes list them.
+- Remote Client keys (il-004): `rc_*` keys and the suggestions key's ↑
+  bring the Remote Client up on a tab (it accepts only apps signed with the
+  owner's key).
 
 ## Next
 

@@ -91,7 +91,10 @@ jobs:
         # (not a restore of an older commit).
         prev=$(git describe --tags --match 'build-*' --abbrev=0 HEAD 2>/dev/null || true)
         range=${prev:+$prev..}HEAD
-        { echo "Changes:"; git log --no-merges --format='- %s' "$range" | head -n 50; } > notes.md
+        # Scenarios named in the commits of this build (owner's rule).
+        scen=$(git log --no-merges --format='%B' "$range" | grep -i '^scenarios:' \
+          | sed 's/^[Ss]cenarios:[[:space:]]*//' | tr ',' '\n' | grep -oE 'il-[0-9]+' | sort -u | paste -sd, - | sed 's/,/, /g')
+        { echo "Scenarios: ${scen:-none named}"; echo; echo "Changes:"; git log --no-merges --format='- %s' "$range" | head -n 50; } > notes.md
         # Every build is a beta (a pre-release) until the owner marks it
         # stable from Studio; the updater offers betas only when asked.
         gh release create "$tag" "$apk" --target "$GITHUB_SHA" --prerelease \

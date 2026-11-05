@@ -623,6 +623,32 @@ public class Keyboard2 extends InputMethodService
     startActivity(i);
   }
 
+  /** il-004: bring the Remote Client to the front on [tab]. Its OpenTab
+      door only lets in apps signed with the owner's key; the client is
+      singleTask, so a running client comes up as it was. */
+  void open_remote_client(String tab)
+  {
+    Intent i = new Intent("io.github.flareragnarok.remoteclient.OPEN")
+      .setClassName("io.github.flareragnarok.remoteclient",
+          "io.github.flareragnarok.remoteclient.OpenTab")
+      .putExtra("tab", tab).putExtra("from", "inputlayer")
+      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    try
+    {
+      startActivity(i);
+    }
+    catch (android.content.ActivityNotFoundException e)
+    {
+      android.widget.Toast.makeText(this, "Remote Client is not installed",
+          android.widget.Toast.LENGTH_SHORT).show();
+    }
+    catch (SecurityException e)
+    {
+      android.widget.Toast.makeText(this, "Remote Client refused (signed with another key?)",
+          android.widget.Toast.LENGTH_SHORT).show();
+    }
+  }
+
   /** Studio: whether [ev] is on [v]. */
   static boolean on_view(View v, MotionEvent ev)
   {
@@ -1203,6 +1229,12 @@ public class Keyboard2 extends InputMethodService
           EditStrip.forward_delete = !EditStrip.forward_delete;
           _keyboard_layout_view.setKeyboard(current_layout());
           break;
+
+        case STUDIO_RC_STATUS: open_remote_client("status"); break;
+        case STUDIO_RC_ROADMAP: open_remote_client("roadmap"); break;
+        case STUDIO_RC_COMMANDS: open_remote_client("commands"); break;
+        case STUDIO_RC_DOC: open_remote_client("doc"); break;
+        case STUDIO_RC_SETUP: open_remote_client("setup"); break;
 
         case STUDIO_TOGGLE_REPEAT:
         {

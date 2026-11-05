@@ -49,6 +49,13 @@ public final class KeyValue implements Comparable<KeyValue>
         handle (the editing actions often do nothing). */
     STUDIO_UNDO,
     STUDIO_REDO,
+    /** Bring the Remote Client up on a tab (il-004). Opens it only; the
+        keyboard never talks to the desktop. */
+    STUDIO_RC_STATUS,
+    STUDIO_RC_ROADMAP,
+    STUDIO_RC_COMMANDS,
+    STUDIO_RC_DOC,
+    STUDIO_RC_SETUP,
   }
 
   // Must be evaluated in the reverse order of their values.
@@ -700,6 +707,11 @@ public final class KeyValue implements Comparable<KeyValue>
       case "studio_apply_format": return eventKey("¶", Event.STUDIO_APPLY_FORMAT, FLAG_SMALLER_FONT);
       case "studio_undo": return eventKey(0xE036, Event.STUDIO_UNDO, 0);
       case "studio_redo": return eventKey(0xE037, Event.STUDIO_REDO, 0);
+      case "rc_status": return eventKey("RC1", Event.STUDIO_RC_STATUS, FLAG_SMALLER_FONT);
+      case "rc_roadmap": return eventKey("RC2", Event.STUDIO_RC_ROADMAP, FLAG_SMALLER_FONT);
+      case "rc_commands": return eventKey("RC3", Event.STUDIO_RC_COMMANDS, FLAG_SMALLER_FONT);
+      case "rc_doc": return eventKey("RC4", Event.STUDIO_RC_DOC, FLAG_SMALLER_FONT);
+      case "rc_setup": return eventKey("RC⚙", Event.STUDIO_RC_SETUP, FLAG_SMALLER_FONT);
 
       /* Key events */
       case "esc": return keyeventKey("Esc", KeyEvent.KEYCODE_ESCAPE, FLAG_SMALLER_FONT);

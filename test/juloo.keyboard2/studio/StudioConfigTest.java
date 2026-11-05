@@ -95,7 +95,8 @@ public class StudioConfigTest
   public void applet_keys_exist()
   {
     String[] actions = { "left", "right", "up", "down", "select_all", "copy",
-      "cut", "paste", "undo", "redo", "layout", "keyboard_picker", "clipboard" };
+      "cut", "paste", "undo", "redo", "layout", "keyboard_picker", "clipboard",
+      "rc_status", "rc_roadmap", "rc_commands", "rc_doc", "rc_setup" };
     for (String a : actions)
       assertNotNull(a, KeyValue.getKeyByName(ComfortBar.key_name(a)));
     for (ComfortKeySpec s : StudioConfig.DEFAULT_KEYS)
