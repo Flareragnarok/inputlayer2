@@ -186,9 +186,15 @@ public class StudioActivity extends Activity
     }));
     root.addView(setup);
     // il-005: every key, searchable; how the switching keys switch back.
-    root.addView(button("Keys and behaviours", new View.OnClickListener() {
+    LinearLayout tools = new LinearLayout(this);
+    tools.addView(button("Keys and behaviours", new View.OnClickListener() {
       public void onClick(View v) { startActivity(new Intent(StudioActivity.this, KeysActivity.class)); }
     }));
+    // il-006: whole layouts, drawn and saved; layout:<name> keys show them.
+    tools.addView(button("Layout editor", new View.OnClickListener() {
+      public void onClick(View v) { startActivity(new Intent(StudioActivity.this, LayoutEditorActivity.class)); }
+    }));
+    root.addView(tools);
 
     root.addView(heading(R.string.studio_updates));
     root.addView(text(getString(R.string.studio_installed,

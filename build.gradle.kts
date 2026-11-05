@@ -12,6 +12,8 @@ dependencies {
   testImplementation("junit:junit:4.13.2")
   // The android.jar used by unit tests only has stubs of org.json.
   testImplementation("org.json:json:20240303")
+  // A real XmlPullParser on the JVM, so tests can load layout XML (il-006).
+  testImplementation("net.sf.kxml:kxml2:2.3.0")
 }
 
 // Studio builds are numbered by CI (STUDIO_BUILD = workflow run number) and

@@ -575,7 +575,8 @@ public final class KeyValue implements Comparable<KeyValue>
     if (!juloo.keyboard2.studio.Behaviours.is_variant(name))
       return null;
     String base = juloo.keyboard2.studio.Behaviours.base_of(name);
-    KeyValue kv = getSpecialKeyByName(base);
+    KeyValue kv = base.startsWith(juloo.keyboard2.studio.Behaviours.LAYOUT_PREFIX)
+      ? makeLayoutKey(base) : getSpecialKeyByName(base);
     if (kv == null)
       return null;
     juloo.keyboard2.studio.Behaviours.Spec spec = juloo.keyboard2.studio.Behaviours.spec_of(name);
@@ -583,8 +584,27 @@ public final class KeyValue implements Comparable<KeyValue>
         kv.getFlags() | FLAG_SPECIAL);
   }
 
+  /** il-006: `layout:<name>`, a key that shows a saved layout (its
+      default behaviour from Studio → Keys); null if not one. */
+  public static KeyValue makeLayoutKey(String name)
+  {
+    if (!name.startsWith(juloo.keyboard2.studio.Behaviours.LAYOUT_PREFIX)
+        || juloo.keyboard2.studio.Behaviours.capable(name) == null)
+      return null;
+    String n = name.substring(juloo.keyboard2.studio.Behaviours.LAYOUT_PREFIX.length());
+    return new KeyValue(new Behaved(name, null, "▦" + (n.length() > 4 ? n.substring(0, 4) : n)),
+        Kind.Behaved, 0, FLAG_SMALLER_FONT | FLAG_SPECIAL);
+  }
+
   public static KeyValue getKeyByName(String name)
   {
+    if (name.startsWith(juloo.keyboard2.studio.Behaviours.LAYOUT_PREFIX)
+        && name.indexOf(juloo.keyboard2.studio.Behaviours.SEP) < 0)
+    {
+      KeyValue l = makeLayoutKey(name);
+      if (l != null)
+        return l;
+    }
     if (name.indexOf(juloo.keyboard2.studio.Behaviours.SEP) > 0)
     {
       KeyValue b = makeBehavedKey(name);
@@ -996,7 +1016,8 @@ public final class KeyValue implements Comparable<KeyValue>
       base = b; spec = s; _symbol = sym;
     }
 
-    public String name() { return base + juloo.keyboard2.studio.Behaviours.SEP + spec.code(); }
+    /** [spec] null: the key's default (a plain `layout:<name>`). */
+    public String name() { return spec == null ? base : base + juloo.keyboard2.studio.Behaviours.SEP + spec.code(); }
 
     @Override public String toString() { return _symbol; }
 

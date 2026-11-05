@@ -174,8 +174,16 @@ public final class KeyEditor
   /** The list of every key, with a filter. */
   void pick(String title, final Picked done, final Runnable cancel)
   {
+    pick(_act, _prefs, title, done, cancel);
+  }
+
+  /** The same list for any screen (the layout editor too): every key, the
+      saved layouts as keys, a filter. */
+  static void pick(final android.app.Activity _act, android.content.SharedPreferences prefs,
+      String title, final Picked done, final Runnable cancel)
+  {
     final List<KeyCatalog.Entry> all;
-    try { all = KeyCatalog.all(_act.getResources()); }
+    try { all = KeyCatalog.with_layouts(KeyCatalog.all(_act.getResources()), new ModuleStore(prefs)); }
     catch (Throwable e)
     {
       Toast.makeText(_act, "Can't list the keys: " + e, Toast.LENGTH_LONG).show();

@@ -99,6 +99,8 @@ Infrastructure:
   a remote build machine; GitHub Actions already covers remote builds.
 - Scenarios (owner's rule, 2026-11-05): `scenarios/`, every commit names
   the ones it touches, release notes list them.
+- Layout editor (il-006): Studio → Layout editor, saved `layout` modules,
+  `layout:<name>` keys (with page behaviours), "Add to my layouts".
 - Switching keys (il-005): Studio → Keys and behaviours, with a search;
   toggle / once / word / timed per key, `~` variants to place.
 - App keys (il-004): `app:<package>[?extras]` on any key opens that app

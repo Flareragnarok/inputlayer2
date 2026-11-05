@@ -81,8 +81,8 @@ public class KeysActivity extends Activity
     for (Behaviours.Capable c : Behaviours.capable())
       if (c.comfort)
         out.add(new KeyCatalog.Entry(c.name, c.name, COMFORT, 0));
-    for (KeyCatalog.Entry e : KeyCatalog.all(getResources()))
-      if (e.group.equals(KeyCatalog.SPECIAL) && e.name.indexOf(Behaviours.SEP) < 0)
+    for (KeyCatalog.Entry e : KeyCatalog.with_layouts(KeyCatalog.all(getResources()), new ModuleStore(_prefs)))
+      if ((e.group.equals(KeyCatalog.SPECIAL) || e.group.equals(KeyCatalog.LAYOUTS)) && e.name.indexOf(Behaviours.SEP) < 0)
         out.add(e);
     return out;
   }

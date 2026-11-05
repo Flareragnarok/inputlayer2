@@ -195,6 +195,18 @@ or after N seconds. A variant name puts a behaviour on one place only:
 `studio_toggle_repeat~once`, `il_symbols~word`, `switch_numeric~10s`
 (labels get ¹, ʷ, ⏱); comfort bar modules can use `toggle_repeat~once`.
 
+**Layout editor** (il-006): Studio → Layout editor edits a whole
+keyboard: open the keyboard as you use it, a saved layout or a blank one;
+tap a key to select it and drag its right edge to resize it, tap a row's
+free space and drag its bottom edge for its height; move keys (◀ ▶ cross
+into the next row), add and remove keys and rows, gaps; Names… sets the tap
+and the eight swipes from the key list (search), text, or any key name
+(`app:…`, `layout:…~once`). Save, Save as, Undo. A saved layout is shown by a
+key `layout:<name>` exactly as drawn (no bottom row added), with the
+behaviours of a page (Studio → Keys); "Add to my layouts" puts it in the
+language key's list. A backspace or number variant of your keyboard is a
+saved layout plus a `layout:` key (toggle, or back after one key).
+
 **App keys** (il-004): any key direction can open an app. In layout mode
 pick the key → direction → "Open an app…", then optional extras for apps
 that take them (the Remote Client: `tab=roadmap`, `commands`, `doc`,

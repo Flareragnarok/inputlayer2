@@ -31,6 +31,8 @@ public final class Behaviours
   public enum Use { EDIT, DELETE, KEY }
 
   public static final String SEP = "~";
+  /** il-006: `layout:<name>` shows a layout made in the layout editor. */
+  public static final String LAYOUT_PREFIX = "layout:";
   public static final String PREF = "studio_behaviours";
 
   public static final class Spec
@@ -141,6 +143,9 @@ public final class Behaviours
     for (Capable c : CAPABLE)
       if (c.name.equals(base))
         return c;
+    if (base.startsWith(LAYOUT_PREFIX) && LayoutDoc.valid_name(base.substring(LAYOUT_PREFIX.length())))
+      return new Capable(base, Use.KEY, true, false,
+          "Your layout \"" + base.substring(LAYOUT_PREFIX.length()) + "\" (Studio → Layout editor).");
     return null;
   }
 

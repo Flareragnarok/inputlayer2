@@ -688,9 +688,66 @@ public class Keyboard2 extends InputMethodService
         else
           setSpecialLayout(loadNumpad(R.xml.greekmath));
         break;
-      default: break;
+      default:
+        if (sw.startsWith(juloo.keyboard2.studio.Behaviours.LAYOUT_PREFIX))
+        {
+          // il-006: a layout from the layout editor, shown as drawn.
+          if (back)
+          {
+            _currentSpecialLayout = null;
+            _keyboard_layout_view.setKeyboard(current_layout());
+            break;
+          }
+          String n = sw.substring(juloo.keyboard2.studio.Behaviours.LAYOUT_PREFIX.length());
+          KeyboardData kd = load_saved_layout(n);
+          if (kd != null)
+            setSpecialLayout(kd);
+          else
+            android.widget.Toast.makeText(this, "No layout \"" + n + "\" (Studio → Layout editor)",
+                android.widget.Toast.LENGTH_SHORT).show();
+        }
+        break;
     }
   }
+
+  /** il-006: a saved layout as the keyboard loads it; null if none or broken. */
+  KeyboardData load_saved_layout(String name)
+  {
+    try
+    {
+      juloo.keyboard2.studio.Module m = new juloo.keyboard2.studio.ModuleStore(Config.globalPrefs()).get("layout", name);
+      if (m == null)
+        return null;
+      return KeyboardData.load_string(juloo.keyboard2.studio.LayoutDoc.of_json(name, m.json).xml());
+    }
+    catch (Exception e)
+    {
+      Logs.exn("Saved layout " + name, e);
+      return null;
+    }
+  }
+
+  /** il-006: what the keyboard shows, for the layout editor's "start from the
+      keyboard as you use it" (written when it changes). */
+  void snapshot_layout()
+  {
+    try
+    {
+      KeyboardData kw = current_layout();
+      if (kw == null)
+        return;
+      String j = juloo.keyboard2.studio.LayoutDoc.of_keyboard(kw, "snapshot").json().toString();
+      SharedPreferences p = Config.globalPrefs();
+      if (!j.equals(p.getString(SNAPSHOT_PREF, "")))
+        p.edit().putString(SNAPSHOT_PREF, j).apply();
+    }
+    catch (Throwable e)
+    {
+      Logs.exn("Layout snapshot", e instanceof Exception ? (Exception)e : new Exception(e));
+    }
+  }
+
+  public static final String SNAPSHOT_PREF = "studio_layout_snapshot";
 
   /** il-004: the app an app key just opened, until when the keyboard
       brings itself back up there. */
@@ -972,6 +1029,7 @@ public class Keyboard2 extends InputMethodService
     _studio_sel_end = info.initialSelEnd;
     setInputView(_keyboard_container_view);
     Logs.debug_startup_input_view(info, _config);
+    _handler.post(new Runnable() { public void run() { snapshot_layout(); } }); // il-006
   }
 
   @Override

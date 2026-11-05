@@ -79,6 +79,23 @@ public final class KeyCatalog
     return _cache;
   }
 
+  static final String LAYOUTS = "Your layouts";
+
+  /** il-006: [all] and, first, a key per saved layout (layout editor), plain
+      and with the behaviours of a page. */
+  public static List<Entry> with_layouts(List<Entry> all, ModuleStore store)
+  {
+    List<Entry> out = new ArrayList<Entry>();
+    for (Module m : store.list("layout"))
+      for (String suffix : new String[]{ "", "~once", "~word" })
+      {
+        String n = Behaviours.LAYOUT_PREFIX + m.name + suffix;
+        out.add(new Entry(n, "▦ " + m.name + suffix, LAYOUTS, -1));
+      }
+    out.addAll(all);
+    return out;
+  }
+
   /** il-005: every switching key with each behaviour, to place with the
       picker ("studio_toggle_repeat~once"…). */
   static List<String> behaviour_variants()
