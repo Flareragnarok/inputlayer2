@@ -623,11 +623,18 @@ public class Keyboard2 extends InputMethodService
     startActivity(i);
   }
 
+  /** il-004: the app an app key just opened, until when the keyboard
+      brings itself back up there. */
+  private String _reshow_pkg = null;
+  private long _reshow_until = 0;
+  static final long RESHOW_MS = 5000;
+
   /** il-004: open [app] the way the launcher does, so a running app comes
       back to the front as it was (its own task), with the key's extras.
-      The keyboard isn't closed by this; it shows again wherever the app
-      gives a text field (or asks for it, as Termux and the Remote Client
-      do). The keyboard never sends anything to the app beyond the extras. */
+      The keyboard stays open (owner, 2026-11-06): Android hides it when
+      the other app takes focus, so when that app's window connects to the
+      keyboard, the keyboard asks to be shown again (onStartInput). The
+      keyboard never sends anything to the app beyond the extras. */
   void open_app(KeyValue.App app)
   {
     Intent i = getPackageManager().getLaunchIntentForPackage(app.package_name());
@@ -642,6 +649,8 @@ public class Keyboard2 extends InputMethodService
     i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     try
     {
+      _reshow_pkg = app.package_name();
+      _reshow_until = android.os.SystemClock.uptimeMillis() + RESHOW_MS;
       startActivity(i);
     }
     catch (RuntimeException e)
@@ -854,6 +863,24 @@ public class Keyboard2 extends InputMethodService
       }
     }
     return null;
+  }
+
+  /** il-004: the app opened by an app key connected: bring the keyboard
+      back up in it, once. */
+  @Override
+  public void onStartInput(EditorInfo attr, boolean restarting)
+  {
+    super.onStartInput(attr, restarting);
+    String pkg = _reshow_pkg;
+    if (pkg == null || attr == null || !pkg.equals(attr.packageName))
+      return;
+    _reshow_pkg = null;
+    if (android.os.SystemClock.uptimeMillis() > _reshow_until || VERSION.SDK_INT < 28)
+      return;
+    // Posted: the new client is bound once onStartInput returns.
+    _handler.post(new Runnable() {
+      public void run() { requestShowSelf(0); }
+    });
   }
 
   @Override
