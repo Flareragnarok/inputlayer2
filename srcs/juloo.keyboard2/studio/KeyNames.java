@@ -122,6 +122,9 @@ public final class KeyNames
     "studio_apply_format",
     "studio_undo",
     "studio_redo",
+    "studio_open",
+    "studio_open_layout_editor",
+    "studio_open_keys",
     "esc",
     "enter",
     "up",
@@ -404,5 +407,16 @@ public final class KeyNames
     "෴",
     "₨",
     "selection_mode"
+  };
+
+  /** The placeholders: layout plumbing, places kept for extra keys. */
+  public static final String[] PLACEHOLDERS = {
+    "shindot_placeholder",
+    "sindot_placeholder",
+    "ole_placeholder",
+    "meteg_placeholder",
+    "removed",
+    "f11_placeholder",
+    "f12_placeholder"
   };
 }

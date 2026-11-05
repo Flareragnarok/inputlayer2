@@ -36,8 +36,6 @@ public class KeysActivity extends Activity
   ArrayAdapter<String> _adapter;
   EditText _query;
 
-  /** Quicksbar actions with behaviours, as entries of their own. */
-  static final String QUICKSBAR = "Quicksbar";
 
   @Override public void onCreate(Bundle b)
   {
@@ -49,12 +47,12 @@ public class KeysActivity extends Activity
     int pad = dp(16);
     root.setPadding(pad, pad, pad, 0);
     TextView intro = new TextView(this);
-    intro.setText("Search a key, tap it for what it does. Keys marked ⇆ switch something: choose how they switch back.");
+    intro.setText("Every quick, by function: quicktoggle, pageswitch, quickopen, quickedit, quickequip, quickbehaviour, quickfunction. Search by quick name, legacy name or symbol; tap one for what it does. Quicks marked ⇆ switch something: choose how they switch back.");
     root.addView(intro);
     final EditText q = _query = new EditText(this);
     q.setSingleLine(true);
     q.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-    q.setHint("Search keys (name or symbol)");
+    q.setHint("Search quicks (e.g. quicktoggle, copy, ?123)");
     root.addView(q);
     ListView list = new ListView(this);
     _adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, new ArrayList<String>());
@@ -69,33 +67,35 @@ public class KeysActivity extends Activity
       public void afterTextChanged(Editable e) { filter(e.toString()); }
     });
     setContentView(root);
-    setTitle("Keys");
+    setTitle("Quicks");
     filter("");
   }
 
-  /** The special keys (variants left out: they show in a key's details)
-      and the quicksbar actions that switch something. */
+  /** Every quick (il-008): the special keys, your layouts, the quicksbar's
+      own quicks (variants left out: they show in a quick's details),
+      grouped by function, in [QuickNames.CATEGORIES] order. */
   List<KeyCatalog.Entry> entries()
   {
     List<KeyCatalog.Entry> out = new ArrayList<KeyCatalog.Entry>();
-    for (Behaviours.Capable c : Behaviours.capable())
-      if (c.quicksbar)
-        out.add(new KeyCatalog.Entry(c.name, c.name, QUICKSBAR, 0));
+    for (String[] p : QuickNames.BAR)
+      out.add(new KeyCatalog.Entry(p[0], "", KeyCatalog.QUICKSBAR, 0));
     for (KeyCatalog.Entry e : KeyCatalog.with_layouts(KeyCatalog.all(getResources()), new ModuleStore(_prefs)))
       if ((e.group.equals(KeyCatalog.SPECIAL) || e.group.equals(KeyCatalog.LAYOUTS)) && e.name.indexOf(Behaviours.SEP) < 0)
         out.add(e);
+    final List<String> cats = java.util.Arrays.asList(QuickNames.CATEGORIES);
+    java.util.Collections.sort(out, new java.util.Comparator<KeyCatalog.Entry>() {
+      public int compare(KeyCatalog.Entry a, KeyCatalog.Entry b)
+      {
+        int ca = cats.indexOf(QuickNames.category_of(a.quick)), cb = cats.indexOf(QuickNames.category_of(b.quick));
+        return ca != cb ? ca - cb : a.quick.compareTo(b.quick);
+      }
+    });
     return out;
   }
 
   void filter(String q)
   {
     _shown = KeyCatalog.filter(_all, q);
-    // Switching keys first: they're what this screen is for.
-    List<KeyCatalog.Entry> sw = new ArrayList<KeyCatalog.Entry>(), rest = new ArrayList<KeyCatalog.Entry>();
-    for (KeyCatalog.Entry e : _shown)
-      (Behaviours.capable(e.name) != null ? sw : rest).add(e);
-    sw.addAll(rest);
-    _shown = sw;
     List<String> labels = new ArrayList<String>();
     JSONObject d = defaults();
     for (KeyCatalog.Entry e : _shown)
@@ -127,12 +127,19 @@ public class KeysActivity extends Activity
   void show(final KeyCatalog.Entry e)
   {
     final Behaviours.Capable c = Behaviours.capable(e.name);
-    AlertDialog.Builder d = new AlertDialog.Builder(this).setTitle(e.glyph + "    " + e.name);
+    AlertDialog.Builder d = new AlertDialog.Builder(this).setTitle((e.glyph.isEmpty() ? "" : e.glyph + "    ") + e.quick);
+    final boolean bar = e.group.equals(KeyCatalog.QUICKSBAR);
     if (c == null)
     {
-      d.setMessage("No behaviours for this key: it does one thing. Place it with edit mode (quick layout) or the layout editor.\n\nName: " + e.name)
+      d.setMessage((bar ? "A quick of the quicksbar: a quicksbar module places it."
+              : "It does one thing. Place it with quickequip (edit mode) or the layout editor.")
+          + "\n\nQuick name: " + QuickNames.stored(e.quick) + "\nLegacy name: " + e.name
+          + "\nEither name works wherever a key name is asked for.")
         .setPositiveButton(android.R.string.ok, null)
-        .setNeutralButton("Copy name", new DialogInterface.OnClickListener() {
+        .setNeutralButton("Copy quick name", new DialogInterface.OnClickListener() {
+          public void onClick(DialogInterface di, int i) { copy(QuickNames.stored(e.quick)); }
+        })
+        .setNegativeButton("Copy legacy name", new DialogInterface.OnClickListener() {
           public void onClick(DialogInterface di, int i) { copy(e.name); }
         })
         .show();
@@ -147,7 +154,7 @@ public class KeysActivity extends Activity
     int checked = cur.mode.ordinal();
     StringBuilder vars = new StringBuilder();
     for (String m : new String[]{ "toggle", "once", "word", "10s" })
-      vars.append(vars.length() == 0 ? "" : ", ").append(e.name).append(Behaviours.SEP).append(m);
+      vars.append(vars.length() == 0 ? "" : ", ").append(QuickNames.stored(e.quick)).append(Behaviours.SEP).append(m);
     final String variants = vars.toString();
     d.setSingleChoiceItems(items, checked, new DialogInterface.OnClickListener() {
         public void onClick(DialogInterface di, int which)
@@ -165,7 +172,8 @@ public class KeysActivity extends Activity
       });
     TextView msg = new TextView(this);
     msg.setText(c.what + "\n\nDefault behaviour, wherever this key is placed. To give one place its own behaviour, place a variant: "
-        + variants + (c.quicksbar ? " (as a quicksbar action)." : " (edit mode → Replace with…, or the layout editor)."));
+        + variants + (c.quicksbar ? " (in a quicksbar module)." : " (quickequip → Replace with…, or the layout editor).")
+        + "\n\nLegacy name: " + e.name);
     msg.setPadding(dp(24), dp(8), dp(24), 0);
     msg.setTextIsSelectable(true);
     LinearLayout wrap = new LinearLayout(this);

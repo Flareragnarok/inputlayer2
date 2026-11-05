@@ -59,7 +59,7 @@ public class Keyboard2View extends View
   }
   public BottomInsetTaker studio_bottom = null;
 
-  /** Studio: row outlined while the quicksbar's quick edit resizes it,
+  /** Studio: row outlined while the quicksbar's quickedit resizes it,
       [-1] for none. */
   private int _studio_row = -1;
   private Paint _studio_row_paint = null;
@@ -75,7 +75,7 @@ public class Keyboard2View extends View
     invalidate();
   }
 
-  /** Studio, the quick edit's focus: row [row] outlined with each of its keys
+  /** Studio, the quickedit's focus: row [row] outlined with each of its keys
       (or key [pos] of it, outlined strongly); with [all_rows], every row
       lightly. [-1] for none. */
   private int _focus_row = -1, _focus_pos = -1;

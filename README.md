@@ -17,19 +17,43 @@ The owner's terms (build 73); code, docs and chats use these.
 
 | Term | What it is |
 |---|---|
-| **Quicksbar** | the bar of quicks at the top. Left to right: quick layout, quick suggestions, quick cursor, quick language, quick edit |
-| **Quicks** | the quicksbar's buttons: a tap and up to eight swipes each (owner, 2026-11-06) |
-| **Quick layout** ⇄ | customizes the layout: tap edit mode, ↑ copy, ↓ key repeat on/off, ↗ backspace split on/off |
+| **Quicksbar** | the bar of quicks at the top. Left to right: quickequip, quick suggestions, quick cursor, quick language, quickedit |
+| **Quick** | any action a key, a swipe or the quicksbar can call; named by its function (see [Quick names](#quick-names)). The quicksbar's buttons are quicks too: a tap and up to eight swipes each |
+| **Quickequip** ⇄ | customizes the layout: tap edit mode, ↑ copy, ↓ key repeat on/off, ↗ backspace split on/off |
 | **Quick suggestions** | the suggestions' language |
 | **Quick cursor** | in the center: ← → ↑ ↓ move the cursor |
 | **Quick language** | DE / FR / RU…: tap next language, ← previous, ↑ list, ↓ save the key arrangement as a layout, → pick a saved layout |
-| **Quick edit** ↕ | right end: tap cycles the **layer of focus** (whole keyboard → bars → components → items); tap an element to select it; ↑ ↓ size, ← → order, ↗ more, ↖ undo, ↙ undo all |
+| **Quickedit** ↕ | right end: tap cycles the **layer of focus** (whole keyboard → bars → components → items); tap an element to select it; ↑ ↓ size, ← → order, ↗ more, ↖ undo, ↙ undo all |
 | **Layers of focus** | **whole** keyboard (everything in proportion) · **bars** (one part) · **components** (a keyboard row, or a bar) · **items** (one key) |
-| **Parts** | the stacked areas the quick edit works on: quicksbar, selection bar, suggestion bar, keyboard, edit strip |
-| **Edit mode** | the quick layout's tap: tapping a key opens the key editor |
+| **Parts** | the stacked areas the quickedit works on: quicksbar, selection bar, suggestion bar, keyboard, edit strip |
+| **Edit mode** | the quickequip's tap: tapping a key opens the key editor |
 | **Key editor** | Studio's screen for one key: tap, 8 swipes, width, split, swap. Also opened by holding a key |
 | **Saved layout** | a key arrangement, saved with quick language ↓, picked with quick language → |
 | **Tap / swipe / hold** | short press · toward one of ↑ ↗ → ↘ ↓ ↙ ← ↖ · long press |
+
+## Quick names
+
+Owner, 2026-11-06 (il-008): every quick is named by its function,
+`<category> : <what> : <detail>`. Studio (Keys and behaviours, the key
+picker, the layout editor) shows and searches these names; layout files and
+saved settings keep the short legacy names, and either name works wherever a
+key name is asked for (`quickfunction:copy` or `copy`). A quick name loads to
+the very same key, so a layout written in quick names types exactly as fast.
+
+| Category | What it holds | Examples |
+|---|---|---|
+| **quickfunction** | the default: input and plain functions; a key's properties under it | `quickfunction : copy` · `: paste` · `: type letter : a` · `: undo` (Ctrl+Z) · `: undo : android` · `: backspace : direction` |
+| **quicktoggle** | switching layouts | `quicktoggle : layout : backspace` (split) · `: layout : next` / `previous` / `list` · `: layout : numbers` (123+) · `: layout : greek` · `: layout : <your layout>` · `: keyboard : next` · `: module : theme` |
+| **pageswitch** | pages of the same layout | `pageswitch : symbols` (?123) · `: symbols more` (=\<) · `: letters` (ABC) |
+| **quickopen** | opening | `quickopen : app : com.termux` · `: layout editor` · `: keys and behaviours` · `: studio` · `: emoji` · `: clipboard` · `: settings` · `: keyboards` |
+| **quickedit** | the quickedit's work | `quickedit : focus` · `: resize : +` / `−` · `: move : up` / `down` · `: undo` · `: undo all` · `: menu` |
+| **quickequip** | equipping keys | `quickequip : layout current` (edit mode: tap a key to edit it) · `: arrangement : save`; holding a key with long press set to equip |
+| **quickbehaviour** | key behaviours | `quickbehaviour : key behaviour : long press` (repeat ↔ equip) |
+
+Behaviour variants keep their mark: `pageswitch : symbols ~once`. Studio →
+Layout editor → Open → "Convert a built-in layout to quick names…" saves a
+built-in layout written in quick names, plus "… legacy", a replica with the
+legacy names.
 
 Contents: [Install](#install-and-update) ·
 [Layout](#the-layout) · [Keys](#gestures-on-the-keyboards-keys) ·
@@ -57,11 +81,11 @@ Keyboard.
 ## The layout
 
 Top to bottom by default (each part can be resized and moved with the
-quick edit ↕):
+quickedit ↕):
 
 | Part | What it is |
 |---|---|
-| **Quicksbar** (26dp) | quicks, left to right: **quick layout** ⇄, **quick suggestions**, **quick cursor**, **quick language**, **quick edit** ↕ (see Names) |
+| **Quicksbar** (26dp) | quicks, left to right: **quickequip** ⇄, **quick suggestions**, **quick cursor**, **quick language**, **quickedit** ↕ (see Names) |
 | **Selection bar** | only shown when it has something: the preview of typing in format |
 | **Suggestion bar** (28dp) | words only; see-through **Clipboard** icon bottom-left, **Memory** icon bottom-right; the Clipboard / Memory pane opens in its place, with its own bar on top |
 | **Keyboard** | Input Layer's own layouts (AZERTY, QWERTY), or upstream's under Legacy |
@@ -71,12 +95,12 @@ All small keys work like keyboard keys: **tap** for the main action,
 **swipe** toward one of 8 directions for the others (the faint labels on
 the key's edges).
 
-Names (owner, build 71): the **quick layout** is the quicksbar's left end
+Names (owner, build 71): the **quickequip** is the quicksbar's left end
 ⇄, it customizes the layout; the **quick language** is the right end, it
 switches languages and saved layouts; the **quick suggestions** next to it
 sets the suggestions' language.
 
-The **quick layout** ⇄: tap **edit mode** (below), ↑ copy, ↓ key repeat
+The **quickequip** ⇄: tap **edit mode** (below), ↑ copy, ↓ key repeat
 on/off (↻ on: backspace, arrows… repeat; ✎ off: holding a key edits it),
 ↗ backspace split on/off (⌫⌦ / ⌫). Cut is backspace ↓, select all ⌦ ←.
 
@@ -106,13 +130,13 @@ Enter, ↓, Add key, search "config"; then open Q, the ⚙ corner, Remove.
 
 **Holding a key opens it in the key editor** (build 69), the same as
 tapping it in edit mode; the key isn't typed. Nothing repeats while held,
-unless key repeat is on (quick layout ↓). Modifiers (Shift, Ctrl) still lock
+unless key repeat is on (quickequip ↓). Modifiers (Shift, Ctrl) still lock
 when held.
 
-**The quick edit** ↕ (build 74). Its tap cycles the layer of focus; the
+**The quickedit** ↕ (build 74). Its tap cycles the layer of focus; the
 label shows it (↕ all, ↕ bars, ↕ rows, ↕ keys; then the selection, ↕ row
 2, ↕ key). While a layer is on, **tap the element itself** to select it:
-the keyboard and the bars don't type, they select (only the quick edit
+the keyboard and the bars don't type, they select (only the quickedit
 still works as a key). Outlines: the whole keyboard in blue; the selected
 bar; the selected row in blue with each of its keys thinly outlined (its
 items), the selected key in orange.
@@ -129,10 +153,10 @@ keyboard was shown; Back with nothing to undo leaves the focus. The
 arrangement (rows, order, added and removed keys) is kept per layout in
 the `keymap` module (`_rows`), so it goes with saved layouts.
 
-**Resizing** with the quick edit ↕, outside the layers (as before): tap selects a part or a row, ↑ / ↓ resize it (hold to
+**Resizing** with the quickedit ↕, outside the layers (as before): tap selects a part or a row, ↑ / ↓ resize it (hold to
 repeat), ← / → move it. **Back** undoes the last change, one gesture at a
-time, and then leaves the selection; long Back or quick edit ↙ undoes everything since
-the keyboard was shown, quick edit ↖ one step. Sizes stay within sane ranges (rows
+time, and then leaves the selection; long Back or quickedit ↙ undoes everything since
+the keyboard was shown, quickedit ↖ one step. Sizes stay within sane ranges (rows
 0.5–2×), and stored sizes out of range are repaired when the keyboard
 starts, from their last sane value or the default (build 62; see ROADMAP's
 Bug log).
@@ -159,7 +183,7 @@ their letters. Upstream's layouts are listed after ours as
   quarter key wider and backspace as much tighter. Since build 70 a
   backspace 2 keys wide or more (QWERTZ) is split: ⌫ with its swipes (two
   thirds), then at the edge ⌦ forward delete (one third), ↓ key repeat
-  on/off, ← select all (quick layout ↗ switches the split). Each part's width
+  on/off, ← select all (quickequip ↗ switches the split). Each part's width
   can be changed on its own (hold it, ↔ Width).
 - **?123** opens the first symbols page, like Gboard's: digits;
   `@ # € _ & - + ( ) /` (€ ↗ $); `=\<` `* " ' : ; ! ?` ⌫.
@@ -218,11 +242,11 @@ app comes back as it was). Nothing of another app lives in the keyboard.
 
 | Key | Tap | Swipes |
 |---|---|---|
-| **Quick layout** ⇄ (left end) | edit mode on/off | ↑ copy · ↓ key repeat on/off · ↗ backspace split on/off |
+| **Quickequip** ⇄ (left end) | edit mode on/off | ↑ copy · ↓ key repeat on/off · ↗ backspace split on/off |
 | **Quick suggestions** | the suggestions' language (`EN`; `⬇ EN` when its dictionary is missing, then it offers the download) | – |
 | **Quick cursor** (center) | – | ← → ↑ ↓ move the cursor |
 | **Quick language** | the layout shown, as a language (`FR`, `DE`, `RU`, `EL`…); tap: the next one | ← previous · ↑ list to pick from · ↓ save the key arrangement · → pick a saved layout |
-| **Quick edit** ↕ (right end) | picks a part to change: quicksbar → suggestions → keyboard → edit strip → selection bar → each keyboard row → off (outlined in blue) | ↑ ↓ taller / shorter · ← → move it up / down in the stack (parts, not rows) · ↖ undo · ↙ undo all |
+| **Quickedit** ↕ (right end) | picks a part to change: quicksbar → suggestions → keyboard → edit strip → selection bar → each keyboard row → off (outlined in blue) | ↑ ↓ taller / shorter · ← → move it up / down in the stack (parts, not rows) · ↖ undo · ↙ undo all |
 
 The keys can be chosen with a `quicksbar` module. Undo/redo left the
 quicksbar for Ctrl's corners (the editing actions it used did nothing in

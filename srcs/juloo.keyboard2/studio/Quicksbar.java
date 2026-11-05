@@ -44,7 +44,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     List<KeyboardData> layouts();
     int current_layout();
     void select_layout(int i);
-    /** The quick edit: the keyboard shown, and its focus changed (redraw the
+    /** The quickedit: the keyboard shown, and its focus changed (redraw the
         outlines from [layer], [target], [sel_row], [sel_pos]). */
     KeyboardData shown_keyboard();
     void focus_changed();
@@ -55,7 +55,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     void open_key_editor_at(int row, int pos);
   }
 
-  /** Containers the quick edit resizes, in the order it selects them. Only
+  /** Containers the quickedit resizes, in the order it selects them. Only
       whole containers, never the elements inside them. */
   public static final int TARGET_QUICKSBAR = 0;
   public static final int TARGET_SUGGESTIONS = 1;
@@ -68,7 +68,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
   /** Names of the targets in [StudioConfig.order]. */
   static final String[] TARGET_NAMES = { "quicksbar", "suggestions", "keyboard", "edit", "selection" };
 
-  /** Container selected by the quick edit, [-1] for none (height up/down
+  /** Container selected by the quickedit, [-1] for none (height up/down
       then resize the keyboard). */
   int _target = -1;
   Listener _listener;
@@ -137,7 +137,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     return true;
   }
 
-  /** The quick edit (its tap selects the layer of focus), [null] if not on
+  /** The quickedit (its tap selects the layer of focus), [null] if not on
       the bar. */
   public View quick_edit_view()
   {
@@ -169,6 +169,13 @@ public class Quicksbar extends FrameLayout implements Quick.Host
 
   public void perform(String action)
   {
+    // il-008: modules may name actions by their quick names.
+    if (QuickNames.is_quick(action))
+    {
+      String a = QuickNames.to_bar(action);
+      if (a != null)
+        action = a;
+    }
     // il-005: repeat, backspace split and edit mode switch through the
     // keyboard's behaviours ("toggle_repeat~once" places a variant).
     String base = Behaviours.base_of(action);
@@ -227,6 +234,12 @@ public class Quicksbar extends FrameLayout implements Quick.Host
 
   public Quick.Label label_of(String action)
   {
+    if (QuickNames.is_quick(action))
+    {
+      String a = QuickNames.to_bar(action);
+      if (a != null)
+        action = a;
+    }
     if (Behaviours.spec_of(action) != null && Behaviours.capable(Behaviours.base_of(action)) != null)
     {
       Quick.Label l = label_of(Behaviours.base_of(action));
@@ -361,10 +374,10 @@ public class Quicksbar extends FrameLayout implements Quick.Host
       refresh(_config);
   }
 
-  /* The quick edit. Its tap cycles the layer of focus: whole keyboard, bars,
+  /* The quickedit. Its tap cycles the layer of focus: whole keyboard, bars,
      components (a keyboard row, or a bar), items (a key). In a layer, tap
      the element itself to select it (the keyboard catches the taps, see
-     [tapped]); the quick edit's swipes then act on it: ↑ ↓ size, ← → order,
+     [tapped]); the quickedit's swipes then act on it: ↑ ↓ size, ← → order,
      ↗ more (the menu), ↖ undo, ↙ undo all. */
 
   public static final int LAYER_OFF = 0, LAYER_WHOLE = 1, LAYER_BARS = 2,
@@ -511,7 +524,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     }
     catch (Exception e)
     {
-      Logs.exn("Quick edit move", e);
+      Logs.exn("Quickedit move", e);
     }
   }
 
@@ -531,7 +544,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     }
     catch (Exception e)
     {
-      Logs.exn("Quick edit scale", e);
+      Logs.exn("Quickedit scale", e);
     }
   }
 
@@ -579,11 +592,11 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     }
     catch (Exception e)
     {
-      Logs.exn("Quick edit width", e);
+      Logs.exn("Quickedit width", e);
     }
   }
 
-  /** The quick edit's ↗: what else can be done with the selection. */
+  /** The quickedit's ↗: what else can be done with the selection. */
   void edit_menu()
   {
     final List<String> labels = new ArrayList<String>();
@@ -618,7 +631,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     }
     else
     {
-      toast((_layer == LAYER_OFF) ? "Tap the quick edit to pick a layer first"
+      toast((_layer == LAYER_OFF) ? "Tap the quickedit to pick a layer first"
           : LAYER_HINTS[_layer]);
       return;
     }
@@ -727,7 +740,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     }
     catch (Exception e)
     {
-      Logs.exn("Quick edit remove", e);
+      Logs.exn("Quickedit remove", e);
     }
   }
 
@@ -752,7 +765,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     }
     catch (Exception e)
     {
-      Logs.exn("Quick edit split row", e);
+      Logs.exn("Quickedit split row", e);
     }
   }
 
@@ -773,7 +786,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     }
     catch (Exception e)
     {
-      Logs.exn("Quick edit join", e);
+      Logs.exn("Quickedit join", e);
     }
   }
 
@@ -787,7 +800,7 @@ public class Quicksbar extends FrameLayout implements Quick.Host
     }
     catch (Exception e)
     {
-      Logs.exn("Quick edit reset", e);
+      Logs.exn("Quickedit reset", e);
     }
   }
 

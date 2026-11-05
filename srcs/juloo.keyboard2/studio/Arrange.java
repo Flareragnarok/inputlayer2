@@ -3,7 +3,7 @@ package juloo.keyboard2.studio;
 import java.util.ArrayList;
 import java.util.List;
 
-/** The quick edit's arrangement operations, on a layout's rows of key ids
+/** The quickedit's arrangement operations, on a layout's rows of key ids
     (the [_rows] of a [keymap] module) and on a row's widths. Pure: each
     returns whether it changed anything. */
 public final class Arrange

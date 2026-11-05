@@ -49,6 +49,10 @@ public final class KeyValue implements Comparable<KeyValue>
         handle (the editing actions often do nothing). */
     STUDIO_UNDO,
     STUDIO_REDO,
+    /** il-008: quickopen : studio / layout editor / keys and behaviours. */
+    STUDIO_OPEN,
+    STUDIO_OPEN_LAYOUT_EDITOR,
+    STUDIO_OPEN_KEYS,
   }
 
   // Must be evaluated in the reverse order of their values.
@@ -598,6 +602,13 @@ public final class KeyValue implements Comparable<KeyValue>
 
   public static KeyValue getKeyByName(String name)
   {
+    // il-008: a quick name is the same key as its legacy name.
+    if (juloo.keyboard2.studio.QuickNames.is_quick(name))
+    {
+      String legacy = juloo.keyboard2.studio.QuickNames.to_key(name);
+      if (legacy != null)
+        return getKeyByName(legacy);
+    }
     if (name.startsWith(juloo.keyboard2.studio.Behaviours.LAYOUT_PREFIX)
         && name.indexOf(juloo.keyboard2.studio.Behaviours.SEP) < 0)
     {
@@ -773,6 +784,9 @@ public final class KeyValue implements Comparable<KeyValue>
       case "studio_apply_format": return eventKey("¶", Event.STUDIO_APPLY_FORMAT, FLAG_SMALLER_FONT);
       case "studio_undo": return eventKey(0xE036, Event.STUDIO_UNDO, 0);
       case "studio_redo": return eventKey(0xE037, Event.STUDIO_REDO, 0);
+      case "studio_open": return eventKey("✲", Event.STUDIO_OPEN, FLAG_SMALLER_FONT);
+      case "studio_open_layout_editor": return eventKey("▦✎", Event.STUDIO_OPEN_LAYOUT_EDITOR, FLAG_SMALLER_FONT);
+      case "studio_open_keys": return eventKey("⌕", Event.STUDIO_OPEN_KEYS, FLAG_SMALLER_FONT);
 
       /* Key events */
       case "esc": return keyeventKey("Esc", KeyEvent.KEYCODE_ESCAPE, FLAG_SMALLER_FONT);

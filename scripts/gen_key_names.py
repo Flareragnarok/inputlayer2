@@ -5,11 +5,11 @@ Run from the repository root after adding keys; KeyNamesTest checks that the
 list is up to date."""
 import re
 
-def names(src):
+def names(src, placeholders=False):
     body = re.search(r"public static KeyValue getSpecialKeyByName.*?\n  }\n", src, re.S).group(0)
     out = []
     for n in re.findall(r'case "((?:[^"\\]|\\.)*)"', body):
-        if n.endswith("_placeholder") or n == "removed":
+        if (n.endswith("_placeholder") or n == "removed") != placeholders:
             continue
         if n not in out:
             out.append(n)
@@ -17,6 +17,7 @@ def names(src):
 
 src = open("srcs/juloo.keyboard2/KeyValue.java", encoding="utf-8").read()
 lines = ",\n".join('    "%s"' % n for n in names(src))
+plines = ",\n".join('    "%s"' % n for n in names(src, placeholders=True))
 open("srcs/juloo.keyboard2/studio/KeyNames.java", "w", encoding="utf-8").write(
 """package juloo.keyboard2.studio;
 
@@ -29,5 +30,10 @@ public final class KeyNames
   public static final String[] SPECIAL = {
 %s
   };
+
+  /** The placeholders: layout plumbing, places kept for extra keys. */
+  public static final String[] PLACEHOLDERS = {
+%s
+  };
 }
-""" % lines)
+""" % (lines, plines))

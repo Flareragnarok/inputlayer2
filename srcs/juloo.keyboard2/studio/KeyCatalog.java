@@ -31,19 +31,23 @@ public final class KeyCatalog
     /** What the key shows. */
     public final String glyph;
     public final String group;
+    /** il-008: its quick name, what Studio shows ("quickfunction : copy"). */
+    public final String quick;
     final int rank;
     /** Position in a group kept in its own order, [-1] if sorted. */
     final int order;
 
     Entry(String n, String gl, String gr, int r) { this(n, gl, gr, r, -1); }
     Entry(String n, String gl, String gr, int r, int o)
-    { name = n; glyph = gl; group = gr; rank = r; order = o; }
+    {
+      name = n; glyph = gl; group = gr; rank = r; order = o;
+      quick = group.equals(QUICKSBAR) ? QuickNames.of_bar(n) : QuickNames.of_key(n);
+    }
 
-    /** What the list shows. */
+    /** What the list shows: what the key shows, and its quick name. */
     public String label()
     {
-      return glyph.equals(name) ? glyph + "    · " + group
-        : glyph + "    " + name + " · " + group;
+      return glyph + "    " + quick;
     }
   }
 
@@ -80,6 +84,8 @@ public final class KeyCatalog
   }
 
   static final String LAYOUTS = "Your layouts";
+  /** Entries that are quicksbar actions (named by [QuickNames.of_bar]). */
+  static final String QUICKSBAR = "Quicksbar";
 
   /** il-006: [all] and, first, a key per saved layout (layout editor), plain
       and with the behaviours of a page. */
@@ -208,6 +214,7 @@ public final class KeyCatalog
     for (Entry e : all)
       if (e.glyph.toLowerCase(Locale.ROOT).contains(f)
           || e.name.toLowerCase(Locale.ROOT).contains(f)
+          || e.quick.toLowerCase(Locale.ROOT).contains(f)
           || e.group.toLowerCase(Locale.ROOT).contains(f))
         out.add(e);
     return out;

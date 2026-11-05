@@ -130,11 +130,11 @@ public final class Behaviours
       new Capable("il_symbols_more", Use.KEY, true, false, "The =\\< symbols page."),
       new Capable("switch_greekmath", Use.KEY, true, false, "The Greek and math page."),
       new Capable("toggle_repeat", Use.EDIT, false, true,
-        "Quicksbar: key repeat on/off (the quick layout's ↓). Same switch as studio_toggle_repeat."),
+        "Quicksbar: key repeat on/off (the quickequip's ↓). Same switch as studio_toggle_repeat."),
       new Capable("split_backspace", Use.DELETE, false, true,
-        "Quicksbar: backspace split into ⌫ ⌦, or whole (the quick layout's ↗)."),
+        "Quicksbar: backspace split into ⌫ ⌦, or whole (the quickequip's ↗)."),
       new Capable("layout_mode", Use.EDIT, false, true,
-        "Quicksbar: edit mode, tapping a key opens its editor (the quick layout's tap).")));
+        "Quicksbar: edit mode, tapping a key opens its editor (the quickequip's tap).")));
 
   public static List<Capable> capable() { return CAPABLE; }
 

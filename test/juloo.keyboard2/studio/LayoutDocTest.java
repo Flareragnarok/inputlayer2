@@ -89,6 +89,38 @@ public class LayoutDocTest
     assertEquals(d.xml(), e.xml());
   }
 
+  /** il-008: every built-in layout, converted to quick names, loads to the
+      very same keys (and the same locale-only keys) as the original. */
+  @Test public void every_built_in_layout_converts_to_quick_names() throws Exception
+  {
+    java.io.File[] files = new java.io.File("srcs/layouts").listFiles();
+    assertTrue(files != null && files.length > 50);
+    StringBuilder bad = new StringBuilder();
+    int keys = 0;
+    for (java.io.File f : files)
+    {
+      String src = new String(java.nio.file.Files.readAllBytes(f.toPath()), "UTF-8");
+      if (!src.contains("<keyboard"))
+        continue; // not a layout
+      KeyboardData orig = load(src);
+      LayoutDoc quick = LayoutDoc.of_keyboard(orig, "Q").with_quick_names("Q");
+      KeyboardData back = load(quick.xml());
+      for (int r = 0; r < orig.rows.size(); r++)
+        for (int k = 0; k < orig.rows.get(r).keys.size(); k++)
+        {
+          KeyboardData.Key a = orig.rows.get(r).keys.get(k), b = back.rows.get(r).keys.get(k);
+          keys++;
+          for (int i = 0; i < 9; i++)
+            if (!java.util.Objects.equals(a.keys[i], b.keys[i])
+                || a.keyHasFlag(i, KeyboardData.Key.F_LOC) != b.keyHasFlag(i, KeyboardData.Key.F_LOC))
+              bad.append("\n  ").append(f.getName()).append(" row ").append(r + 1).append(" key ").append(k + 1)
+                .append(" slot ").append(i).append(": ").append(a.keys[i]).append(" -> ").append(b.keys[i]);
+        }
+    }
+    assertEquals("", bad.length() > 3000 ? bad.substring(0, 3000) : bad.toString());
+    assertTrue(keys > 2000);
+  }
+
   @Test public void names_and_layout_keys()
   {
     assertTrue(LayoutDoc.valid_name("Gaming 2"));

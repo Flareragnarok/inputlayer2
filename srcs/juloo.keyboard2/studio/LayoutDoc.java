@@ -19,6 +19,8 @@ public final class LayoutDoc
 {
   public static final float WIDTH_MIN = 0.25f, WIDTH_MAX = 10f;
   public static final float HEIGHT_MIN = 0.4f, HEIGHT_MAX = 3f;
+  /** Prefix of a name shown only for the languages that use it. */
+  public static final String LOC = "loc ";
   /** Slot names in index order, for the editor's lists. */
   public static final String[] SLOTS = { "tap", "↖", "↗", "↙", "↘", "←", "→", "↑", "↓" };
 
@@ -78,6 +80,9 @@ public final class LayoutDoc
         for (int i = 0; i < 9; i++)
         {
           String n = (k.keys[i] == null) ? null : KeyMap.name_of(k.keys[i]);
+          // "loc ": shown only for the languages that use it (as in the layout files)
+          if (n != null && !n.isEmpty() && k.keyHasFlag(i, KeyboardData.Key.F_LOC))
+            n = LOC + n;
           key.names[i] = (n == null || n.isEmpty()) ? null : n;
         }
         row.keys.add(key);
@@ -283,6 +288,27 @@ public final class LayoutDoc
     return d;
   }
 
+  /** il-008: the same layout with every key named by its quick name
+      (`quickfunction:type letter:a`…); it loads to the very same keys. */
+  public LayoutDoc with_quick_names(String new_name)
+  {
+    LayoutDoc d = copy();
+    d.name = new_name;
+    for (Row r : d.rows)
+      for (Key k : r.keys)
+        for (int i = 0; i < 9; i++)
+          if (k.names[i] != null)
+          {
+            boolean loc = k.names[i].startsWith(LOC);
+            String n = loc ? k.names[i].substring(LOC.length()) : k.names[i];
+            KeyValue kv = KeyMap.key_of_name(n);
+            // placeholders reserve a place for extra keys: plumbing, kept
+            if (!QuickNames.is_quick(n) && (kv == null || kv.getKind() != KeyValue.Kind.Placeholder))
+              k.names[i] = (loc ? LOC : "") + QuickNames.stored(QuickNames.of_key(n));
+          }
+    return d;
+  }
+
   public LayoutDoc copy()
   {
     try { return of_json(name, json()); }
@@ -294,6 +320,8 @@ public final class LayoutDoc
   {
     if (name == null || name.isEmpty())
       return "";
+    if (name.startsWith(LOC))
+      name = name.substring(LOC.length());
     KeyValue kv = KeyMap.key_of_name(name);
     if (kv == null)
       return name;

@@ -216,7 +216,7 @@ public class LayoutEditorActivity extends Activity implements LayoutCanvas.Liste
         StringBuilder names = new StringBuilder();
         for (int i = 0; i < 9; i++)
           if (key.names[i] != null)
-            names.append(names.length() == 0 ? "" : "  ").append(LayoutDoc.SLOTS[i]).append(' ').append(key.names[i]);
+            names.append(names.length() == 0 ? "" : "\n").append(LayoutDoc.SLOTS[i]).append("  ").append(QuickNames.of_key(key.names[i]));
         s += String.format(java.util.Locale.ROOT, "\nKey %d: width %.2f, gap %.2f\n%s", k + 1, key.width, key.shift,
             names.length() == 0 ? "(empty)" : names.toString());
       }
@@ -334,7 +334,7 @@ public class LayoutEditorActivity extends Activity implements LayoutCanvas.Liste
     final LayoutDoc.Key k = _doc.key(_canvas.sel_row, _canvas.sel_key);
     String[] items = new String[9];
     for (int i = 0; i < 9; i++)
-      items[i] = LayoutDoc.SLOTS[i] + "    " + (k.names[i] == null ? "–" : LayoutDoc.label(k.names[i]) + "   " + k.names[i]);
+      items[i] = LayoutDoc.SLOTS[i] + "    " + (k.names[i] == null ? "–" : LayoutDoc.label(k.names[i]) + "   " + QuickNames.of_key(k.names[i]));
     new AlertDialog.Builder(this).setTitle("Key names (tap, then the swipes)")
       .setItems(items, (di, i) -> slot(k, i))
       .setPositiveButton("Done", null).show();
@@ -365,7 +365,7 @@ public class LayoutEditorActivity extends Activity implements LayoutCanvas.Liste
   {
     final EditText t = new EditText(this);
     t.setSingleLine(true);
-    t.setHint(raw ? "e.g. app:com.termux, layout:Gaming~once, studio_toggle_repeat~once" : "e.g. ♪  🎶  ♪~(´ε` )");
+    t.setHint(raw ? "a quick name or a legacy name, e.g. quickopen:app:com.termux, pageswitch:symbols~once, copy" : "e.g. ♪  🎶  ♪~(´ε` )");
     new AlertDialog.Builder(this).setTitle(raw ? "Key name" : "Text").setView(t)
       .setPositiveButton(android.R.string.ok, (di, w) -> {
         String s = t.getText().toString();
@@ -458,6 +458,7 @@ public class LayoutEditorActivity extends Activity implements LayoutCanvas.Liste
     final List<String> items = new ArrayList<String>();
     items.add("The keyboard as you use it");
     items.add("A blank keyboard");
+    items.add("Convert a built-in layout to quick names…");
     for (Module m : saved) items.add("▦ " + m.name);
     Runnable go = () -> new AlertDialog.Builder(this).setTitle("Open")
       .setItems(items.toArray(new String[0]), (di, i) -> {
@@ -469,9 +470,11 @@ public class LayoutEditorActivity extends Activity implements LayoutCanvas.Liste
         }
         else if (i == 1)
           load(LayoutDoc.blank("My layout"), null);
+        else if (i == 2)
+          convert_menu();
         else
         {
-          Module m = saved.get(i - 2);
+          Module m = saved.get(i - 3);
           try { load(LayoutDoc.of_json(m.name, m.json), m.name); }
           catch (Exception e) { toast("Can't open: " + e.getMessage()); }
         }
@@ -495,6 +498,73 @@ public class LayoutEditorActivity extends Activity implements LayoutCanvas.Liste
     new AlertDialog.Builder(this).setTitle("Leave the changes unsaved?")
       .setPositiveButton("Leave them", (di, w) -> finish())
       .setNegativeButton("Stay", null).show();
+  }
+
+  // ---- converting a built-in layout (il-008) ----
+
+  /** Owner: "upstream layouts can be converted in settings to quick names,
+      leaving a replica of the legacy keys". */
+  void convert_menu()
+  {
+    final String[] ids = getResources().getStringArray(juloo.keyboard2.R.array.pref_layout_values);
+    final String[] labels = getResources().getStringArray(juloo.keyboard2.R.array.pref_layout_entries);
+    final List<Integer> idx = new ArrayList<Integer>();
+    List<String> shown = new ArrayList<String>();
+    for (int i = 0; i < ids.length && i < labels.length; i++)
+      if (LayoutsPreference.layout_id_of_name(getResources(), ids[i]) > 0)
+      {
+        idx.add(i);
+        shown.add(labels[i] + "   (" + ids[i] + ")");
+      }
+    new AlertDialog.Builder(this).setTitle("Convert which layout?")
+      .setItems(shown.toArray(new String[0]), (di, w) -> convert(ids[idx.get(w)], labels[idx.get(w)]))
+      .setNegativeButton(android.R.string.cancel, null).show();
+  }
+
+  /** Saves "<name>" in quick names and "<name> legacy", the replica, both
+      with the bottom row the keyboard adds to the built-in one. */
+  void convert(String id, String label)
+  {
+    try
+    {
+      int res = LayoutsPreference.layout_id_of_name(getResources(), id);
+      juloo.keyboard2.KeyboardData kd = juloo.keyboard2.KeyboardData.load(getResources(), res);
+      if (kd.bottom_row)
+        kd = kd.insert_row(juloo.keyboard2.KeyboardData.load_row(getResources(), juloo.keyboard2.R.xml.bottom_row), kd.rows.size());
+      String base = label.replaceAll("[^A-Za-z0-9 _.-]", " ").replaceAll(" +", " ").trim();
+      if (base.isEmpty() || !Character.isLetterOrDigit(base.charAt(0))) base = id;
+      if (base.length() > 17) base = base.substring(0, 17).trim();
+      final LayoutDoc legacy = LayoutDoc.of_keyboard(kd, base + " legacy");
+      final LayoutDoc quick = legacy.with_quick_names(base);
+      // The quick one must load to the same keys as the replica.
+      juloo.keyboard2.KeyboardData a = juloo.keyboard2.KeyboardData.load_string_exn(legacy.xml());
+      juloo.keyboard2.KeyboardData b = juloo.keyboard2.KeyboardData.load_string_exn(quick.xml());
+      for (int r = 0; r < a.rows.size(); r++)
+        for (int k = 0; k < a.rows.get(r).keys.size(); k++)
+          if (!java.util.Arrays.equals(a.rows.get(r).keys.get(k).keys, b.rows.get(r).keys.get(k).keys))
+            throw new IllegalStateException("row " + (r + 1) + " key " + (k + 1) + " differs");
+      final String qn = base, ln = legacy.name;
+      Runnable save = () -> {
+        try
+        {
+          _store.save(Module.create("layout", ln, legacy.json()), false);
+          _store.save(Module.create("layout", qn, quick.json()), false);
+          load(quick, qn);
+          toast("Saved \"" + qn + "\" in quick names and \"" + ln + "\" as it was");
+        }
+        catch (Throwable e) { toast("Not saved: " + e.getMessage()); }
+      };
+      if (_store.get("layout", qn) != null || _store.get("layout", ln) != null)
+        new AlertDialog.Builder(this).setTitle("Replace \"" + qn + "\" and \"" + ln + "\"?")
+          .setPositiveButton("Replace", (di, w) -> save.run())
+          .setNegativeButton(android.R.string.cancel, null).show();
+      else
+        save.run();
+    }
+    catch (Throwable e)
+    {
+      toast("Can't convert " + id + ": " + e.getMessage());
+    }
   }
 
   // ---- using it ----

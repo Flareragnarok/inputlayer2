@@ -45,7 +45,7 @@ public final class KeyMap
   /** layout -> key id -> its changes. */
   final Map<String, Map<String, Change>> _layouts =
     new HashMap<String, Map<String, Change>>();
-  /** layout -> its rows as key ids, top to bottom, when the quick edit has
+  /** layout -> its rows as key ids, top to bottom, when the quickedit has
       rearranged it ([ROWS] in the module). */
   final Map<String, List<List<String>>> _structures =
     new HashMap<String, List<List<String>>>();
@@ -130,7 +130,7 @@ public final class KeyMap
 
   public boolean is_empty() { return _layouts.isEmpty() && _structures.isEmpty(); }
 
-  /** The rows of [layout] as the quick edit arranged them, [null] if it
+  /** The rows of [layout] as the quickedit arranged them, [null] if it
       didn't. */
   public List<List<String>> structure(String layout)
   {
@@ -272,7 +272,7 @@ public final class KeyMap
     return out;
   }
 
-  /** A key added by the quick edit: one key wide, tapping [id]. */
+  /** A key added by the quickedit: one key wide, tapping [id]. */
   static KeyboardData.Key new_key(String id, KeyboardData.Key template, Change c)
   {
     KeyValue tap = key_of_name(id);
@@ -365,6 +365,26 @@ public final class KeyMap
     for (String n : KeyNames.SPECIAL)
       if (kv.equals(key_of_name(n)))
         return n;
+    // il-008: names that give back the very key, for whole layouts
+    // (the layout editor, converting a layout to quick names).
+    if (kv.getKind() == KeyValue.Kind.Placeholder)
+      for (String n : KeyNames.PLACEHOLDERS)
+        if (kv.equals(key_of_name(n)))
+          return n;
+    if (kv.getKind() == KeyValue.Kind.Char && s.indexOf(':') < 0)
+    {
+      // shows [s], types another character: "symbol:character"
+      String c = String.valueOf(kv.getChar());
+      String n = s + ":" + (KeyValue.getSpecialKeyByName(c) == null ? c : "\\" + c);
+      if (kv.equals(key_of_name(n)))
+        return n;
+    }
+    if (kv.getKind() == KeyValue.Kind.String && s.indexOf('\\') < 0)
+    {
+      String n = ":str:'" + s.replace("'", "\\'") + "'";
+      if (kv.equals(key_of_name(n)))
+        return n;
+    }
     return s;
   }
 
