@@ -89,6 +89,8 @@ public class QuickNamesTest
       { "quicktoggle:layout:Gaming~word", "layout:Gaming~word" },
       { "quickfunction:undo", "studio_undo" },
       { "quickfunction:undo:android", "undo" },
+      { "quickapp:com.termux", "app:com.termux" },
+      { "quickapp : io.github.flareragnarok.remoteclient?tab=roadmap", "app:io.github.flareragnarok.remoteclient?tab=roadmap" },
     };
     for (String[] p : same)
       assertEquals(p[0], KeyValue.getKeyByName(p[1]), KeyValue.getKeyByName(p[0]));

@@ -342,7 +342,7 @@ public class LayoutEditorActivity extends Activity implements LayoutCanvas.Liste
 
   void slot(final LayoutDoc.Key k, final int i)
   {
-    String[] items = { "Pick a quick…", "quickopen : app…", "Type text or emoji…", "Type a key name…", "Empty" };
+    String[] items = { "Pick a quick…", "quickapp (quickopen : app)…", "Type text or emoji…", "Type a key name…", "Empty" };
     new AlertDialog.Builder(this).setTitle(LayoutDoc.SLOTS[i])
       .setItems(items, (di, w) -> {
         switch (w)
@@ -352,7 +352,7 @@ public class LayoutEditorActivity extends Activity implements LayoutCanvas.Liste
                 n -> set_name(k, i, n), this::slots);
             break;
           case 1:
-            AppPick.show(this, "quickopen : app for " + LayoutDoc.SLOTS[i],
+            AppPick.show(this, LayoutDoc.SLOTS[i] + " : quickapp",
                 n -> set_name(k, i, n), this::slots);
             break;
           case 2: ask_text(k, i, false); break;

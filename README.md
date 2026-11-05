@@ -45,12 +45,14 @@ the very same key, so a layout written in quick names types exactly as fast.
 | **quickfunction** | the default: input and plain functions; a key's properties under it | `quickfunction : copy` · `: paste` · `: type letter : a` · `: undo` (Ctrl+Z) · `: undo : android` · `: backspace : direction` |
 | **quicktoggle** | switching layouts | `quicktoggle : layout : backspace` (split) · `: layout : next` / `previous` / `list` · `: layout : numbers` (123+) · `: layout : greek` · `: layout : <your layout>` · `: keyboard : next` · `: module : theme` |
 | **pageswitch** | pages of the same layout | `pageswitch : symbols` (?123) · `: symbols more` (=\<) · `: letters` (ABC) |
-| **quickopen** | opening | `quickopen : app : com.termux` · `: layout editor` · `: keys and behaviours` · `: studio` · `: emoji` · `: clipboard` · `: settings` · `: keyboards` |
+| **quickopen** | opening (`quickapp : <package>` is short for `quickopen : app : <package>`) | `quickopen : app : com.termux` · `: layout editor` · `: keys and behaviours` · `: studio` · `: emoji` · `: clipboard` · `: settings` · `: keyboards` |
 | **quickedit** | the quickedit's work | `quickedit : focus` · `: resize : +` / `−` · `: move : up` / `down` · `: undo` · `: undo all` · `: menu` |
 | **quickequip** | equipping keys | `quickequip : layout current` (edit mode: tap a key to edit it) · `: arrangement : save`; holding a key with long press set to equip |
 | **quickbehaviour** | key behaviours | `quickbehaviour : key behaviour : long press` (repeat ↔ equip) |
 
-Behaviour variants keep their mark: `pageswitch : symbols ~once`. Studio →
+The key editor names where it is the same way: `quickequip : <layout> :
+key <key> ←`, then what goes there (`… : quickapp` for an app, with a
+search). Behaviour variants keep their mark: `pageswitch : symbols ~once`. Studio →
 Layout editor → Open → "Convert a built-in layout to quick names…" saves a
 built-in layout written in quick names, plus "… legacy", a replica with the
 legacy names.

@@ -28,6 +28,8 @@ public final class QuickNames
 {
   public static final String FUNCTION = "quickfunction", TOGGLE = "quicktoggle", PAGE = "pageswitch",
          OPEN = "quickopen", EDIT = "quickedit", EQUIP = "quickequip", BEHAVIOUR = "quickbehaviour";
+  /** Short for "quickopen : app" (owner, 2026-11-06: "quickopen / quickapp"). */
+  public static final String APP = "quickapp";
   /** In the order Studio lists them. */
   public static final String[] CATEGORIES = { TOGGLE, PAGE, OPEN, EDIT, EQUIP, BEHAVIOUR, FUNCTION };
 
@@ -128,7 +130,8 @@ public final class QuickNames
       if (name.regionMatches(true, 0, k, 0, k.length()) && name.length() > k.length()
           && (name.charAt(k.length()) == ':' || name.charAt(k.length()) == ' '))
         return true;
-    return false;
+    return name.regionMatches(true, 0, APP, 0, APP.length()) && name.length() > APP.length()
+      && (name.charAt(APP.length()) == ':' || name.charAt(APP.length()) == ' ');
   }
 
   // ---- legacy -> quick ----
@@ -308,6 +311,8 @@ public final class QuickNames
     List<String> s = segments(q);
     if (s.size() < 2)
       return null;
+    if (s.get(0).equalsIgnoreCase(APP) && rest_after(q, 1) != null)
+      return KeyValue.APP_PREFIX + rest_after(q, 1); // quickapp : <package> = quickopen : app : <package>
     String cat = s.get(0).toLowerCase(Locale.ROOT);
     String sub = s.get(1).toLowerCase(Locale.ROOT);
     // the parts whose case and characters matter come from [q] as written

@@ -26,6 +26,16 @@ import org.json.JSONObject;
 public final class KeyEditor
 {
   static final String[] DIR_LABELS = { "Tap", "↑", "↗", "→", "↘", "↓", "↙", "←", "↖" };
+
+  /** Where the editor is, as a quick path (owner, 2026-11-06:
+      "quickequip : … : key ← : quickopen / quickapp"): the layout, the key,
+      and direction [d] (-1: the key itself). */
+  String path(int d)
+  {
+    String p = QuickNames.EQUIP + " : " + (_layout.isEmpty() ? "layout current" : _layout)
+      + " : key " + glyph(_id);
+    return d < 0 ? p : p + " " + DIR_LABELS[d].toLowerCase(java.util.Locale.ROOT);
+  }
   static final String NEW_MODULE = "mine";
 
   final Activity _act;
@@ -121,7 +131,7 @@ public final class KeyEditor
       public void run() { if (split == null) split(); else save_split(null); }
     });
     new AlertDialog.Builder(_act)
-      .setTitle("Key " + glyph(_id) + " · " + (_layout.isEmpty() ? "layout" : _layout))
+      .setTitle(path(-1))
       .setItems(rows.toArray(new String[0]), new DialogInterface.OnClickListener() {
         public void onClick(DialogInterface di, int i) { acts.get(i).run(); }
       })
@@ -139,7 +149,7 @@ public final class KeyEditor
     acts.add(new Runnable() { public void run() { pick(d); } });
     labels.add("Type text or emoji…");
     acts.add(new Runnable() { public void run() { type_text(d); } });
-    labels.add("quickopen : app…");
+    labels.add("quickapp (quickopen : app)…");
     acts.add(new Runnable() { public void run() { pick_app(d); } });
     if (!empty)
     {
@@ -152,7 +162,7 @@ public final class KeyEditor
       acts.add(new Runnable() { public void run() { save(d, null); } });
     }
     new AlertDialog.Builder(_act)
-      .setTitle(DIR_LABELS[d] + "    " + glyph(_names[d]))
+      .setTitle(path(d) + "   " + glyph(_names[d]))
       .setItems(labels.toArray(new String[0]), new DialogInterface.OnClickListener() {
         public void onClick(DialogInterface di, int i) { acts.get(i).run(); }
       })
@@ -166,7 +176,7 @@ public final class KeyEditor
 
   void pick(final int d)
   {
-    pick("Key for " + DIR_LABELS[d],
+    pick(path(d) + " : quick",
         new Picked() { public void picked(String n) { save(d, n); } },
         new Runnable() { public void run() { direction(d); } });
   }
@@ -436,7 +446,7 @@ public final class KeyEditor
     if (cur != null && cur.getKind() == KeyValue.Kind.String)
       t.setText(cur.getString());
     new AlertDialog.Builder(_act)
-      .setTitle("Text for " + DIR_LABELS[d])
+      .setTitle(path(d) + " : type text")
       .setView(t)
       .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
         public void onClick(DialogInterface di, int i)
@@ -462,7 +472,7 @@ public final class KeyEditor
       with a search, with optional extras. */
   void pick_app(final int d)
   {
-    AppPick.show(_act, "quickopen : app for " + DIR_LABELS[d],
+    AppPick.show(_act, path(d) + " : quickapp",
         n -> save(d, n), () -> direction(d));
   }
 
