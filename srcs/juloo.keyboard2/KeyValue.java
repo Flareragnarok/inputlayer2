@@ -131,6 +131,7 @@ public final class KeyValue implements Comparable<KeyValue>
     Macro, // [_payload] is a [KeyValue.Macro], value is unused.
     Stateful, // [_payload] is a [KeyValue.Stateful], value is the query.
     App, // [_payload] is a [KeyValue.App]: open another app (il-004).
+    Behaved, // [_payload] is a [KeyValue.Behaved]: a switching key with its behaviour (il-005).
   }
 
   private static final int FLAGS_OFFSET = 20;
@@ -257,6 +258,12 @@ public final class KeyValue implements Comparable<KeyValue>
   public int getSliderRepeat()
   {
     return ((int)(short)(_code & VALUE_BITS));
+  }
+
+  /** Defined only when [getKind() == Kind.Behaved]. */
+  public Behaved getBehaved()
+  {
+    return ((Behaved)_payload);
   }
 
   /** Defined only when [getKind() == Kind.App]. */
@@ -561,8 +568,29 @@ public final class KeyValue implements Comparable<KeyValue>
     return new KeyValue(new App(target), Kind.App, 0, FLAG_SMALLER_FONT | FLAG_SPECIAL);
   }
 
+  /** "<switching key>~once|~word|~<n>s|~toggle": that key with that
+      behaviour (Studio → Keys); null if [name] isn't one. */
+  public static KeyValue makeBehavedKey(String name)
+  {
+    if (!juloo.keyboard2.studio.Behaviours.is_variant(name))
+      return null;
+    String base = juloo.keyboard2.studio.Behaviours.base_of(name);
+    KeyValue kv = getSpecialKeyByName(base);
+    if (kv == null)
+      return null;
+    juloo.keyboard2.studio.Behaviours.Spec spec = juloo.keyboard2.studio.Behaviours.spec_of(name);
+    return new KeyValue(new Behaved(base, spec, kv.getString() + spec.mark()), Kind.Behaved, 0,
+        kv.getFlags() | FLAG_SPECIAL);
+  }
+
   public static KeyValue getKeyByName(String name)
   {
+    if (name.indexOf(juloo.keyboard2.studio.Behaviours.SEP) > 0)
+    {
+      KeyValue b = makeBehavedKey(name);
+      if (b != null)
+        return b;
+    }
     if (name.startsWith(APP_PREFIX))
     {
       KeyValue a = makeAppKey(name.substring(APP_PREFIX.length()));
@@ -955,6 +983,31 @@ public final class KeyValue implements Comparable<KeyValue>
     @Override
     public String describe() { return name(); }
   };
+
+  /** A switching key placed with a behaviour of its own (il-005). */
+  public static final class Behaved implements Comparable<Behaved>, Describe
+  {
+    public final String base;
+    public final juloo.keyboard2.studio.Behaviours.Spec spec;
+    final String _symbol;
+
+    Behaved(String b, juloo.keyboard2.studio.Behaviours.Spec s, String sym)
+    {
+      base = b; spec = s; _symbol = sym;
+    }
+
+    public String name() { return base + juloo.keyboard2.studio.Behaviours.SEP + spec.code(); }
+
+    @Override public String toString() { return _symbol; }
+
+    @Override public String describe() { return name(); }
+
+    @Override public int compareTo(Behaved o) { return name().compareTo(o.name()); }
+
+    @Override public boolean equals(Object o) { return o instanceof Behaved && ((Behaved)o).name().equals(name()); }
+
+    @Override public int hashCode() { return name().hashCode(); }
+  }
 
   /** Another app to open: a package and optional string extras (for apps
       that take them, e.g. a tab to show). The keyboard only starts it. */

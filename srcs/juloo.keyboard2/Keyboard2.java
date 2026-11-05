@@ -168,6 +168,11 @@ public class Keyboard2 extends InputMethodService
     juloo.keyboard2.studio.CrashLog.install(this);
     SharedPreferences prefs = DirectBootAwarePreferences.get_shared_preferences(this);
     _handler = new Handler(getMainLooper());
+    _behaviours = new juloo.keyboard2.studio.Behaviours(new juloo.keyboard2.studio.Behaviours.Host() {
+      public void revert(String sw) { do_switch(sw, true); }
+      public Object later(Runnable r, long ms) { _handler.postDelayed(r, ms); return r; }
+      public void cancel(Object h) { _handler.removeCallbacks((Runnable)h); }
+    });
     _foldStateTracker = new FoldStateTracker(this);
     _dictionaries = Dictionaries.instance(this);
     // Studio: heights out of range (build 61's endless growth) are repaired
@@ -293,6 +298,7 @@ public class Keyboard2 extends InputMethodService
       }
       public void open_studio() { start_activity(StudioActivity.class); }
       public void open_dictionaries() { launch_dictionaries_activity(); }
+      public void behave(String base, juloo.keyboard2.studio.Behaviours.Spec spec) { Keyboard2.this.behave(base, spec); }
       public void highlight(int target) { highlight_container(target); }
       public int keyboard_rows() { return _keyboard_layout_view.studio_row_count(); }
       public List<KeyboardData> layouts()
@@ -593,6 +599,7 @@ public class Keyboard2 extends InputMethodService
 
   private void open_key_editor(KeyboardData kw, KeyboardData.Key k)
   {
+    _behaviours.edited(); // il-005: one key edit is one use of edit mode / repeat off
     String layout = juloo.keyboard2.studio.KeyMap.layout_key(kw);
     juloo.keyboard2.studio.KeyMap km = (_config.studio.keymap != null)
       ? _config.studio.keymap : juloo.keyboard2.studio.KeyMap.of_json(null);
@@ -621,6 +628,68 @@ public class Keyboard2 extends InputMethodService
     i.putExtra(StudioActivity.EXTRA_KEY_ALL_IDS, ids.toArray(new String[0]));
     i.putExtra(StudioActivity.EXTRA_KEY_ALL_NAMES, names.toArray(new String[0]));
     startActivity(i);
+  }
+
+  /** il-005: switching keys and how they switch back (Studio → Keys). */
+  private juloo.keyboard2.studio.Behaviours _behaviours;
+
+  /** il-005: a switching key fired ([spec] null: its default from Studio →
+      Keys): switch, then let [_behaviours] arm the way back. */
+  void behave(String base, juloo.keyboard2.studio.Behaviours.Spec spec)
+  {
+    if (spec == null)
+      spec = juloo.keyboard2.studio.Behaviours.default_of(juloo.keyboard2.studio.Behaviours
+          .parse_defaults(Config.globalPrefs().getString(juloo.keyboard2.studio.Behaviours.PREF, "{}")), base);
+    do_switch(base, false);
+    _behaviours.switched(base, spec);
+  }
+
+  /** The switches themselves. [back]: switching back; a page goes back to
+      the letters, a toggle toggles. */
+  void do_switch(String sw, boolean back)
+  {
+    switch (sw)
+    {
+      case "studio_toggle_repeat": case "toggle_repeat":
+      {
+        boolean on = !_config.keyrepeat_enabled;
+        Config.globalPrefs().edit().putBoolean("keyrepeat_enabled", on).apply();
+        android.widget.Toast.makeText(this, on ? "Key repeat on"
+            : "Key repeat off: hold a key to edit it", android.widget.Toast.LENGTH_SHORT).show();
+        break;
+      }
+      case "studio_backspace_toggle":
+        EditStrip.forward_delete = !EditStrip.forward_delete;
+        _keyboard_layout_view.setKeyboard(current_layout());
+        break;
+      case "split_backspace":
+      {
+        boolean on = !_config.studio.split_backspace;
+        Config.globalPrefs().edit().putBoolean(juloo.keyboard2.studio.StudioConfig.KEY_SPLIT_BACKSPACE, on).apply();
+        android.widget.Toast.makeText(this, on ? "Backspace split: ⌫ ⌦" : "Backspace whole",
+            android.widget.Toast.LENGTH_SHORT).show();
+        break;
+      }
+      case "layout_mode":
+        set_layout_mode(!_layout_mode);
+        break;
+      case "switch_numeric": case "il_symbols": case "il_symbols_more": case "switch_greekmath":
+        if (back)
+        {
+          _currentSpecialLayout = null;
+          _keyboard_layout_view.setKeyboard(current_layout());
+        }
+        else if (sw.equals("switch_numeric"))
+          setSpecialLayout(loadNumericLayout());
+        else if (sw.equals("il_symbols"))
+          setSpecialLayout(LayoutModifier.modify_symbols(loadLayout(R.xml.il_symbols)));
+        else if (sw.equals("il_symbols_more"))
+          setSpecialLayout(LayoutModifier.modify_symbols(loadLayout(R.xml.il_symbols_more)));
+        else
+          setSpecialLayout(loadNumpad(R.xml.greekmath));
+        break;
+      default: break;
+    }
   }
 
   /** il-004: the app an app key just opened, until when the keyboard
@@ -1145,6 +1214,24 @@ public class Keyboard2 extends InputMethodService
   {
     public void open_app(KeyValue.App app) { Keyboard2.this.open_app(app); }
 
+    public void behave(String base, juloo.keyboard2.studio.Behaviours.Spec spec) { Keyboard2.this.behave(base, spec); }
+
+    public void typed(KeyValue key)
+    {
+      boolean del = false, word = false;
+      if (key.getKind() == KeyValue.Kind.Keyevent)
+      {
+        int c = key.getKeyevent();
+        del = c == KeyEvent.KEYCODE_DEL || c == KeyEvent.KEYCODE_FORWARD_DEL;
+        word = c == KeyEvent.KEYCODE_ENTER || c == KeyEvent.KEYCODE_TAB;
+      }
+      else if (key.getKind() == KeyValue.Kind.Char)
+        word = juloo.keyboard2.studio.Behaviours.ends_word(String.valueOf(key.getChar()));
+      else if (key.getKind() == KeyValue.Kind.String)
+        word = juloo.keyboard2.studio.Behaviours.ends_word(key.getString());
+      _behaviours.typed(del, word);
+    }
+
     public void handle_event_key(KeyValue.Event ev)
     {
       switch (ev)
@@ -1156,10 +1243,11 @@ public class Keyboard2 extends InputMethodService
         case SWITCH_TEXT:
           _currentSpecialLayout = null;
           _keyboard_layout_view.setKeyboard(current_layout());
+          _behaviours.left_page();
           break;
 
         case SWITCH_NUMERIC:
-          setSpecialLayout(loadNumericLayout());
+          behave("switch_numeric", null);
           break;
 
         case SWITCH_EMOJI:
@@ -1210,7 +1298,7 @@ public class Keyboard2 extends InputMethodService
           break;
 
         case SWITCH_GREEKMATH:
-          setSpecialLayout(loadNumpad(R.xml.greekmath));
+          behave("switch_greekmath", null);
           break;
 
         case CAPS_LOCK:
@@ -1257,29 +1345,23 @@ public class Keyboard2 extends InputMethodService
           break;
 
         case STUDIO_BACKSPACE_TOGGLE:
-          EditStrip.forward_delete = !EditStrip.forward_delete;
-          _keyboard_layout_view.setKeyboard(current_layout());
+          behave("studio_backspace_toggle", null);
           break;
 
         case STUDIO_TOGGLE_REPEAT:
-        {
-          boolean on = !_config.keyrepeat_enabled;
-          Config.globalPrefs().edit().putBoolean("keyrepeat_enabled", on).apply();
-          android.widget.Toast.makeText(Keyboard2.this, on ? "Key repeat on"
-              : "Key repeat off: hold a key to edit it", android.widget.Toast.LENGTH_SHORT).show();
+          behave("studio_toggle_repeat", null);
           break;
-        }
 
         case STUDIO_SECTOR_STEP:
           _edit_strip.sector_step();
           break;
 
         case STUDIO_SYMBOLS:
-          setSpecialLayout(LayoutModifier.modify_symbols(loadLayout(R.xml.il_symbols)));
+          behave("il_symbols", null);
           break;
 
         case STUDIO_SYMBOLS_MORE:
-          setSpecialLayout(LayoutModifier.modify_symbols(loadLayout(R.xml.il_symbols_more)));
+          behave("il_symbols_more", null);
           break;
 
         case STUDIO_APPLY_LOOK:

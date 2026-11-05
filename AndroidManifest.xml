@@ -29,6 +29,7 @@
         <action android:name="android.intent.action.MAIN"/>
       </intent-filter>
     </activity>
+    <activity android:name="juloo.keyboard2.studio.KeysActivity" android:theme="@style/appTheme" android:exported="false" android:label="Keys"/>
     <activity android:name="juloo.keyboard2.studio.StudioActivity" android:icon="@mipmap/ic_launcher" android:theme="@style/appTheme" android:exported="true" android:launchMode="singleTop">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>

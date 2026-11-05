@@ -121,6 +121,15 @@ public final class KeyEventHandler
       case Macro: evaluate_macro(key.getMacro()); break;
       case Stateful: handle_stateful(key.getStateful()); break;
       case App: _recv.open_app(key.getApp()); break;
+      case Behaved: _recv.behave(key.getBehaved().base, key.getBehaved().spec); break;
+    }
+    // il-005: keys that type or edit count as a use of a switched key.
+    switch (key.getKind())
+    {
+      case Char: case String: case Keyevent: case Editing: case Macro: case Slider:
+        _recv.typed(key);
+        break;
+      default: break;
     }
     update_meta_state(old_mods);
     _last_action = _next_last_action;
@@ -577,6 +586,10 @@ public final class KeyEventHandler
     public void handle_event_key(KeyValue.Event ev);
     /** il-004: start another app. */
     public void open_app(KeyValue.App app);
+    /** il-005: a switching key with a behaviour ([spec] null: its default). */
+    public void behave(String base, juloo.keyboard2.studio.Behaviours.Spec spec);
+    /** il-005: a key that types or edits was used. */
+    public void typed(KeyValue key);
     public void set_shift_state(boolean state, boolean lock);
     public void set_compose_pending(boolean pending);
     public void selection_state_changed(boolean selection_is_ongoing);

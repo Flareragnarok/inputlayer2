@@ -29,6 +29,8 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     void comfort_key(KeyValue kv);
     void open_studio();
     void open_dictionaries();
+    /** il-005: a switching action ([spec] null: its default). */
+    void behave(String base, Behaviours.Spec spec);
     /** Layout mode: tapping a key of the keyboard opens it in Studio. */
     void toggle_layout_mode();
     boolean layout_mode();
@@ -167,6 +169,17 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
 
   public void perform(String action)
   {
+    // il-005: repeat, backspace split and edit mode switch through the
+    // keyboard's behaviours ("toggle_repeat~once" places a variant).
+    String base = Behaviours.base_of(action);
+    Behaviours.Capable cap = Behaviours.capable(base);
+    if (cap != null && cap.comfort)
+    {
+      _listener.behave(base, Behaviours.spec_of(action));
+      if (base.equals("layout_mode"))
+        refresh(_config); // Update the key's label.
+      return;
+    }
     if (action.equals("select_container"))
       next_layer();
     else if (action.equals("edit_menu"))
@@ -186,18 +199,6 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       op_size(true);
     else if (action.equals("height_down"))
       op_size(false);
-    else if (action.equals("toggle_repeat"))
-    {
-      boolean on = !_config.keyrepeat_enabled;
-      _prefs.edit().putBoolean("keyrepeat_enabled", on).apply();
-      toast(on ? "Key repeat on" : "Key repeat off: hold a key to edit it");
-    }
-    else if (action.equals("split_backspace"))
-    {
-      boolean on = !_config.studio.split_backspace;
-      _prefs.edit().putBoolean(StudioConfig.KEY_SPLIT_BACKSPACE, on).apply();
-      toast(on ? "Backspace split: ⌫ ⌦" : "Backspace whole");
-    }
     else if (action.equals("layouts_save"))
     {
       try { toast("Saved as " + SavedLayouts.save_current(new ModuleStore(_prefs))); }
@@ -205,11 +206,6 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
     }
     else if (action.equals("layouts_pick"))
       layouts_pick();
-    else if (action.equals("layout_mode"))
-    {
-      _listener.toggle_layout_mode();
-      refresh(_config); // Update the key's label.
-    }
     else if (action.equals("height_undo"))
       back();
     else if (action.equals("height_revert"))
@@ -231,6 +227,11 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
 
   public ComfortKey.Label label_of(String action)
   {
+    if (Behaviours.spec_of(action) != null && Behaviours.capable(Behaviours.base_of(action)) != null)
+    {
+      ComfortKey.Label l = label_of(Behaviours.base_of(action));
+      return new ComfortKey.Label(l.text + Behaviours.spec_of(action).mark(), l.key_font);
+    }
     switch (action)
     {
       case "select_container": return new ComfortKey.Label(focus_label(), false);

@@ -185,6 +185,16 @@ cursor); the forward delete on backspace ↗ is retired.
 
 ## Comfort bar
 
+**Switching keys and their behaviours** (il-005): Studio → Keys and
+behaviours lists every special key with a search. Keys marked ⇆ switch
+something (key repeat, backspace direction, backspace split, edit mode, the
+number/symbol/Greek pages): pick how each one switches back by default:
+toggle, after one use (one key edit for repeat and edit mode, one delete for
+the backspace switches, one key typed for a page), at the end of the word,
+or after N seconds. A variant name puts a behaviour on one place only:
+`studio_toggle_repeat~once`, `il_symbols~word`, `switch_numeric~10s`
+(labels get ¹, ʷ, ⏱); comfort bar modules can use `toggle_repeat~once`.
+
 **App keys** (il-004): any key direction can open an app. In layout mode
 pick the key → direction → "Open an app…", then optional extras for apps
 that take them (the Remote Client: `tab=roadmap`, `commands`, `doc`,

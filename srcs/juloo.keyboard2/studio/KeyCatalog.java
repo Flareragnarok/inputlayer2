@@ -68,6 +68,7 @@ public final class KeyCatalog
     {
       Set<String> names = new LinkedHashSet<String>(layout_key_names(res));
       Collections.addAll(names, KeyNames.SPECIAL);
+      names.addAll(behaviour_variants());
       juloo.keyboard2.Emoji.init(res);
       List<String> emojis = new ArrayList<String>();
       for (int g = 0; g < juloo.keyboard2.Emoji.getNumGroups(); g++)
@@ -76,6 +77,18 @@ public final class KeyCatalog
       _cache = build(names, Arrays.asList(MUSIC_KEYS), emojis);
     }
     return _cache;
+  }
+
+  /** il-005: every switching key with each behaviour, to place with the
+      picker ("studio_toggle_repeat~once"…). */
+  static List<String> behaviour_variants()
+  {
+    List<String> out = new ArrayList<String>();
+    for (Behaviours.Capable c : Behaviours.capable())
+      if (!c.comfort)
+        for (String m : new String[]{ "toggle", "once", "word", "10s" })
+          out.add(c.name + Behaviours.SEP + m);
+    return out;
   }
 
   /** Entries for [names], one per distinct key, sorted. */

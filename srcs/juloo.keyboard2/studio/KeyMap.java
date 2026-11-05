@@ -349,6 +349,8 @@ public final class KeyMap
       return "";
     if (kv.getKind() == KeyValue.Kind.App)
       return KeyValue.APP_PREFIX + kv.getApp().target;
+    if (kv.getKind() == KeyValue.Kind.Behaved)
+      return kv.getBehaved().name();
     String s = kv.getString();
     if (kv.equals(key_of_name(s)))
       return s;

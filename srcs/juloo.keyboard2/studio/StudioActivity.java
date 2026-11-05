@@ -185,6 +185,10 @@ public class StudioActivity extends Activity
       }
     }));
     root.addView(setup);
+    // il-005: every key, searchable; how the switching keys switch back.
+    root.addView(button("Keys and behaviours", new View.OnClickListener() {
+      public void onClick(View v) { startActivity(new Intent(StudioActivity.this, KeysActivity.class)); }
+    }));
 
     root.addView(heading(R.string.studio_updates));
     root.addView(text(getString(R.string.studio_installed,
