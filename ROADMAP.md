@@ -112,6 +112,10 @@ Infrastructure:
 
 ## Next
 
+- **quickedit : add row** (owner, 2026-11-06, "might, in the future"):
+  quickedit : menu can add and remove keys, split and join rows, but not add
+  a new empty row; the layout editor has + row above / below already.
+
 1. **Images and files.** Copied images and files kept in Memory (Images,
    Files) and shown in the Clipboard tab, pasted back into apps that accept
    them; adding files from the phone's storage to Memory.

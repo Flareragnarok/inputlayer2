@@ -342,17 +342,21 @@ public class LayoutEditorActivity extends Activity implements LayoutCanvas.Liste
 
   void slot(final LayoutDoc.Key k, final int i)
   {
-    String[] items = { "Pick a key…", "Type text or emoji…", "Type a key name…", "Empty" };
+    String[] items = { "Pick a quick…", "quickopen : app…", "Type text or emoji…", "Type a key name…", "Empty" };
     new AlertDialog.Builder(this).setTitle(LayoutDoc.SLOTS[i])
       .setItems(items, (di, w) -> {
         switch (w)
         {
           case 0:
-            KeyEditor.pick(this, _prefs, "Key for " + LayoutDoc.SLOTS[i],
+            KeyEditor.pick(this, _prefs, "Quick for " + LayoutDoc.SLOTS[i],
                 n -> set_name(k, i, n), this::slots);
             break;
-          case 1: ask_text(k, i, false); break;
-          case 2: ask_text(k, i, true); break;
+          case 1:
+            AppPick.show(this, "quickopen : app for " + LayoutDoc.SLOTS[i],
+                n -> set_name(k, i, n), this::slots);
+            break;
+          case 2: ask_text(k, i, false); break;
+          case 3: ask_text(k, i, true); break;
           default: set_name(k, i, null); break;
         }
       })
