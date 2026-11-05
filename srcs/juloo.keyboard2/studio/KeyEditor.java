@@ -139,6 +139,8 @@ public final class KeyEditor
     acts.add(new Runnable() { public void run() { pick(d); } });
     labels.add("Type text or emoji…");
     acts.add(new Runnable() { public void run() { type_text(d); } });
+    labels.add("Open an app…");
+    acts.add(new Runnable() { public void run() { pick_app(d); } });
     if (!empty)
     {
       labels.add("Remove");
@@ -440,6 +442,67 @@ public final class KeyEditor
           }
           else
             save(d, n);
+        }
+      })
+      .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface di, int i) { direction(d); }
+      })
+      .show();
+  }
+
+  /** il-004: a key that opens a launchable app, with optional extras for
+      apps that take them (e.g. the Remote Client's tab=roadmap). */
+  void pick_app(final int d)
+  {
+    android.content.pm.PackageManager pm = _act.getPackageManager();
+    android.content.Intent main = new android.content.Intent(android.content.Intent.ACTION_MAIN)
+      .addCategory(android.content.Intent.CATEGORY_LAUNCHER);
+    final List<String[]> apps = new ArrayList<String[]>(); // {label, package}
+    for (android.content.pm.ResolveInfo ri : pm.queryIntentActivities(main, 0))
+    {
+      String pkg = ri.activityInfo.packageName;
+      boolean seen = false;
+      for (String[] a : apps) seen |= a[1].equals(pkg);
+      if (!seen && !pkg.equals(_act.getPackageName()))
+        apps.add(new String[]{ String.valueOf(ri.loadLabel(pm)), pkg });
+    }
+    java.util.Collections.sort(apps, new java.util.Comparator<String[]>() {
+      public int compare(String[] a, String[] b) { return a[0].compareToIgnoreCase(b[0]); }
+    });
+    String[] items = new String[apps.size()];
+    for (int i = 0; i < items.length; i++)
+      items[i] = apps.get(i)[0] + "   " + apps.get(i)[1];
+    new AlertDialog.Builder(_act)
+      .setTitle("App for " + DIR_LABELS[d])
+      .setItems(items, new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface di, int i) { app_extras(d, apps.get(i)[1]); }
+      })
+      .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface di, int i) { direction(d); }
+      })
+      .show();
+  }
+
+  void app_extras(final int d, final String pkg)
+  {
+    final EditText t = new EditText(_act);
+    t.setHint("optional, e.g. tab=roadmap");
+    t.setSingleLine(true);
+    new AlertDialog.Builder(_act)
+      .setTitle("Extras for " + pkg)
+      .setView(t)
+      .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface di, int i)
+        {
+          String x = t.getText().toString().trim();
+          String name = KeyValue.APP_PREFIX + pkg + (x.isEmpty() ? "" : "?" + x);
+          if (KeyValue.getKeyByName(name).getKind() != KeyValue.Kind.App)
+          {
+            Toast.makeText(_act, "Extras are name=value, joined with &", Toast.LENGTH_LONG).show();
+            app_extras(d, pkg);
+          }
+          else
+            save(d, name);
         }
       })
       .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {

@@ -99,9 +99,8 @@ Infrastructure:
   a remote build machine; GitHub Actions already covers remote builds.
 - Scenarios (owner's rule, 2026-11-05): `scenarios/`, every commit names
   the ones it touches, release notes list them.
-- Remote Client keys (il-004): `rc_*` keys and the suggestions key's ↑
-  bring the Remote Client up on a tab (it accepts only apps signed with the
-  owner's key).
+- App keys (il-004): `app:<package>[?extras]` on any key opens that app
+  (Termux, the Remote Client, …); picked in layout mode → "Open an app…".
 
 ## Next
 

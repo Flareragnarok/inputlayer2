@@ -623,28 +623,30 @@ public class Keyboard2 extends InputMethodService
     startActivity(i);
   }
 
-  /** il-004: bring the Remote Client to the front on [tab]. Its OpenTab
-      door only lets in apps signed with the owner's key; the client is
-      singleTask, so a running client comes up as it was. */
-  void open_remote_client(String tab)
+  /** il-004: open [app] the way the launcher does, so a running app comes
+      back to the front as it was (its own task), with the key's extras.
+      The keyboard isn't closed by this; it shows again wherever the app
+      gives a text field (or asks for it, as Termux and the Remote Client
+      do). The keyboard never sends anything to the app beyond the extras. */
+  void open_app(KeyValue.App app)
   {
-    Intent i = new Intent("io.github.flareragnarok.remoteclient.OPEN")
-      .setClassName("io.github.flareragnarok.remoteclient",
-          "io.github.flareragnarok.remoteclient.OpenTab")
-      .putExtra("tab", tab).putExtra("from", "inputlayer")
-      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    Intent i = getPackageManager().getLaunchIntentForPackage(app.package_name());
+    if (i == null)
+    {
+      android.widget.Toast.makeText(this, app.package_name() + " is not installed",
+          android.widget.Toast.LENGTH_SHORT).show();
+      return;
+    }
+    for (java.util.Map.Entry<String, String> e : app.extras().entrySet())
+      i.putExtra(e.getKey(), e.getValue());
+    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     try
     {
       startActivity(i);
     }
-    catch (android.content.ActivityNotFoundException e)
+    catch (RuntimeException e)
     {
-      android.widget.Toast.makeText(this, "Remote Client is not installed",
-          android.widget.Toast.LENGTH_SHORT).show();
-    }
-    catch (SecurityException e)
-    {
-      android.widget.Toast.makeText(this, "Remote Client refused (signed with another key?)",
+      android.widget.Toast.makeText(this, "Can't open " + app.package_name() + ": " + e.getMessage(),
           android.widget.Toast.LENGTH_SHORT).show();
     }
   }
@@ -1114,6 +1116,8 @@ public class Keyboard2 extends InputMethodService
   public class Receiver implements KeyEventHandler.IReceiver,
          KeyValue.Stateful.Symbol_provider, DictionarySwitcher.Callback
   {
+    public void open_app(KeyValue.App app) { Keyboard2.this.open_app(app); }
+
     public void handle_event_key(KeyValue.Event ev)
     {
       switch (ev)
@@ -1229,12 +1233,6 @@ public class Keyboard2 extends InputMethodService
           EditStrip.forward_delete = !EditStrip.forward_delete;
           _keyboard_layout_view.setKeyboard(current_layout());
           break;
-
-        case STUDIO_RC_STATUS: open_remote_client("status"); break;
-        case STUDIO_RC_ROADMAP: open_remote_client("roadmap"); break;
-        case STUDIO_RC_COMMANDS: open_remote_client("commands"); break;
-        case STUDIO_RC_DOC: open_remote_client("doc"); break;
-        case STUDIO_RC_SETUP: open_remote_client("setup"); break;
 
         case STUDIO_TOGGLE_REPEAT:
         {

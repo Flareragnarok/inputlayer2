@@ -49,13 +49,6 @@ public final class KeyValue implements Comparable<KeyValue>
         handle (the editing actions often do nothing). */
     STUDIO_UNDO,
     STUDIO_REDO,
-    /** Bring the Remote Client up on a tab (il-004). Opens it only; the
-        keyboard never talks to the desktop. */
-    STUDIO_RC_STATUS,
-    STUDIO_RC_ROADMAP,
-    STUDIO_RC_COMMANDS,
-    STUDIO_RC_DOC,
-    STUDIO_RC_SETUP,
   }
 
   // Must be evaluated in the reverse order of their values.
@@ -137,6 +130,7 @@ public final class KeyValue implements Comparable<KeyValue>
     Slider, // [_payload] is a [KeyValue.Slider], value is slider repeatition.
     Macro, // [_payload] is a [KeyValue.Macro], value is unused.
     Stateful, // [_payload] is a [KeyValue.Stateful], value is the query.
+    App, // [_payload] is a [KeyValue.App]: open another app (il-004).
   }
 
   private static final int FLAGS_OFFSET = 20;
@@ -263,6 +257,12 @@ public final class KeyValue implements Comparable<KeyValue>
   public int getSliderRepeat()
   {
     return ((int)(short)(_code & VALUE_BITS));
+  }
+
+  /** Defined only when [getKind() == Kind.App]. */
+  public App getApp()
+  {
+    return ((App)_payload);
   }
 
   /** Defined only when [getKind() == Kind.Macro]. */
@@ -549,8 +549,26 @@ public final class KeyValue implements Comparable<KeyValue>
 
   /** Return a key by its name. If the given name doesn't correspond to any
       special key, it is parsed with [KeyValueParser]. */
+  /** "app:<package>" or "app:<package>?name=value&…": a key that opens that
+      app (its launcher activity, string extras added). */
+  public static final String APP_PREFIX = "app:";
+
+  /** [null] if [target] isn't "<package>[?name=value&…]". */
+  public static KeyValue makeAppKey(String target)
+  {
+    if (!App.valid(target))
+      return null;
+    return new KeyValue(new App(target), Kind.App, 0, FLAG_SMALLER_FONT | FLAG_SPECIAL);
+  }
+
   public static KeyValue getKeyByName(String name)
   {
+    if (name.startsWith(APP_PREFIX))
+    {
+      KeyValue a = makeAppKey(name.substring(APP_PREFIX.length()));
+      if (a != null)
+        return a;
+    }
     KeyValue k = getSpecialKeyByName(name);
     if (k != null)
       return k;
@@ -707,11 +725,6 @@ public final class KeyValue implements Comparable<KeyValue>
       case "studio_apply_format": return eventKey("¶", Event.STUDIO_APPLY_FORMAT, FLAG_SMALLER_FONT);
       case "studio_undo": return eventKey(0xE036, Event.STUDIO_UNDO, 0);
       case "studio_redo": return eventKey(0xE037, Event.STUDIO_REDO, 0);
-      case "rc_status": return eventKey("RC1", Event.STUDIO_RC_STATUS, FLAG_SMALLER_FONT);
-      case "rc_roadmap": return eventKey("RC2", Event.STUDIO_RC_ROADMAP, FLAG_SMALLER_FONT);
-      case "rc_commands": return eventKey("RC3", Event.STUDIO_RC_COMMANDS, FLAG_SMALLER_FONT);
-      case "rc_doc": return eventKey("RC4", Event.STUDIO_RC_DOC, FLAG_SMALLER_FONT);
-      case "rc_setup": return eventKey("RC⚙", Event.STUDIO_RC_SETUP, FLAG_SMALLER_FONT);
 
       /* Key events */
       case "esc": return keyeventKey("Esc", KeyEvent.KEYCODE_ESCAPE, FLAG_SMALLER_FONT);
@@ -942,6 +955,61 @@ public final class KeyValue implements Comparable<KeyValue>
     @Override
     public String describe() { return name(); }
   };
+
+  /** Another app to open: a package and optional string extras (for apps
+      that take them, e.g. a tab to show). The keyboard only starts it. */
+  public static final class App implements Comparable<App>, Describe
+  {
+    static final java.util.regex.Pattern TARGET = java.util.regex.Pattern.compile(
+        "[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+(\\?[A-Za-z0-9_.]+=[A-Za-z0-9_.:-]*(&[A-Za-z0-9_.]+=[A-Za-z0-9_.:-]*)*)?");
+
+    public final String target;
+
+    App(String t) { target = t; }
+
+    static boolean valid(String t) { return t != null && TARGET.matcher(t).matches(); }
+
+    public String package_name()
+    {
+      int q = target.indexOf('?');
+      return q < 0 ? target : target.substring(0, q);
+    }
+
+    /** name -> value, in order. */
+    public java.util.LinkedHashMap<String, String> extras()
+    {
+      java.util.LinkedHashMap<String, String> m = new java.util.LinkedHashMap<String, String>();
+      int q = target.indexOf('?');
+      if (q >= 0)
+        for (String kv : target.substring(q + 1).split("&"))
+        {
+          int e = kv.indexOf('=');
+          m.put(kv.substring(0, e), kv.substring(e + 1));
+        }
+      return m;
+    }
+
+    /** The label: ↗ and the package's last part, short (↗term, ↗remo). */
+    @Override
+    public String toString()
+    {
+      String p = package_name();
+      String last = p.substring(p.lastIndexOf('.') + 1);
+      return "↗" + (last.length() > 4 ? last.substring(0, 4) : last);
+    }
+
+    @Override
+    public String describe() { return target; }
+
+    @Override
+    public int compareTo(App o) { return target.compareTo(o.target); }
+
+    @Override
+    public boolean equals(Object o) { return o instanceof App && ((App)o).target.equals(target); }
+
+    @Override
+    public int hashCode() { return target.hashCode(); }
+  }
 
   public static final class Macro implements Comparable<Macro>, Describe
   {

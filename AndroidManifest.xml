@@ -6,13 +6,6 @@
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
   <!-- Studio: self-update from GitHub releases, confirmed by the user -->
   <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
-  <!-- il-004: open the Remote Client on a tab. Declared here too (same
-       signature) so it exists whichever app is installed first. -->
-  <permission
-      android:name="io.github.flareragnarok.remoteclient.permission.OPEN"
-      android:label="Open the Remote Client on a tab"
-      android:protectionLevel="signature"/>
-  <uses-permission android:name="io.github.flareragnarok.remoteclient.permission.OPEN"/>
 
   <application android:label="@string/app_name" android:allowBackup="true" android:icon="@mipmap/ic_launcher" android:hardwareAccelerated="false">
     <service android:name="juloo.keyboard2.Keyboard2" android:label="@string/app_name" android:permission="android.permission.BIND_INPUT_METHOD" android:exported="true" android:directBootAware="true">
@@ -49,6 +42,10 @@
     <intent>
       <action android:name="android.view.InputMethod" />
     </intent>
-    <package android:name="io.github.flareragnarok.remoteclient" />
+    <!-- il-004: app keys open launchable apps; the key editor lists them. -->
+    <intent>
+      <action android:name="android.intent.action.MAIN" />
+      <category android:name="android.intent.category.LAUNCHER" />
+    </intent>
   </queries>
 </manifest>

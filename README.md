@@ -185,16 +185,18 @@ cursor); the forward delete on backspace ↗ is retired.
 
 ## Comfort bar
 
-The Remote Client keys `rc_status`, `rc_roadmap`, `rc_commands`, `rc_doc`,
-`rc_setup` (labels RC1–RC4, RC⚙) bring the Remote Client to the front on
-that tab, the running window if there is one. Put them on any key with
-layout mode. The keyboard only opens the client: it never talks to the
-desktop and never holds its key (scenario il-004).
+**App keys** (il-004): any key direction can open an app. In layout mode
+pick the key → direction → "Open an app…", then optional extras for apps
+that take them (the Remote Client: `tab=roadmap`, `commands`, `doc`,
+`setup`, `status`). The key is named `app:<package>[?name=value&…]`, labelled
+↗ and the package's last part (↗term, ↗remo); comfort bar modules can use
+the same name as an action. It opens the app as the launcher does (a running
+app comes back as it was). Nothing of another app lives in the keyboard.
 
 | Key | Tap | Swipes |
 |---|---|---|
 | **Layout key** ⇄ (left end) | edit mode on/off | ↑ copy · ↓ key repeat on/off · ↗ backspace split on/off |
-| **Suggestions key** | the suggestions' language (`EN`; `⬇ EN` when its dictionary is missing, then it offers the download) | ↑ brings up the Remote Client on Status |
+| **Suggestions key** | the suggestions' language (`EN`; `⬇ EN` when its dictionary is missing, then it offers the download) | – |
 | **Cursor key** (center) | – | ← → ↑ ↓ move the cursor |
 | **Language key** | the layout shown, as a language (`FR`, `DE`, `RU`, `EL`…); tap: the next one | ← previous · ↑ list to pick from · ↓ save the key arrangement · → pick a saved layout |
 | **Edit key** ↕ (right end) | picks a part to change: comfort bar → suggestions → keyboard → edit strip → selection bar → each keyboard row → off (outlined in blue) | ↑ ↓ taller / shorter · ← → move it up / down in the stack (parts, not rows) · ↖ undo · ↙ undo all |

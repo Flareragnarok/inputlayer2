@@ -23,9 +23,8 @@ public final class StudioConfig
       // backspace on/off. Cut is backspace ↓, select all ⌦ ←.
       ComfortKeySpec.of("c", "layout_mode", "n", "copy", "s", "toggle_repeat",
           "ne", "split_backspace"),
-      // Suggestions key: the suggestions' language; ↑ brings up the Remote
-      // Client on Status (il-004; rc_* keys open other tabs).
-      ComfortKeySpec.of("c", "dictionary", "n", "rc_status"),
+      // Suggestions key: the suggestions' language.
+      ComfortKeySpec.of("c", "dictionary"),
       // Cursor key.
       ComfortKeySpec.of("w", "left", "e", "right", "n", "up", "s", "down"),
       // Language key: tap next language, ← previous, ↑ list; ↓ saves the key

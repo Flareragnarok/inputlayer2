@@ -300,10 +300,9 @@ public class ComfortBar extends FrameLayout implements ComfortKey.Host
       case "layout_prev": return "switch_backward";
       case "keyboard_picker": return "change_method";
       case "clipboard": return "switch_clipboard";
-      // il-004: bring the Remote Client up on a tab.
-      case "rc_status": case "rc_roadmap": case "rc_commands": case "rc_doc": case "rc_setup":
-        return action;
-      default: return null;
+      default:
+        // il-004: "app:<package>[?k=v&…]" opens an app, as on a key.
+        return action.startsWith(KeyValue.APP_PREFIX) ? action : null;
     }
   }
 

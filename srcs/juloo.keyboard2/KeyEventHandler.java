@@ -120,6 +120,7 @@ public final class KeyEventHandler
       case Slider: handle_slider(key.getSlider(), key.getSliderRepeat(), false); break;
       case Macro: evaluate_macro(key.getMacro()); break;
       case Stateful: handle_stateful(key.getStateful()); break;
+      case App: _recv.open_app(key.getApp()); break;
     }
     update_meta_state(old_mods);
     _last_action = _next_last_action;
@@ -574,6 +575,8 @@ public final class KeyEventHandler
   public static interface IReceiver extends Suggestions.Callback
   {
     public void handle_event_key(KeyValue.Event ev);
+    /** il-004: start another app. */
+    public void open_app(KeyValue.App app);
     public void set_shift_state(boolean state, boolean lock);
     public void set_compose_pending(boolean pending);
     public void selection_state_changed(boolean selection_is_ongoing);
