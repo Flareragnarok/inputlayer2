@@ -118,7 +118,7 @@ swipes), `KeyboardData` / `KeyValue` / `KeyValueParser` (layouts and keys),
 `juloo.keyboard2.studio` (Quicksbar, EditStrip, MemoryStore, Arrange,
 FocusLayout, Heights, Behaviours, LayoutEditorActivity …). What the owner
 has said about the rewrite (via the laptop Claude): the inherited engine is
-unstable and slow to edit, its swipes are not comfortable for a power user;
+unstable and slow to edit, its swipes are not quick enough for a power user;
 Memory, the clipboard, Sector, Verse and the quickedit need a better
 foundation; the app should be untraceable to Unexpected Keyboard, trusted,
 and update without a security prompt (a release key); long-term, keyboards
