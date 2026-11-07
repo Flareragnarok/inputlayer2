@@ -14,7 +14,9 @@ only the owner does that.
   Studio-Briefing Drive folder (what changed, where the risk is, test list).
 - Names (owner): the bar is the quicksbar, every action is a quick, named
   by function (README → Quick names). Never write "comfort" or "<x> key"
-  for a quick.
+  for a quick, and not "comfortable" either, even in design text or
+  quotes about the owner's wishes: say "quick" (owner, 2026-11-08: "names
+  like comfortable which should even in design be renamed quick").
 
 - Read `NOTE-inputlayer-20261101-2231.md` and `NOTE-inputlayer-20261101-2245.md`
   in the Studio-Briefing Drive folder. **2245 sets the priorities:**
