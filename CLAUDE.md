@@ -22,6 +22,16 @@ only the owner does that.
   - A new core and dropping the debug tag are long-term goals.
   - The debug key stays in use until then.
 
+## Used elsewhere (2026-11-08)
+
+The Remote Client (Flareragnarok/remotelayer-, ~/work/remote-client)
+distills its layout model from this app's: default layout + the owner's
+edits as an overlay applied last (`keymap`), the quickedit's layers of
+focus, hold-to-edit, the searchable key picker, saved arrangements, undo
+and repair (ROADMAP 26-27, 62, 65-74; il-006..008). Its
+`docs/design-lineage-inputlayer.md` maps each one. When arranging changes
+here, check whether it should carry over there.
+
 ## Working notes
 
 - `ROADMAP.md` (done / next / later / undecided) and `README.md` (features,
