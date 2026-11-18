@@ -52,6 +52,32 @@ public class CodeTableTest
     assertTrue(CodeTable.search_blocks("currency").get(0).name.equals("Currency symbols"));
   }
 
+  @Test public void grid_rows_like_the_unicode_charts()
+  {
+    List<CodeTable.Block> bs = CodeTable.blocks();
+    List<CodeTable.Row> rows = CodeTable.rows(bs, 8, null);
+    // Basic latin: its title, then rows from 0020 (0000-0018 are controls).
+    assertEquals(-1, rows.get(0).base);
+    assertEquals(0x20, rows.get(1).base);
+    assertEquals(0x28, rows.get(2).base);
+    int sheqel = -1;
+    for (int i = 0; i < rows.size(); i++)
+      if (rows.get(i).base == 0x20A8)
+        sheqel = i;
+    assertTrue(sheqel > 0);
+    CodeTable.Row r = rows.get(sheqel);
+    assertEquals("Currency symbols", r.block.name);
+    assertEquals("₪", CodeTable.cell(r.block, 0x20A8 + 2, null));
+    // Cells out of the block, or that the phone can't draw, are empty.
+    assertEquals("", CodeTable.cell(bs.get(0), 0x7F, null));
+    java.util.BitSet only = new java.util.BitSet();
+    only.set(0x20AA);
+    assertEquals("", CodeTable.cell(r.block, 0x20A9, only));
+    List<CodeTable.Row> drawn = CodeTable.rows(bs, 16, only);
+    assertEquals(2, drawn.size());
+    assertEquals(0x20A0, drawn.get(1).base);
+  }
+
   @Test public void shown_and_put_on_keys()
   {
     assertEquals("◌̀", CodeTable.shown(0x300));

@@ -119,8 +119,10 @@ layout, every special key, music notes and all emojis, grouped Latin,
 Greek, Cyrillic, other scripts, Music, digits and symbols, Emoji, special
 keys; alphabetical inside, emojis in the emoji pane's order; with a
 search, and a **⌗ Code table** button), **Type text or emoji…** (any
-text on the key: 🎶, ♪~(´ε` ), a word), **⌗ Code table…** (il-009: every
-Unicode block as a grid of big characters, or a search by character, code
+text on the key: 🎶, ♪~(´ε` ), a word), **⌗ Code table…** (il-009: one
+grid table of all of Unicode like the code charts, hex digits across, a
+row per 8 codes (16 on a wide screen), each block under its title;
+**Blocks** jumps; or a search by character, code
 `20AA` / `U+20AA` or Unicode name `sheqel`, `grave`; long-press names a
 character; ones the phone can't draw are left out), **Remove**, or **Back to the layout's own**. **⇄ Swap the whole
 key with…** trades everything two keys hold, tap and swipes. **↔ Width**

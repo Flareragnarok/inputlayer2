@@ -13,19 +13,19 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.GridView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/** il-009: the code table. Every Unicode block as a grid of characters, and
+/** il-009: the code table. Every Unicode block in one grid table, and
     a search by character, code (20AA, U+20AA) or Unicode name (sheqel);
     the character picked goes on the key (owner, 2026-11-18: "a browsable
     code table … ₪ è ♪ whatever"). Used by the key editor and, through the
@@ -41,9 +41,6 @@ public final class CodeTable
     public final int last;
     /** Its usable characters, in code order. */
     final int[] cps;
-    /** Whether this phone draws at least one of them (set in the
-        background, [true] until known). */
-    volatile boolean drawable = true;
 
     Block(String n, int f, int l, int[] c) { name = n; first = f; last = l; cps = c; }
   }
@@ -233,8 +230,62 @@ public final class CodeTable
     return Build.VERSION.SDK_INT < 23 || p.hasGlyph(s);
   }
 
-  /** The table: the blocks, or what the search finds; a block opens as a
-      grid. [done] gets the key name of the character tapped. */
+  /** The cells this phone draws, [null] until known (then every usable
+      cell shows). */
+  static volatile BitSet _draws = null;
+
+  static boolean shows(int cp, BitSet draws)
+  {
+    return usable(cp) && (draws == null || draws.get(cp));
+  }
+
+  /** A line of the table: a block's title ([base] -1), or [cols] cells
+      from code [base]. */
+  static final class Row
+  {
+    final Block block;
+    final int base;
+    Row(Block b, int ba) { block = b; base = ba; }
+  }
+
+  /** The grid table (owner, 2026-11-18: "need like a grid table"): each
+      block's title, then its rows of [cols] codes, like the Unicode
+      charts. Rows and blocks with nothing to show are left out. */
+  static List<Row> rows(List<Block> blocks, int cols, BitSet draws)
+  {
+    List<Row> out = new ArrayList<Row>();
+    for (Block b : blocks)
+    {
+      boolean titled = false;
+      int i = 0;
+      while (i < b.cps.length)
+      {
+        int base = b.cps[i] - b.cps[i] % cols;
+        boolean any = false;
+        for (; i < b.cps.length && b.cps[i] < base + cols; i++)
+          any |= draws == null || draws.get(b.cps[i]);
+        if (!any)
+          continue;
+        if (!titled)
+        {
+          out.add(new Row(b, -1));
+          titled = true;
+        }
+        out.add(new Row(b, base));
+      }
+    }
+    return out;
+  }
+
+  /** What the cell of [cp] in a row of [b] shows, "" for none. */
+  static String cell(Block b, int cp, BitSet draws)
+  {
+    return (cp >= b.first && cp <= b.last && shows(cp, draws)) ? shown(cp) : "";
+  }
+
+  /** The table: the grid of every block, or what the search finds. Tap a
+      character to pick it, long-press it for its code and name. [done]
+      gets the key name of the character tapped. */
   public static void show(final Activity act, String title, final Done done,
       final Runnable cancel)
   {
@@ -246,62 +297,106 @@ public final class CodeTable
       cancel.run();
       return;
     }
-    final Paint paint = new Paint();
-    final List<Object> rows = new ArrayList<Object>();
-    final ArrayAdapter<String> adapter = new ArrayAdapter<String>(act,
+    final float dp = act.getResources().getDisplayMetrics().density;
+    final float width_dp = act.getResources().getDisplayMetrics().widthPixels / dp;
+    final int cols = width_dp >= 600 ? 16 : 8;
+    final List<Row> table = new ArrayList<Row>(rows(blocks, cols, _draws));
+    final AlertDialog[] dlg = new AlertDialog[1];
+    final Picker pick = new Picker() {
+      public void picked(int cp)
+      {
+        String n = key_name(cp);
+        if (n == null)
+        {
+          Toast.makeText(act, "Can't put " + hex(cp) + " on a key", Toast.LENGTH_LONG).show();
+          return;
+        }
+        dlg[0].dismiss();
+        done.picked(n);
+      }
+    };
+    final TableAdapter grid = new TableAdapter(act, table, cols, dp, pick);
+    final List<Object> hits = new ArrayList<Object>();
+    final ArrayAdapter<String> found = new ArrayAdapter<String>(act,
         android.R.layout.simple_list_item_1, new ArrayList<String>());
+
     LinearLayout box = new LinearLayout(act);
     box.setOrientation(LinearLayout.VERTICAL);
     final EditText q = new EditText(act);
     q.setSingleLine(true);
     q.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
     q.setHint("Search: ₪, 20AA, sheqel, grave, arrows");
+    // The column digits, over the cells.
+    final LinearLayout heads = TableAdapter.line(act, dp);
+    ((TextView)heads.getChildAt(0)).setText("");
+    for (int c = 0; c < cols; c++)
+    {
+      TextView t = TableAdapter.cell_view(act, dp, 12);
+      t.setText(Integer.toHexString(c).toUpperCase(Locale.ROOT));
+      t.setMinHeight(0);
+      heads.addView(t, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+    }
     final ListView list = new ListView(act);
-    list.setAdapter(adapter);
+    list.setAdapter(grid);
+    list.setFastScrollEnabled(true);
     box.addView(q);
+    box.addView(heads);
     box.addView(list, new LinearLayout.LayoutParams(
           LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
-    final AlertDialog dlg = new AlertDialog.Builder(act).setTitle(title).setView(box)
+    dlg[0] = new AlertDialog.Builder(act).setTitle(title).setView(box)
       .setNegativeButton(android.R.string.cancel, (di, i) -> cancel.run())
+      .setNeutralButton("Blocks", null)
       .create();
+
     final Runnable refill = new Runnable() {
       public void run()
       {
         String s = q.getText().toString();
-        rows.clear();
-        List<String> labels = new ArrayList<String>();
         if (s.trim().isEmpty())
         {
-          for (Block b : blocks)
-            if (b.drawable)
-            {
-              rows.add(b);
-              labels.add(block_label(b, paint));
-            }
+          heads.setVisibility(View.VISIBLE);
+          if (list.getAdapter() != grid)
+            list.setAdapter(grid);
+          return;
         }
-        else
+        heads.setVisibility(View.GONE);
+        BitSet draws = _draws;
+        hits.clear();
+        List<String> labels = new ArrayList<String>();
+        for (Block b : search_blocks(s))
         {
-          for (Block b : search_blocks(s))
-            if (b.drawable)
-            {
-              rows.add(b);
-              labels.add("▸ " + block_label(b, paint));
-            }
-          Names ns = _names;
-          for (int cp : search(s, ns))
-            if (draws(paint, shown(cp)))
-            {
-              rows.add(cp);
-              labels.add(shown(cp) + "    " + hex(cp) + "  " + name(cp));
-            }
-          if (ns == null)
-          {
-            rows.add(null);
-            labels.add("Loading the names…");
-          }
+          hits.add(b);
+          labels.add("▸ " + b.name + "    " + hex(b.first) + "–" + hex(b.last));
         }
-        adapter.clear();
-        adapter.addAll(labels);
+        Names ns = _names;
+        for (int cp : search(s, ns))
+          if (shows(cp, draws))
+          {
+            hits.add(cp);
+            labels.add(shown(cp) + "    " + hex(cp) + "  " + name(cp));
+          }
+        if (ns == null)
+        {
+          hits.add(null);
+          labels.add("Loading the names…");
+        }
+        found.clear();
+        found.addAll(labels);
+        if (list.getAdapter() != found)
+          list.setAdapter(found);
+      }
+    };
+    final Jump jump = new Jump() {
+      public void to(Block b)
+      {
+        q.setText("");
+        refill.run();
+        for (int i = 0; i < table.size(); i++)
+          if (table.get(i).block == b)
+          {
+            list.setSelection(i);
+            return;
+          }
       }
     };
     q.addTextChangedListener(new TextWatcher() {
@@ -310,106 +405,165 @@ public final class CodeTable
       public void afterTextChanged(Editable s) { refill.run(); }
     });
     list.setOnItemClickListener((p, v, i, id) -> {
-      Object r = rows.get(i);
+      if (list.getAdapter() != found)
+        return;
+      Object r = hits.get(i);
       if (r instanceof Block)
-        open_block(act, (Block)r, paint, dlg, done);
+        jump.to((Block)r);
       else if (r instanceof Integer)
-        picked(act, (Integer)r, dlg, null, done);
+        pick.picked((Integer)r);
     });
     list.setOnItemLongClickListener((p, v, i, id) -> {
-      Object r = rows.get(i);
-      if (r instanceof Integer)
-        Toast.makeText(act, hex((Integer)r) + " " + name((Integer)r), Toast.LENGTH_LONG).show();
-      return r instanceof Integer;
+      if (list.getAdapter() != found || !(hits.get(i) instanceof Integer))
+        return false;
+      int cp = (Integer)hits.get(i);
+      Toast.makeText(act, hex(cp) + " " + name(cp), Toast.LENGTH_LONG).show();
+      return true;
     });
-    refill.run();
-    dlg.show();
-    // The names and which blocks this phone draws, off the screen's thread.
+    dlg[0].show();
+    // "Blocks" jumps to a block, and the table stays open.
+    dlg[0].getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
+      final List<Block> shown_blocks = new ArrayList<Block>();
+      for (Row r : table)
+        if (r.base < 0)
+          shown_blocks.add(r.block);
+      String[] names = new String[shown_blocks.size()];
+      for (int i = 0; i < names.length; i++)
+        names[i] = shown_blocks.get(i).name + "    " + hex(shown_blocks.get(i).first);
+      new AlertDialog.Builder(act).setTitle("Go to block")
+        .setItems(names, (di, i) -> jump.to(shown_blocks.get(i)))
+        .show();
+    });
+    // Which cells this phone draws, and the names, off the screen's thread.
     new Thread(new Runnable() {
       public void run()
       {
         try
         {
-          Paint bg = new Paint();
-          for (Block b : blocks)
+          if (_draws == null)
           {
-            boolean any = false;
-            for (int cp : b.cps)
-              if (draws(bg, shown(cp))) { any = true; break; }
-            b.drawable = any;
+            Paint bg = new Paint();
+            BitSet d = new BitSet(LAST_CP + 1);
+            for (Block b : blocks)
+              for (int cp : b.cps)
+                if (draws(bg, shown(cp)))
+                  d.set(cp);
+            _draws = d;
           }
           names();
         }
         catch (Throwable _e) {}
+        final List<Row> drawn = rows(blocks, cols, _draws);
         act.runOnUiThread(new Runnable() {
-          public void run() { if (dlg.isShowing()) refill.run(); }
+          public void run()
+          {
+            if (!dlg[0].isShowing())
+              return;
+            grid.draws = _draws;
+            table.clear();
+            table.addAll(drawn);
+            grid.notifyDataSetChanged();
+            refill.run();
+          }
         });
       }
     }).start();
   }
 
-  static String block_label(Block b, Paint p)
-  {
-    StringBuilder prev = new StringBuilder();
-    int k = 0;
-    for (int i = 0; i < b.cps.length && k < 6 && i < 64; i++)
-      if (draws(p, shown(b.cps[i])))
-      {
-        prev.append(shown(b.cps[i])).append(' ');
-        k++;
-      }
-    return b.name + "    " + hex(b.first) + "–" + hex(b.last) + "\n" + prev;
-  }
+  interface Picker { void picked(int cp); }
+  interface Jump { void to(Block b); }
 
-  /** The block as a grid of big characters; tap picks, long press names. */
-  static void open_block(final Activity act, Block b, Paint p,
-      final AlertDialog table, final Done done)
+  /** The grid: a block's title, or a row label (the code of its first
+      cell; the column digit adds to it) then [cols] cells. */
+  static final class TableAdapter extends android.widget.BaseAdapter
   {
-    final List<Integer> cps = new ArrayList<Integer>();
-    for (int cp : b.cps)
-      if (draws(p, shown(cp)))
-        cps.add(cp);
-    final float dp = act.getResources().getDisplayMetrics().density;
-    GridView grid = new GridView(act);
-    grid.setNumColumns(GridView.AUTO_FIT);
-    grid.setColumnWidth((int)(52 * dp));
-    grid.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
-    grid.setAdapter(new ArrayAdapter<Integer>(act, 0, cps) {
-      @Override
-      public View getView(int i, View v, ViewGroup parent)
+    final Activity _act;
+    final List<Row> _rows;
+    final int _cols;
+    final float _dp;
+    final Picker _pick;
+    BitSet draws = _draws;
+
+    TableAdapter(Activity act, List<Row> rows, int cols, float dp, Picker pick)
+    {
+      _act = act; _rows = rows; _cols = cols; _dp = dp; _pick = pick;
+    }
+
+    public int getCount() { return _rows.size(); }
+    public Object getItem(int i) { return _rows.get(i); }
+    public long getItemId(int i) { return i; }
+    @Override public int getViewTypeCount() { return 2; }
+    @Override public int getItemViewType(int i) { return _rows.get(i).base < 0 ? 0 : 1; }
+    @Override public boolean isEnabled(int i) { return false; }
+
+    static LinearLayout line(Activity act, float dp)
+    {
+      LinearLayout l = new LinearLayout(act);
+      l.setOrientation(LinearLayout.HORIZONTAL);
+      TextView label = new TextView(act);
+      label.setTypeface(android.graphics.Typeface.MONOSPACE);
+      label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+      label.setGravity(Gravity.CENTER_VERTICAL | Gravity.END);
+      label.setPadding(0, 0, (int)(4 * dp), 0);
+      l.addView(label, new LinearLayout.LayoutParams((int)(44 * dp),
+            ViewGroup.LayoutParams.MATCH_PARENT));
+      return l;
+    }
+
+    static TextView cell_view(Activity act, float dp, int sp)
+    {
+      TextView t = new TextView(act);
+      t.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
+      t.setGravity(Gravity.CENTER);
+      t.setMinHeight((int)(44 * dp));
+      t.setSingleLine(true);
+      return t;
+    }
+
+    public View getView(int i, View v, ViewGroup parent)
+    {
+      final Row r = _rows.get(i);
+      if (r.base < 0)
       {
-        TextView t = (v instanceof TextView) ? (TextView)v : new TextView(act);
-        t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26);
-        t.setGravity(Gravity.CENTER);
-        t.setMinHeight((int)(52 * dp));
-        t.setText(shown(getItem(i)));
+        TextView t = (v instanceof TextView) ? (TextView)v : new TextView(_act);
+        t.setTypeface(null, android.graphics.Typeface.BOLD);
+        t.setPadding((int)(8 * _dp), (int)(14 * _dp), 0, (int)(4 * _dp));
+        t.setText(r.block.name + "    " + hex(r.block.first) + "–" + hex(r.block.last));
         return t;
       }
-    });
-    final AlertDialog dlg = new AlertDialog.Builder(act)
-      .setTitle(b.name + "  " + hex(b.first) + "–" + hex(b.last))
-      .setView(grid)
-      .setNegativeButton("Blocks", null)
-      .create();
-    grid.setOnItemClickListener((pa, v, i, id) -> picked(act, cps.get(i), table, dlg, done));
-    grid.setOnItemLongClickListener((pa, v, i, id) -> {
-      Toast.makeText(act, hex(cps.get(i)) + " " + name(cps.get(i)), Toast.LENGTH_LONG).show();
-      return true;
-    });
-    dlg.show();
-  }
-
-  static void picked(Activity act, int cp, AlertDialog table, AlertDialog grid, Done done)
-  {
-    String n = key_name(cp);
-    if (n == null)
-    {
-      Toast.makeText(act, "Can't put " + hex(cp) + " on a key", Toast.LENGTH_LONG).show();
-      return;
+      LinearLayout l = (LinearLayout)v;
+      if (l == null)
+      {
+        l = line(_act, _dp);
+        for (int c = 0; c < _cols; c++)
+        {
+          TextView t = cell_view(_act, _dp, 22);
+          t.setBackgroundResource(android.R.drawable.list_selector_background);
+          l.addView(t, new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        }
+      }
+      ((TextView)l.getChildAt(0)).setText(String.format(Locale.ROOT, "%04X", r.base));
+      for (int c = 0; c < _cols; c++)
+      {
+        final int cp = r.base + c;
+        TextView t = (TextView)l.getChildAt(c + 1);
+        String s = cell(r.block, cp, draws);
+        t.setText(s);
+        if (s.isEmpty())
+        {
+          t.setOnClickListener(null);
+          t.setOnLongClickListener(null);
+          t.setClickable(false);
+          continue;
+        }
+        t.setOnClickListener(x -> _pick.picked(cp));
+        t.setOnLongClickListener(x -> {
+          Toast.makeText(_act, hex(cp) + " " + name(cp), Toast.LENGTH_LONG).show();
+          return true;
+        });
+      }
+      return l;
     }
-    if (grid != null)
-      grid.dismiss();
-    table.dismiss();
-    done.picked(n);
   }
 }
