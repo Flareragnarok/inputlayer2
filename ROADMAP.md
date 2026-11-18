@@ -99,6 +99,8 @@ Infrastructure:
   a remote build machine; GitHub Actions already covers remote builds.
 - Scenarios (owner's rule, 2026-11-05): `scenarios/`, every commit names
   the ones it touches, release notes list them.
+- Code table (il-009, build 87): ⌗ Code table in the key editor and in
+  every key picker; every Unicode block, search by character, code or name.
 - Quick names (il-008): every action is a quick, named by function
   (quickfunction, quicktoggle, pageswitch, quickopen, quickedit, quickequip,
   quickbehaviour); Studio shows them, either name works as a key name;

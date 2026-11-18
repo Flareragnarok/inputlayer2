@@ -149,6 +149,8 @@ public final class KeyEditor
     acts.add(new Runnable() { public void run() { pick(d); } });
     labels.add("Type text or emoji…");
     acts.add(new Runnable() { public void run() { type_text(d); } });
+    labels.add("⌗  Code table (any character)…");
+    acts.add(new Runnable() { public void run() { code_table(d); } });
     labels.add("quickapp (quickopen : app)…");
     acts.add(new Runnable() { public void run() { pick_app(d); } });
     if (!empty)
@@ -190,7 +192,7 @@ public final class KeyEditor
   /** The same list for any screen (the layout editor too): every key, the
       saved layouts as keys, a filter. */
   static void pick(final android.app.Activity _act, android.content.SharedPreferences prefs,
-      String title, final Picked done, final Runnable cancel)
+      final String title, final Picked done, final Runnable cancel)
   {
     final List<KeyCatalog.Entry> all;
     try { all = KeyCatalog.with_layouts(KeyCatalog.all(_act.getResources()), new ModuleStore(prefs)); }
@@ -217,6 +219,13 @@ public final class KeyEditor
       .setView(box)
       .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
         public void onClick(DialogInterface di, int i) { cancel.run(); }
+      })
+      // il-009: any character, not only those on a layout.
+      .setNeutralButton("⌗ Code table", new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface di, int i)
+        {
+          CodeTable.show(_act, title + " : code table", n -> done.picked(n), cancel);
+        }
       })
       .create();
     filter.addTextChangedListener(new TextWatcher() {
@@ -466,6 +475,13 @@ public final class KeyEditor
         public void onClick(DialogInterface di, int i) { direction(d); }
       })
       .show();
+  }
+
+  /** il-009: any Unicode character, from the code table. */
+  void code_table(final int d)
+  {
+    CodeTable.show(_act, path(d) + " : code table",
+        n -> save(d, n), () -> direction(d));
   }
 
   /** il-004: a key that opens a launchable app (quickopen : app), picked
