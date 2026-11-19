@@ -38,4 +38,10 @@ public final class CustomTools
     return UnicodeStyles.font(m.name, m.json.optString("lower", ""),
         m.json.optString("upper", ""), m.json.optString("digits", ""));
   }
+
+  /** il-010: a [corruption] module's marks, as a Verse look. */
+  public static UnicodeStyles.Corruption corruption(Module m)
+  {
+    return UnicodeStyles.corruption(m.name, m.json.optString("marks", ""));
+  }
 }

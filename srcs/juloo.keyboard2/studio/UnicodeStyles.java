@@ -175,6 +175,46 @@ public final class UnicodeStyles
     _fonts_from = from;
   }
 
+  /** il-010: a saved corruption (from a [corruption] module): combining
+      marks, picked in the code table, piled in this order on every
+      character (owner, 2026-11-18: "⩚̸̷⃫̨̣̖ … we got these corruptions as
+      well"). */
+  public static final class Corruption
+  {
+    public final String name;
+    public final String marks;
+
+    Corruption(String n, String m) { name = n; marks = m; }
+  }
+
+  static List<Corruption> _corruptions = new ArrayList<Corruption>();
+
+  /** [null] unless [name] is free and [marks] holds only combining marks
+      (one or more). */
+  public static Corruption corruption(String name, String marks)
+  {
+    if (name == null || name.trim().isEmpty() || marks == null || marks.isEmpty()
+        || Arrays.asList(STYLES).contains(name.trim()))
+      return null;
+    for (int cp : code_points(marks))
+      if (!is_mark(cp))
+        return null;
+    return new Corruption(name.trim(), marks);
+  }
+
+  public static synchronized void set_corruptions(List<Corruption> cs)
+  {
+    _corruptions = new ArrayList<Corruption>(cs);
+  }
+
+  static Corruption corruption_named(String style)
+  {
+    for (Corruption c : _corruptions)
+      if (c.name.equals(style))
+        return c;
+    return null;
+  }
+
   /** Verse's nests: { name, items... }. Every nest but "Case" (which holds
       [CASES]) starts with [PLAIN]; "Fonts" holds the saved fonts, only when
       there are some. */
@@ -186,7 +226,11 @@ public final class UnicodeStyles
     l.add(new String[]{ "Sans", PLAIN, "sans", "sans_bold", "sans_italic", "sans_bold_italic" });
     l.add(new String[]{ "Type", PLAIN, "mono", "script", "bold_script", "fraktur", "bold_fraktur", "double" });
     l.add(new String[]{ "Shapes", PLAIN, "small_caps", "circled", "fullwidth" });
-    l.add(new String[]{ "Marks", PLAIN, "strike", "underline", "zalgo" });
+    List<String> marks = new ArrayList<String>(
+        Arrays.asList("Marks", PLAIN, "strike", "underline", "zalgo"));
+    for (Corruption c : _corruptions)
+      marks.add(c.name);
+    l.add(marks.toArray(new String[0]));
     if (!_fonts.isEmpty())
     {
       String[] f = new String[_fonts.size() + 2];
@@ -203,6 +247,8 @@ public final class UnicodeStyles
   public static List<String> styles()
   {
     List<String> l = new ArrayList<String>(Arrays.asList(STYLES));
+    for (Corruption c : _corruptions)
+      l.add(c.name);
     for (Font f : _fonts)
       l.add(f.name);
     return l;
@@ -250,7 +296,7 @@ public final class UnicodeStyles
           j += Character.charCount(s.codePointAt(j));
           n++;
         }
-        if (n == 1)
+        if (n == 1 && !is_corruption(s.substring(start, j)))
           b.appendCodePoint(cp);
         i = j;
         continue;
@@ -266,6 +312,30 @@ public final class UnicodeStyles
     return b.toString();
   }
 
+  static boolean is_corruption(String run)
+  {
+    for (Corruption c : _corruptions)
+      if (c.marks.equals(run))
+        return true;
+    return false;
+  }
+
+  /** The marks right after the first character of [s] that has some. */
+  static String first_marks(String s)
+  {
+    for (int i = 0; i < s.length(); )
+    {
+      int cp = s.codePointAt(i);
+      i += Character.charCount(cp);
+      int j = i;
+      while (j < s.length() && is_mark(s.codePointAt(j)))
+        j += Character.charCount(s.codePointAt(j));
+      if (j > i && !is_mark(cp))
+        return s.substring(i, j);
+    }
+    return "";
+  }
+
   /** [s] in [style], from whatever style it was in. */
   public static String apply(String s, String style)
   {
@@ -277,6 +347,9 @@ public final class UnicodeStyles
       case "underline": return combine(plain, UNDERLINE);
       case "zalgo": return zalgo(plain, new Random(plain.hashCode()));
     }
+    Corruption co = corruption_named(style);
+    if (co != null)
+      return combine(plain, co.marks);
     Map<Character, Integer> t = table(style);
     if (t == null)
       return s;
@@ -318,6 +391,10 @@ public final class UnicodeStyles
   /** The style of the first styled character, [PLAIN] if none. */
   public static String style_of(String s)
   {
+    String run = first_marks(s);
+    for (Corruption c : _corruptions)
+      if (c.marks.equals(run))
+        return c.name;
     if (s.indexOf(STRIKE) >= 0)
       return "strike";
     if (s.indexOf(UNDERLINE) >= 0)
@@ -339,6 +416,11 @@ public final class UnicodeStyles
   }
 
   static String combine(String s, char mark)
+  {
+    return combine(s, String.valueOf(mark));
+  }
+
+  static String combine(String s, String mark)
   {
     StringBuilder b = new StringBuilder();
     for (int i = 0; i < s.length(); )

@@ -70,7 +70,7 @@
   <string name="studio_add_op">Add step</string>
   <string name="studio_add_op_value">This step needs a value</string>
   <string name="studio_tools">Edit strip tools</string>
-  <string name="studio_tools_desc">Opened from Spec (selections) and Vert (formats, fonts) on the edit strip. Your own selections join the Scope cycle, formats the View cycle and fonts the Verse cycle. They are saved as modules, listed below, where you can export or delete them.</string>
+  <string name="studio_tools_desc">Opened from Spec (selections) and Vert (formats, fonts) on the edit strip. Your own selections join the Scope cycle, formats the View cycle, and fonts and corruptions the Verse cycle. They are saved as modules, listed below, where you can export or delete them.</string>
   <string name="studio_tool_selection">New selection</string>
   <string name="studio_tool_format">New format</string>
   <string name="studio_tool_font">New font</string>

@@ -102,6 +102,8 @@ Infrastructure:
 - Code table (il-009, build 87): ⌗ Code table in the key editor and in
   every key picker; every Unicode block, search by character, code or name.
   Build 88: one grid table like the code charts, with a block jump.
+- Corruptions (il-010, build 89): your own combining marks, picked in the
+  code table, as Verse looks in the Marks nest (`corruption` modules).
 - Quick names (il-008): every action is a quick, named by function
   (quickfunction, quicktoggle, pageswitch, quickopen, quickedit, quickequip,
   quickbehaviour); Studio shows them, either name works as a key name;

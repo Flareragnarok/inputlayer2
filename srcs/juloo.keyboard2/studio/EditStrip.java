@@ -295,6 +295,14 @@ public class EditStrip extends LinearLayout
         fonts.add(f);
     }
     UnicodeStyles.set_fonts(fonts);
+    List<UnicodeStyles.Corruption> corruptions = new ArrayList<UnicodeStyles.Corruption>();
+    for (Module m : store.list("corruption"))
+    {
+      UnicodeStyles.Corruption c = CustomTools.corruption(m);
+      if (c != null)
+        corruptions.add(c);
+    }
+    UnicodeStyles.set_corruptions(corruptions);
   }
 
   View make_key(QuickSpec s, float width)

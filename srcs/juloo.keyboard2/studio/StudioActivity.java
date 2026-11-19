@@ -265,6 +265,7 @@ public class StudioActivity extends Activity
     tool_form(root, "font", R.string.studio_tool_font,
         new String[]{ "lower", "upper", "digits" },
         new int[]{ R.string.studio_tool_lower, R.string.studio_tool_upper, R.string.studio_tool_digits });
+    corruption_form(root);
 
     root.addView(heading(R.string.studio_modules));
     root.addView(text(getString(R.string.studio_modules_desc)));
@@ -527,6 +528,93 @@ public class StudioActivity extends Activity
         catch (Exception e)
         {
           toast(getString(R.string.studio_tool_invalid) + " " + e.getMessage());
+        }
+      }
+    }));
+  }
+
+  /** il-010: a corruption for Verse's Marks nest, its marks picked in the
+      code table (or pasted), previewed as they're added. */
+  void corruption_form(LinearLayout root)
+  {
+    TextView t = text("New corruption (a Verse look)");
+    t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+    t.setPadding(0, dp(12), 0, 0);
+    root.addView(t);
+    final EditText name = new EditText(this);
+    name.setSingleLine(true);
+    name.setHint(R.string.studio_tool_name);
+    root.addView(name);
+    final EditText marks = new EditText(this);
+    marks.setSingleLine(true);
+    marks.setHint("Combining marks, e.g. ̸ ⃫ ̣ (from the code table, or pasted)");
+    root.addView(marks);
+    final TextView preview = text("");
+    preview.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
+    preview.setPadding(0, dp(12), 0, dp(12));
+    root.addView(preview);
+    final Runnable show = new Runnable() {
+      public void run()
+      {
+        String m = marks.getText().toString();
+        preview.setText(m.isEmpty() ? ""
+            : UnicodeStyles.combine("Corruption", m));
+      }
+    };
+    marks.addTextChangedListener(new android.text.TextWatcher() {
+      public void beforeTextChanged(CharSequence s, int a, int b, int c) {}
+      public void onTextChanged(CharSequence s, int a, int b, int c) {}
+      public void afterTextChanged(android.text.Editable s) { show.run(); }
+    });
+    LinearLayout row = new LinearLayout(this);
+    row.addView(button("⌗ Add marks…", new View.OnClickListener() {
+      public void onClick(View v)
+      {
+        CodeTable.pick_marks(StudioActivity.this, "Corruption : marks", cp -> {
+          if (UnicodeStyles.corruption("x", new String(Character.toChars(cp))) == null)
+          {
+            toast("Not a combining mark: " + CodeTable.hex(cp));
+            return false;
+          }
+          marks.append(new String(Character.toChars(cp)));
+          toast("Added " + CodeTable.hex(cp) + " · " + UnicodeStyles.combine("Corruption", marks.getText().toString()));
+          return true;
+        }, () -> {});
+      }
+    }));
+    row.addView(button("⌫ Last", new View.OnClickListener() {
+      public void onClick(View v)
+      {
+        String m = marks.getText().toString();
+        if (!m.isEmpty())
+          marks.setText(m.substring(0, m.offsetByCodePoints(m.length(), -1)));
+      }
+    }));
+    root.addView(row);
+    root.addView(button(R.string.studio_category_add, new View.OnClickListener() {
+      public void onClick(View v)
+      {
+        try
+        {
+          String m = marks.getText().toString();
+          UnicodeStyles.Corruption c = UnicodeStyles.corruption(name.getText().toString(), m);
+          if (c == null)
+          {
+            toast("Incomplete: needs a name (not a built-in look) and only combining marks.");
+            return;
+          }
+          JSONObject j = new JSONObject();
+          j.put("marks", m);
+          Module mod = Module.create("corruption", c.name, j);
+          _store.save(mod);
+          name.setText("");
+          marks.setText("");
+          refresh_modules();
+          toast(getString(R.string.studio_imported, mod.type, mod.name));
+        }
+        catch (Exception e)
+        {
+          toast("Not saved: " + e.getMessage());
         }
       }
     }));

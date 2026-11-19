@@ -289,6 +289,33 @@ public final class CodeTable
   public static void show(final Activity act, String title, final Done done,
       final Runnable cancel)
   {
+    open(act, title, "", cp -> {
+      String n = key_name(cp);
+      if (n == null)
+      {
+        Toast.makeText(act, "Can't put " + hex(cp) + " on a key", Toast.LENGTH_LONG).show();
+        return false;
+      }
+      done.picked(n);
+      return true;
+    }, false, cancel);
+  }
+
+  /** il-010: the table open on the combining marks; it stays open, each
+      character tapped goes to [take] (a corruption being built), [close]
+      runs on Done. */
+  public static void pick_marks(Activity act, String title, final Take take,
+      Runnable close)
+  {
+    open(act, title, "combining", take, true, close);
+  }
+
+  /** Gets a character tapped; [false] when it can't be used. */
+  public interface Take { boolean take(int cp); }
+
+  static void open(final Activity act, String title, String query,
+      final Take take, final boolean stay, final Runnable cancel)
+  {
     final List<Block> blocks;
     try { blocks = blocks(); }
     catch (Throwable e)
@@ -305,14 +332,8 @@ public final class CodeTable
     final Picker pick = new Picker() {
       public void picked(int cp)
       {
-        String n = key_name(cp);
-        if (n == null)
-        {
-          Toast.makeText(act, "Can't put " + hex(cp) + " on a key", Toast.LENGTH_LONG).show();
-          return;
-        }
-        dlg[0].dismiss();
-        done.picked(n);
+        if (take.take(cp) && !stay)
+          dlg[0].dismiss();
       }
     };
     final TableAdapter grid = new TableAdapter(act, table, cols, dp, pick);
@@ -344,7 +365,7 @@ public final class CodeTable
     box.addView(list, new LinearLayout.LayoutParams(
           LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
     dlg[0] = new AlertDialog.Builder(act).setTitle(title).setView(box)
-      .setNegativeButton(android.R.string.cancel, (di, i) -> cancel.run())
+      .setNegativeButton(stay ? "Done" : "Cancel", (di, i) -> cancel.run())
       .setNeutralButton("Blocks", null)
       .create();
 
@@ -420,6 +441,8 @@ public final class CodeTable
       Toast.makeText(act, hex(cp) + " " + name(cp), Toast.LENGTH_LONG).show();
       return true;
     });
+    q.setText(query);
+    refill.run();
     dlg[0].show();
     // "Blocks" jumps to a block, and the table stays open.
     dlg[0].getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {

@@ -295,8 +295,13 @@ every syntax.
 **Verse** nests: **Case** (UPPER, lower, Title Case, tOGGLE cASE,
 snake_case, camelCase, aLtErNaTiNg), **Serif** (𝐛𝐨𝐥𝐝, 𝑖𝑡𝑎𝑙𝑖𝑐, 𝒃𝒐𝒍𝒅 𝒊𝒕𝒂𝒍𝒊𝒄),
 **Sans**, **Type** (𝚖𝚘𝚗𝚘, 𝓈𝒸𝓇𝒾𝓅𝓉, 𝔣𝔯𝔞𝔨𝔱𝔲𝔯, 𝕕𝕠𝕦𝕓𝕝𝕖), **Shapes** (ꜱᴍᴀʟʟ ᴄᴀᴘꜱ,
-ⓒⓘⓡⓒⓛⓔⓓ, ｆｕｌｌ), **Marks** (s̶t̶r̶i̶k̶e̶, u̲n̲d̲e̲r̲l̲i̲n̲e̲, z̷a̴l̵g̶o̸) and **Fonts**
-(saved `font` modules). Every nest but Case starts with *plain*. Looks
+ⓒⓘⓡⓒⓛⓔⓓ, ｆｕｌｌ), **Marks** (s̶t̶r̶i̶k̶e̶, u̲n̲d̲e̲r̲l̲i̲n̲e̲, z̷a̴l̵g̶o̸, then your
+**corruptions**) and **Fonts** (saved `font` modules). A corruption
+(il-010) is your own pile of combining marks, put in that order on every
+character (ẉ̸⃫ọ̸⃫ṛ̸⃫ḍ̸⃫): Studio → Edit strip tools → New corruption, marks
+picked with **⌗ Add marks…** (the code table on the combining marks, open
+while you tap) or pasted, with a live preview; saved as a `corruption`
+module (`{"module":"corruption","name":"slashed","marks":"̸⃫̣"}`). Every nest but Case starts with *plain*. Looks
 convert from plain letters, so they switch freely; snake_case and
 camelCase convert into each other, Title splits them back into words.
 
